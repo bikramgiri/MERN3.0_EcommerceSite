@@ -1,12 +1,18 @@
 import express from 'express';
 import { connectDB } from './database/connection';
-const app = express();
+import userRoutes from './routes/userRoutes';
 
-// Database connection
+const app = express();
+app.use(express.json());
+app.use(express.urlencoded({extended : true}));
+
+// *Database connection
 connectDB();
-// *OR
+// OR
 // import './database/connection';
 
+// *Routes
+app.use("/api/auth", userRoutes);
 
 export default app;
 

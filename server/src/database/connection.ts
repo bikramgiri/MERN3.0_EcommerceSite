@@ -1,17 +1,21 @@
 import { Sequelize } from 'sequelize-typescript';
 import { envConfig } from '../config/config';
 
-// const sequelize = new Sequelize(envConfig.dbConnectionString as string);
+// const sequelize = new Sequelize(envConfig.dbConnectionString as string, {
+//   models: [__dirname + '/models'] // Path to your models
+// });
+
 // Or
 const sequelize = new Sequelize(envConfig.dbConnectionString as string, {
-  dialect: 'postgres',
+  // dialect: 'postgres',
   logging: false,
-  dialectOptions: {
-    ssl: {
-      require: true,
-      rejectUnauthorized: false  
-    }
-  }
+  // dialectOptions: {
+  //   ssl: {
+  //     // require: true,
+  //     rejectUnauthorized: false  
+  //   }
+  // },
+  models: [__dirname + '/models'] // Path to your models
 });
 
 const connectDB = async () => {
@@ -31,5 +35,9 @@ const connectDB = async () => {
 // } catch (error) {
 //   console.error('Unable to connect to the database:', error);
 // }
+
+sequelize.sync({force : false, alter: false}).then(()=>{
+    console.log("Database Synced!");
+})
 
 export { sequelize, connectDB };
