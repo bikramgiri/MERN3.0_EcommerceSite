@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import User from "../../database/models/userModel";
+import bcrypt from 'bcrypt';
 import { sequelize } from "../../database/connection";
 
 class AuthController {
@@ -14,10 +15,45 @@ class AuthController {
                   return;
             }
 
-            const registerData = await User.create({
+            if(username.length < 3){
+                  res.status(400).json({
+                        message : "Username must be at least 3 characters long",
+                        field : "username"
+                  });
+                  return;
+            }
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if(!emailRegex.test(email)){
+                  res.status(400).json({
+                        message : "Invalid email format",
+                        field : "email"
+                  });
+                  return;
+            }
+
+            const existingEmail = await User.findOne({where : {email}});
+            if(existingEmail){
+                  res.status(400).json({
+                        message : "Email already exists",
+                        field : "email"
+                  });
+                  return;
+            }
+
+            if(password.length < 8){
+                  res.status(400).json({
+                        message : "Password must be at least 8 characters long",
+                        field : "password"
+                  });
+                  return;
+            }
+
+           try {
+             const registerData = await User.create({
                   username,
                   email,
-                  password
+                  password : bcrypt.hashSync(password, 10) 
             });
 
             // Or from raw queries
@@ -31,6 +67,11 @@ class AuthController {
                   message : "User registered successfully",
                   data : registerData
             });
+           } catch (error) {
+                  res.status(500).json({
+                        message : "Something went wrong"
+                  });
+           }
       }
 }
 
