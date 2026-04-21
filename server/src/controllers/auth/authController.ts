@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import User from "../../database/models/userModel";
 import bcrypt from 'bcrypt';
 import { sequelize } from "../../database/connection";
-
 class AuthController {
       // *User Registration
       static async register(req:Request, res:Response){
