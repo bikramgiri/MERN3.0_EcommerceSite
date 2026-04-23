@@ -36,7 +36,7 @@ const connectDB = async () => {
 //   console.error('Unable to connect to the database:', error);
 // }
 
-sequelize.sync({force : false, alter: false}).then(()=>{
+sequelize.sync({force : false, alter: false}).then(()=>{ // force: true will drop the table if it already exists and create a new one, alter: true will check the current state of the table in the database (which columns it has, what are their data types, etc), and then perform the necessary changes in the table to make it match the model.
     console.log("Database Synced!");
 })
 

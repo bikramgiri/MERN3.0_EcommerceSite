@@ -1,4 +1,4 @@
-import {Table, Column, Model, DataType} from 'sequelize-typescript'
+import {Table, Column, Model, DataType, AllowNull} from 'sequelize-typescript'
 
 @Table({
     tableName : "users", 
@@ -34,6 +34,18 @@ class User extends Model{
         defaultValue : 'customer'
     })
     declare role:string
+
+    @AllowNull(true)
+    @Column({
+        type : DataType.STRING,
+    })
+    declare otp:string
+
+    @AllowNull(true)
+    @Column({
+        type : DataType.DATE,
+    })
+    declare otpGeneratedTime:Date
 }
 
 export default User
