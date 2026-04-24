@@ -39,13 +39,19 @@ class User extends Model{
     @Column({
         type : DataType.STRING,
     })
-    declare otp:string
+    declare otp:string | null
 
     @AllowNull(true)
     @Column({
         type : DataType.DATE,
     })
-    declare otpGeneratedTime:Date
+    declare otpGeneratedTime:Date | null
+
+    @AllowNull(true)
+    @Column({
+        type : DataType.STRING,
+    })
+    declare resetPasswordToken:string | null
 }
 
 export default User

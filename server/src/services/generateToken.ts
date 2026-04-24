@@ -1,11 +1,11 @@
-import jwt from "jsonwebtoken";
+import jwt, { Secret, SignOptions } from "jsonwebtoken";
 import { envConfig } from "../config/config";
 
-const generateToken = (userId: string) => {
+const generateToken = (userId: string, expiresIn: string) => {
       const token = jwt.sign(
         { id: userId },
-        envConfig.jwtSecretKey as string,
-        { expiresIn: "1d" },
+        envConfig.jwtSecretKey as Secret,
+        { expiresIn: expiresIn } as SignOptions,
       );
       return token;
 }
