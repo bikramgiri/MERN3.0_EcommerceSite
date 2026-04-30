@@ -13,6 +13,11 @@ export interface AuthRequest extends Request {
   };
 }
 
+export enum Role {
+  Admin = "admin",
+  Customer = "customer",
+}
+
 class authMiddleware {
   // *Authentication Middleware
   async isAuthenticated(
@@ -84,6 +89,20 @@ class authMiddleware {
         message: "Something went wrong",
       });
     }
+  }
+
+   // *Authorization Middleware
+  authorizeRole(...roles: Role[]) {
+    return (req: AuthRequest, res: Response, next: NextFunction): void => {
+      let userRole = req.user?.role as Role;
+      if (!roles.includes(userRole)) {
+        res.status(403).json({
+          message: `Role (${userRole}) don't have permission to do this action.`,
+        });
+        return;
+      }
+      next();
+    };
   }
 }
 
