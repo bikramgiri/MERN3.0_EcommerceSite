@@ -50,27 +50,20 @@ class authMiddleware {
       }
 
       // *verify token
-      jwt.verify(token, secret,
-        async (err, decoded: any) => {
-          if (err) {
-            console.error("JWT verification failed:", {
-              name: err.name, 
-              message: err.message, 
-              expiredAt: (err as any).expiredAt, 
-            });
+      let decoded: any
+      try {
+        decoded = jwt.verify(token, secret)
+      } catch (err: any) {
+        console.error("JWT verification failed:", { name: err.name, message: err.message })
+        res.status(401).json({ message: "Unauthorized! Invalid token" })
+        return
+      }
 
-            res.status(401).json({
-              message: "Unauthorized! Invalid token",
-            });
-            return;
-          } else {
-            const userId = decoded.id;
-            if (!userId) {
-              res.status(401).json({
-                message: "Unauthorized! Invalid token payload",
-              });
-              return;
-            }
+        const userId = decoded?.id
+      if (!userId) {
+        res.status(401).json({ message: "Unauthorized! Invalid token payload" })
+        return
+      }
 
             const useData = await User.findByPk(userId);
             if (!useData) {
@@ -79,15 +72,15 @@ class authMiddleware {
               });
               return;
             }
+
             req.user = useData;
             next();
-          }
-        },
-      );
+          
     } catch (error) {
       res.status(500).json({
         message: "Something went wrong",
       });
+
     }
   }
 

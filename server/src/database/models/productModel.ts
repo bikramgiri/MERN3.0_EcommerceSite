@@ -1,4 +1,6 @@
-import {Table, Column, Model, DataType, AllowNull} from 'sequelize-typescript'
+import {Table, Column, Model, DataType, AllowNull, ForeignKey, BelongsTo} from 'sequelize-typescript'
+import Category from './categoryModel'
+import User from './userModel'
 
 @Table({
     tableName : "products", 
@@ -49,6 +51,22 @@ class Product extends Model{
         type : DataType.INTEGER
     })
     declare productDiscount:number
+
+    @ForeignKey(() => Category)
+    @AllowNull(false)
+    @Column({ type: DataType.UUID })
+    declare categoryId: string
+
+    @ForeignKey(() => User)
+    @AllowNull(false)
+    @Column({ type: DataType.UUID })
+    declare userId: string
+
+    @BelongsTo(() => Category)
+    declare category: Category
+
+    @BelongsTo(() => User)
+    declare owner: User
 }
 
 export default Product
