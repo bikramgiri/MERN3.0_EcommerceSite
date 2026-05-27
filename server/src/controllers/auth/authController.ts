@@ -9,6 +9,7 @@ import findData from "../../services/findData";
 import isOtpExpired from "../../services/checkOtpExpiration";
 import { envConfig } from "../../config/config";
 import jwt, { Secret } from "jsonwebtoken";
+import { AuthRequest } from "../../middleware/authMiddleware";
 class AuthController {
   // *User Registration
   static async register(req: Request, res: Response) {
@@ -372,6 +373,77 @@ class AuthController {
         message: "Password reset successful",
       });
     } catch (error) {
+      res.status(500).json({
+        message: "Something went wrong",
+      });
+    }
+  }
+
+  // *Change Password (for logged in users)
+  static async changePassword(req: AuthRequest, res: Response) {
+    try {
+      const userId = req.user?.id
+      if (!userId) {
+        res.status(401).json({
+          message: "Unauthorized!",
+          field: "general",
+        });
+        return;
+      }
+
+      const { currentPassword, newPassword, confirmNewPassword } = req.body;
+      if (!currentPassword || !newPassword || !confirmNewPassword) {
+        res.status(400).json({
+          message:
+            "currentPassword, newPassword and confirmNewPassword are required",
+          field: "general",
+        });
+        return;
+      }
+
+      if (newPassword.length < 8) {
+        res.status(400).json({
+          message: "New password must be at least 8 characters long",
+          field: "newPassword",
+        });
+        return;
+      }
+
+      if (newPassword !== confirmNewPassword) {
+        res.status(400).json({
+          message: "New password and confirm new password do not match",
+          field: "confirmNewPassword",
+        });
+        return;
+      }
+
+      const user = await User.findByPk(userId);
+      if (!user) {
+        res.status(404).json({
+          message: "User not found",
+        });
+        return;
+      }    
+      
+      const isCurrentPasswordValid = bcrypt.compareSync(
+        currentPassword,
+        user.password
+      );
+      if (!isCurrentPasswordValid) {
+        res.status(400).json({
+          message: "Current password is incorrect",
+          field: "currentPassword",
+        });
+        return;
+      }
+
+      user.password = bcrypt.hashSync(newPassword, 10);
+      await user.save();
+
+      res.status(200).json({
+        message: "Password changed successfully",
+      });
+    }  catch (error) {
       res.status(500).json({
         message: "Something went wrong",
       });

@@ -1,16 +1,17 @@
 import express, { Router } from 'express'
 import categoryController from '../../../controllers/admin/category/categoryController';
 import authMiddleware, { Role } from '../../../middleware/authMiddleware';
+import catchAsyncError from '../../../services/catchAsyncError';
 
 const router:Router = express.Router()
 
 router.route("/category")
-.post(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Admin), categoryController.addCategory)
-.get(categoryController.fetchAllCategories)
+.post(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Admin), catchAsyncError(categoryController.addCategory))
+.get(catchAsyncError(categoryController.fetchAllCategories))
 
 router.route("/category/:id")
-.get(categoryController.fetchSingleCategory)
-.patch(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Admin), categoryController.updateCategory)
-.delete(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Admin), categoryController.deleteCategory)
+.get(catchAsyncError(categoryController.fetchSingleCategory))
+.patch(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Admin), catchAsyncError(categoryController.updateCategory))
+.delete(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Admin), catchAsyncError(categoryController.deleteCategory))
 
 export default router;
