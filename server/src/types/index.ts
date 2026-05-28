@@ -1,3 +1,7 @@
+export enum UserRole {
+    Customer = "customer",
+    Admin = "admin"
+}
 
 export enum OrderStatus {
     Pending = "Pending",

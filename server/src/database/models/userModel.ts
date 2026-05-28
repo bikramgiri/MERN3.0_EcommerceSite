@@ -1,4 +1,5 @@
 import {Table, Column, Model, DataType, AllowNull} from 'sequelize-typescript'
+import { UserRole } from '../../types'
 
 @Table({
     tableName : "users", 
@@ -30,8 +31,8 @@ class User extends Model{
     declare password:string 
 
     @Column({
-        type : DataType.ENUM('customer','admin'), 
-        defaultValue : 'customer'
+        type : DataType.ENUM(UserRole.Customer, UserRole.Admin), 
+        defaultValue : UserRole.Customer
     })
     declare role:string
 

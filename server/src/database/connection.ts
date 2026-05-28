@@ -3,6 +3,9 @@ import { envConfig } from '../config/config';
 import User from './models/userModel';
 import Product from './models/productModel';
 import Category from './models/categoryModel';
+import Order from './models/orderModel';
+import OrderDetails from './models/orderDetailsModel';
+import Payment from './models/paymentModel';
 
 // const sequelize = new Sequelize(envConfig.dbConnectionString as string, {
 //   models: [__dirname + '/models'] // Path to your models
@@ -23,14 +26,29 @@ const sequelize = new Sequelize(envConfig.dbConnectionString as string, {
 
 // *Relationships
 
-// Relationship between User and Product
+// Relationship between Product and User
 Product.belongsTo(User, { foreignKey: 'userId'})
 User.hasMany(Product, { foreignKey: 'userId'})
 
-// Relationship between Category and Product
+// Relationship between Product and Category
 Product.belongsTo(Category, { foreignKey: 'categoryId'})
 Category.hasMany(Product, { foreignKey: 'categoryId'})
 
+// Relationship between Order and User
+Order.belongsTo(User, { foreignKey: "userId" });
+User.hasMany(Order, { foreignKey: "userId" });
+
+// Relationship between Order and Payment
+Order.belongsTo(Payment, { foreignKey: "paymentId" });
+Payment.hasOne(Order, { foreignKey: "paymentId" });
+
+// Relationship between OrderDetails and Order
+OrderDetails.belongsTo(Order, { foreignKey: "orderId" });
+Order.hasMany(OrderDetails, { foreignKey: "orderId" });
+
+// Relationship between OrderDetails and Product
+OrderDetails.belongsTo(Product, { foreignKey: "productId" });
+Product.hasMany(OrderDetails, { foreignKey: "productId" });
 
 const connectDB = async () => {
   try {
