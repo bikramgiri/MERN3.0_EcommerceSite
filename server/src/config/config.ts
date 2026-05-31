@@ -10,5 +10,10 @@ export const envConfig = {
       emailPassword: process.env.EMAIL_PASSWORD,
       adminUsername: process.env.ADMIN_USERNAME,
       adminEmail: process.env.ADMIN_EMAIL,
-      adminPassword: process.env.ADMIN_PASSWORD
+      adminPassword: process.env.ADMIN_PASSWORD,
+      backendUrl: process.env.BACKEND_URL,
+      clientUrl: process.env.CLIENT_URL,
+      khaltiPaymentUrl: process.env.KHALTI_PAYMENT_URL,
+      khaltiSecretKey: process.env.KHALTI_SECRET_KEY,
+      khaltiVerificationUrl: process.env.KHALTI_VERIFICATION_URL,
 }

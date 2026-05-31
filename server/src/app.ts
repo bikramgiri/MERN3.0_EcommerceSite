@@ -3,6 +3,7 @@ import { connectDB } from './database/connection';
 import userRoutes from './routes/auth/authRoutes';
 import categoryRoutes from './routes/admin/category/categoryRoutes';
 import productRoutes from './routes/admin/product/productRoutes';
+import customerOrderRoutes from './routes/customer/order/customerOrderRoutes';
 
 const app = express();
 app.use(express.json());
@@ -17,6 +18,7 @@ connectDB();
 app.use("/api/auth", userRoutes);
 app.use("/api/admin", categoryRoutes)
 app.use("/api/admin", productRoutes)
+app.use("/api/customer", customerOrderRoutes)
 
 // *Give access to storage folder images
 app.use("/src/storage", express.static("storage")); 
