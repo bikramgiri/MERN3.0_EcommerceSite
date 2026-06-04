@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+import crypto from 'crypto';
 
 // Helper: delete image file from disk
 const deleteImageFromDisk = (filename: string | undefined) => {
@@ -11,3 +12,13 @@ const deleteImageFromDisk = (filename: string | undefined) => {
 };
 
 export default deleteImageFromDisk;
+
+// Helper: generate HMAC SHA256 hash
+const generateHmacSha256Hash = (data: string, secret: string): string => {
+  if (!data || !secret) {
+    throw new Error("Both data and secret are required to generate a hash.");
+  }
+  return crypto.createHmac("sha256", secret).update(data).digest("base64");
+};
+
+export { generateHmacSha256Hash };

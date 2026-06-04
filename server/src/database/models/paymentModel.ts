@@ -34,10 +34,11 @@ class Payment extends Model{
     })
     declare paymentStatus:string
 
+    @AllowNull(true)
     @Column({
         type : DataType.STRING,
     })
-    declare pidx:string
+    declare pidx:string | null; // Payment ID from the gateway, optional for COD
 }
 
 export default Payment
