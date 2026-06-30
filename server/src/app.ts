@@ -5,6 +5,7 @@ import categoryRoutes from './routes/admin/category/categoryRoutes';
 import productRoutes from './routes/admin/product/productRoutes';
 import customerOrderRoutes from './routes/customer/order/customerOrderRoutes';
 import adminOrderRoutes from './routes/admin/order/adminOrderRoutes';
+import cartRoutes from './routes/customer/cart/cartRoutes';
 
 const app = express();
 app.use(express.json());
@@ -21,6 +22,7 @@ app.use("/api/admin", categoryRoutes)
 app.use("/api/admin", productRoutes)
 app.use("/api/admin", adminOrderRoutes)
 app.use("/api/customer", customerOrderRoutes)
+app.use("/api/customer", cartRoutes)
 
 // *Give access to storage folder images
 app.use("/src/storage", express.static("storage")); 

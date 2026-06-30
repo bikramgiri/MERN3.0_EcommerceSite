@@ -6,6 +6,7 @@ import Category from './models/categoryModel';
 import Order from './models/orderModel';
 import OrderDetails from './models/orderDetailsModel';
 import Payment from './models/paymentModel';
+import Cart from './models/cartModel';
 
 // const sequelize = new Sequelize(envConfig.dbConnectionString as string, {
 //   models: [__dirname + '/models'] // Path to your models
@@ -40,7 +41,7 @@ User.hasMany(Order, { foreignKey: "userId" });
 
 // Relationship between Order and Payment
 Order.belongsTo(Payment, { foreignKey: "paymentId" });
-Payment.hasOne(Order, { foreignKey: "paymentId" });
+Payment.hasOne(Order, { foreignKey: "paymentId" }); 
 
 // Relationship between OrderDetails and Order
 OrderDetails.belongsTo(Order, { foreignKey: "orderId" });
@@ -50,12 +51,20 @@ Order.hasMany(OrderDetails, { foreignKey: "orderId" });
 OrderDetails.belongsTo(Product, { foreignKey: "productId" });
 Product.hasMany(OrderDetails, { foreignKey: "productId" });
 
+// // Relationship between Cart and User
+// Cart.belongsTo(User, { foreignKey: "userId" });
+// User.hasMany(Cart, { foreignKey: "userId" }); 
+
+// // Relationship between Cart and Product
+// Cart.belongsTo(Product, { foreignKey: "productId" });
+// Product.hasMany(Cart, { foreignKey: "productId" }); 
+
 const connectDB = async () => {
   try {
     await sequelize.authenticate();
     console.log('Database connection has been established successfully.');
 
-    await sequelize.sync({force : false, alter: false})
+    await sequelize.sync({force : false, alter: false}); // Set force to true to drop and recreate tables, alter to true to update tables
     console.log("Database Synced!");
   } catch (error) {
     console.error('Unable to connect to the database:', error);
