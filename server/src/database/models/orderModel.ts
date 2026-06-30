@@ -1,6 +1,7 @@
 import {Table, Column, Model, DataType, AllowNull, ForeignKey} from 'sequelize-typescript'
 import { OrderStatus } from '../../types'
 import Payment from './paymentModel'
+import User from './userModel';
 
 @Table({
   tableName: "orders",
@@ -63,6 +64,10 @@ class Order extends Model {
   @ForeignKey(() => Payment)
   @Column({ type: DataType.UUID })
   declare paymentId: string;
+
+  @ForeignKey(() => User)
+  @Column({ type: DataType.UUID })
+  declare userId: string;
 }
 
 export default Order

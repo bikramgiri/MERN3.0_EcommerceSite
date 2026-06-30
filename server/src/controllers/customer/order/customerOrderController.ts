@@ -945,6 +945,15 @@ class CustomerOrderController {
       if (!order) {
         res.status(404).json({
           message: "Order not found",
+          field: "orderId",
+        });
+        return;
+      }
+
+      if (order.userId !== userId) {
+        res.status(403).json({
+          message: "You do not have permission to delete this order",
+          field: "orderId",
         });
         return;
       }
@@ -953,6 +962,7 @@ class CustomerOrderController {
       if (nonDeletableStatuses.includes(order.orderStatus as OrderStatus)) {
         res.status(400).json({
           message: `Order cannot be deleted as it is already ${order.orderStatus}`,
+          field: "orderId",
         });
         return;
       }
