@@ -3,6 +3,7 @@ import Review from "../../../database/models/reviewModel";
 import Product from "../../../database/models/productModel";
 import Category from "../../../database/models/categoryModel";
 import User from "../../../database/models/userModel";
+import deleteImageFromDisk from "../../../services/helper";
 
 class AdminReviewController {
       // *Fetch all reviews
@@ -28,7 +29,7 @@ class AdminReviewController {
 
             const reviewsWithFullImageUrl = reviews.map(review => {
                   const reviewData = review.toJSON() as any;
-                  reviewData.reviewImageUrl = `${process.env.BACKEND_URL}/storage/${reviewData.reviewImage}`;
+                  reviewData.reviewImageUrl = reviewData.reviewImage ? `${process.env.BACKEND_URL}/storage/${reviewData.reviewImage}` : null;
                   return reviewData;
             });
             reviewsWithFullImageUrl.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -40,6 +41,39 @@ class AdminReviewController {
                   data : reviewsWithFullImageUrl
             })
       }
+
+      // *Delete Review
+      public static async deleteReview(req: Request, res: Response) : Promise<void> {
+            const reviewId = req.params.id;
+            if (!reviewId) {
+                  res.status(400).json({
+                        success : false,
+                        message : "Review ID is required"
+                  })
+                  return;
+            }
+
+            const review = await Review.findByPk(reviewId as string);
+            if (!review) {
+                  res.status(404).json({
+                        success : false,
+                        message : "Review not found"
+                  })
+                  return;
+            }
+
+            await review.destroy();
+
+            if (review.reviewImage) {
+              deleteImageFromDisk(review.reviewImage);
+            }
+
+            res.status(200).json({
+              success: true,
+              message: "Review deleted successfully",
+            });
+      } 
+
 }
 
 export default AdminReviewController;

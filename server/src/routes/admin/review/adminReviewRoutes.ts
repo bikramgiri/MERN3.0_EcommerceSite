@@ -9,4 +9,7 @@ const router:Router = express.Router();
 router.route("/review")
 .get(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Admin), catchAsyncError(AdminReviewController.fetchAllReviews));
 
+router.route("/review/:id")
+.delete(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Admin), catchAsyncError(AdminReviewController.deleteReview));
+
 export default router;
