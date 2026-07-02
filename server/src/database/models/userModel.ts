@@ -31,6 +31,12 @@ class User extends Model{
     declare password:string 
 
     @Column({
+            type : DataType.STRING,
+            allowNull : true 
+    })
+    declare avatar : string;
+
+    @Column({
         type : DataType.ENUM(UserRole.Customer, UserRole.Admin), 
         defaultValue : UserRole.Customer
     })

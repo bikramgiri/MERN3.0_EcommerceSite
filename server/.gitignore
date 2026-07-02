@@ -9,6 +9,7 @@ lerna-debug.log*
 
 .env
 node_modules
+src/storage/
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json

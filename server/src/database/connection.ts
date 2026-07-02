@@ -7,6 +7,7 @@ import Order from './models/orderModel';
 import OrderDetails from './models/orderDetailsModel';
 import Payment from './models/paymentModel';
 import Cart from './models/cartModel';
+import Review from './models/reviewModel';
 
 // const sequelize = new Sequelize(envConfig.dbConnectionString as string, {
 //   models: [__dirname + '/models'] // Path to your models
@@ -58,6 +59,14 @@ Product.hasMany(OrderDetails, { foreignKey: "productId" });
 // // Relationship between Cart and Product
 // Cart.belongsTo(Product, { foreignKey: "productId" });
 // Product.hasMany(Cart, { foreignKey: "productId" }); 
+
+// Relationship between Review and User
+Review.belongsTo(User, { foreignKey: "userId" });
+User.hasMany(Review, { foreignKey: "userId" });
+
+// Relationship between Review and Product
+Review.belongsTo(Product, { foreignKey: "productId" });
+Product.hasMany(Review, { foreignKey: "productId" });
 
 const connectDB = async () => {
   try {

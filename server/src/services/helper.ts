@@ -3,11 +3,13 @@ const path = require("path");
 import crypto from 'crypto';
 
 // Helper: delete image file from disk
-const deleteImageFromDisk = (filename: string | undefined) => {
+const deleteImageFromDisk = (filename: string | undefined | null) => {
   if (!filename) return;
   const imagePath = path.join(__dirname, "../storage", filename);
   fs.unlink(imagePath, (err: NodeJS.ErrnoException | null) => {
-    if (err) console.error("Failed to delete image:", err);
+if (err && err.code !== "ENOENT") {
+      console.error("Failed to delete image:", err);
+    }
   });
 };
 
