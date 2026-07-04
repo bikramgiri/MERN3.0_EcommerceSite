@@ -4,6 +4,8 @@ import Review from "../../../database/models/reviewModel";
 import Product from "../../../database/models/productModel";
 import User from "../../../database/models/userModel";
 import deleteImageFromDisk from "../../../services/helper";
+import getFullImageUrl from "../../../services/imageHandler";
+import { cloudinary } from "../../../cloudinary";
 
 class ReviewController {
   // *Add Review
@@ -30,10 +32,13 @@ class ReviewController {
         return;
       }
 
-      const file = req.file;
+      // Get Cloudinary result from middleware
+      const cloudinaryResult = (req as any).cloudinaryResult || {
+        secure_url: "",
+      }; // Default to an empty object if not set
 
-      const reviewImage = file?.filename;
-      const reviewImageUrl =  reviewImage ? `${process.env.BACKEND_URL}/storage/${reviewImage}` : null;
+      const reviewImage = cloudinaryResult.secure_url || "";
+      const fileName = reviewImage.split("/").pop() || "";
 
       const { rating, message } = req.body;
 
@@ -103,17 +108,17 @@ class ReviewController {
         productId,
         rating: parseInt(rating),
         message,
-        reviewImage: reviewImage,
+        reviewImage: fileName,
       });
 
-      const reviewResponse = {
+      const reviewWithImageUrl = {
         ...review.toJSON(),
-        reviewImageUrl: reviewImageUrl,
+        reviewImage: reviewImage,
       };
 
       res.status(200).json({
         message: "Review added successfully.",
-        data: reviewResponse,
+        data: reviewWithImageUrl,
       });
     } catch (error: any) {
       console.error("AddReview error:", error);
@@ -172,12 +177,11 @@ class ReviewController {
 
       const reviewsWithImageUrl = reviews.map((review) => {
         const reviewData = review.toJSON();
-        if (reviewData.reviewImage) {
-          reviewData.reviewImageUrl = `${process.env.BACKEND_URL}/storage/${reviewData.reviewImage}`;
-        }
-        return reviewData;
+        return {
+          ...reviewData,
+          reviewImage: getFullImageUrl(reviewData.reviewImage),
+        };
       });
-      // get latest reviews first
       reviewsWithImageUrl.sort((a, b) => {
         return (
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -241,10 +245,10 @@ class ReviewController {
 
       const reviewsWithImageUrl = reviews.map((review) => {
         const reviewData = review.toJSON();
-        if (reviewData.reviewImage) {
-          reviewData.reviewImageUrl = `${process.env.BACKEND_URL}/storage/${reviewData.reviewImage}`;
-        }
-        return reviewData;
+        return {
+          ...reviewData,
+          reviewImage: getFullImageUrl(reviewData.reviewImage),
+        };
       });
       reviewsWithImageUrl.sort((a, b) => {
         return (
@@ -334,38 +338,42 @@ class ReviewController {
         return;
       }
 
-      const file = req.file;
-      let newReviewImage: string | null = review.reviewImage;
-      let newReviewImageUrl: string | null = review.reviewImage
-        ? `${process.env.BACKEND_URL}/storage/${review.reviewImage}`
-        : null;
+      // update product image only if a new image is uploaded
+      let fileName = review.reviewImage; // Keep old filename
+      let reviewImage = fileName?  getFullImageUrl(fileName) : null; // Default full URL
 
-      if (req.body.reviewImageToRemove === "true") {
-        // user explicitly wants to remove the existing image
-        if (review.reviewImage) {
-          deleteImageFromDisk(review.reviewImage);
-        }
-        newReviewImage = null;
-        newReviewImageUrl = null;
-      } else if (file) {
-        // user uploaded a new image — replace the old one
-        if (review.reviewImage) {
-          deleteImageFromDisk(review.reviewImage);
-        }
-        newReviewImage = file.filename;
-        newReviewImageUrl = `${process.env.BACKEND_URL}/storage/${newReviewImage}`;
+      // Handle new image upload
+      const cloudinaryResult = (req as any).cloudinaryResult;
+      if (cloudinaryResult && cloudinaryResult.secure_url) {
+        // Delete old image from Cloudinary
+        const oldReviewImage = review.reviewImage ? review.reviewImage.split("/").pop() || "" : "";
+        cloudinary.uploader.destroy(
+          oldReviewImage,
+          (error: any, result: any) => {
+            if (error) {
+              console.error("Error deleting old image from Cloudinary:", error);
+            } else {
+              console.log(
+                "Old image deleted from Cloudinary successfully:",
+                result,
+              );
+            }
+          },
+        );
+
+        reviewImage = cloudinaryResult.secure_url; // update to new image URL
+        fileName = reviewImage? reviewImage.split("/").pop() || "" : ""; // update to new filename
       }
-      // else: no file, no remove flag → keep existing image untouched (defaults set above)
 
       const updatedReview = await review.update({
         rating: rating !== undefined ? parseInt(rating) : review.rating,
         message: message !== undefined ? message : review.message,
-        reviewImage: newReviewImage,
+        reviewImage: fileName, // store only the filename in the database
       });
 
       const reviewResponse = {
         ...updatedReview.toJSON(),
-        reviewImageUrl: newReviewImageUrl,
+        reviewImageUrl: reviewImage, // send full URL in response
       };
 
       res.status(200).json({

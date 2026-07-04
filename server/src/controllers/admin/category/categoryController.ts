@@ -1,5 +1,7 @@
 import { Request, Response } from "express"
 import Category from "../../../database/models/categoryModel"
+import getFullImageUrl from "../../../services/imageHandler"
+import { cloudinary } from "../../../cloudinary"
 
 class CategoryController{
       categoryData = [
@@ -33,6 +35,28 @@ class CategoryController{
 
       // *Add Category
       async addCategory(req:Request, res:Response):Promise<void> {
+            const file = req.file;
+            if(!file){
+                  res.status(400).json({ 
+                        message: "Category image is required",
+                        field: "categoryImage" 
+                  })
+                  return
+            }
+
+            // Get cloudinary resukt from middleware
+            const cloudinaryResult = (req as any).cloudinaryResult
+            if(!cloudinaryResult || !cloudinaryResult.secure_url){
+                  res.status(500).json({ 
+                        message: "Error uploading image to Cloudinary",
+                        field: "categoryImage" 
+                  })
+                  return
+            }
+
+            const categoryImage = cloudinaryResult.secure_url
+            const fileName = categoryImage.split("/").pop() || ""
+
             const { categoryName, categoryDescription } = req.body
             if(!categoryName || !categoryDescription){
                   res.status(400).json({ 
@@ -69,18 +93,24 @@ class CategoryController{
 
             const category = await Category.create({ 
                   categoryName, 
-                  categoryDescription 
+                  categoryDescription,
+                  categoryImage: fileName 
             })
+
+            const categoryWithImageUrl = {
+                  ...category.toJSON(),
+                  categoryImage: categoryImage // Use the full Cloudinary URL
+            }
 
             res.status(201).json({ 
                   message: "Category created successfully",
-                  data: category 
+                  data: categoryWithImageUrl 
             })
       }
 
       // *Fetch All Categories
       async fetchAllCategories(req:Request, res:Response):Promise<void> {
-            const categories = await Category.findAll()
+            const categories = await Category.findAll()            
             if(categories.length === 0){
                   res.status(404).json({ 
                         message: "No categories found",
@@ -89,17 +119,26 @@ class CategoryController{
                   return
             }
 
+            const categoriesWithImageUrl = categories.map((c) => {
+                  const plain = c.toJSON()
+                  return {
+                        ...plain,
+                        categoryImage: getFullImageUrl(plain.categoryImage) // Use the helper function to get full URL
+                  }
+            })
+            categoriesWithImageUrl.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
             res.status(200).json({ 
                   message: "Categories fetched successfully",
-                  totalCategories: categories.length,
-                  data: categories 
+                  totalCategories: categoriesWithImageUrl.length,
+                  data: categoriesWithImageUrl 
             })
       }
 
       // *Fetch Single Category
       async fetchSingleCategory(req:Request, res:Response):Promise<void> {
-            const { id } = req.params
-            if(!id){
+            const categoryId = req.params.id
+            if(!categoryId){
                   res.status(400).json({ 
                         message: "Category ID is required",
                         field: "general" 
@@ -107,7 +146,7 @@ class CategoryController{
                   return
             }
 
-            const category = await Category.findByPk(id as string)
+            const category = await Category.findByPk(categoryId as string)
             if(!category){
                   res.status(404).json({ 
                         message: "Category not found",
@@ -115,16 +154,22 @@ class CategoryController{
                   })
                   return
             }
+
+            const categoryWithImageUrl = {
+                  ...category.toJSON(),
+                  categoryImage: getFullImageUrl(category.categoryImage) // Use the helper function to get full URL
+            }
+
             res.status(200).json({ 
                   message: "Category fetched successfully",
-                  data: category 
+                  data: categoryWithImageUrl 
             })
       }
 
       // *Update Category
       async updateCategory(req:Request, res:Response):Promise<void> {
-            const { id } = req.params
-            if(!id){
+            const categoryId = req.params.id
+            if(!categoryId){
                   res.status(400).json({ 
                         message: "Category ID is required",
                         field: "general" 
@@ -135,7 +180,7 @@ class CategoryController{
             const { categoryName, categoryDescription } = req.body
 
             // *Check if category exists
-            const category = await Category.findByPk(id as string)
+            const category = await Category.findByPk(categoryId as string)
             if(!category){
                   res.status(404).json({ 
                         message: "Category not found",
@@ -161,29 +206,81 @@ class CategoryController{
             }
 
             const existingCategory = await Category.findOne({ where: { categoryName } })
-            if(existingCategory && existingCategory.id !== id){
-                  res.status(400).json({ 
-                        message: "Category name already exists",
-                        field: "categoryName" 
-                  })
-                  return
+            if (existingCategory && existingCategory.id !== categoryId) {
+              res.status(400).json({
+                message: "Category name already exists",
+                field: "categoryName",
+              });
+              return;
+            }
+
+            // *For Cloudinary: update category image only if a new image is uploaded
+            let fileName = category.categoryImage; // Keep old filename
+            let categoryImage = fileName? getFullImageUrl(fileName): ""; // Default full URL
+
+            // Handle new image upload
+            const cloudinaryResult = (req as any).cloudinaryResult;
+            if (cloudinaryResult && cloudinaryResult.secure_url) {
+              const oldCategoryImage = category.categoryImage ? category.categoryImage.split("/").pop() || "" : "";
+              cloudinary.uploader.destroy(oldCategoryImage,
+                  (error: any, result: any) => {
+                  if (error) {
+                    console.error("Error deleting old image from Cloudinary:", error,);
+                  } else {
+                    console.log("Old image deleted from Cloudinary successfully:", result,);
+                  }
+                },
+              );
+
+              categoryImage = cloudinaryResult.secure_url; // update to new image URL
+              fileName = categoryImage.split("/").pop() || ""; // update to new filename
+            }
+
+            // Remove Existing images
+            if (req.body.categoryImageToRemove) {
+              let categoryImageToRemove = req.body.categoryImageToRemove;
+              if (typeof categoryImageToRemove === "string")
+                categoryImageToRemove = JSON.parse(categoryImageToRemove);
+
+              // Delete from Cloudinary
+              if (categoryImageToRemove.length > 0) {
+                const publicIds = categoryImageToRemove.map((filename: string) => {
+                  const withoutExt = filename.replace(/\.[^/.]+$/, "");
+                  return `Mern3_Ecommerce_Images/${withoutExt}`;
+                });
+                await cloudinary.uploader.destroy(publicIds, {
+                  resource_type: "image",
+                  invalidate: true,
+                });
+              }
+
+              // Remove from DB categoryImage
+              await category.update({ categoryImage: null });
             }
 
             const updatedCategory = await category.update({
-                  categoryName,
-                  categoryDescription
-            })
+              categoryName,
+              categoryDescription,
+              categoryImage: fileName
+            });
+
+            const categoryWithImageUrl = {
+                  ...updatedCategory.toJSON(),
+                  // categoryImage: getFullImageUrl(updatedCategory.categoryImage) // Use the helper function to get full URL
+                  // or
+                  categoryImage: categoryImage
+            }
 
             res.status(200).json({ 
                   message: "Category updated successfully",
-                  data: updatedCategory 
+                  data: categoryWithImageUrl 
             })
       }
 
       // *Delete Category
       async deleteCategory(req:Request, res:Response):Promise<void> {
-            const { id } = req.params
-            if(!id){
+            const categoryId = req.params.id
+            if(!categoryId){
                   res.status(400).json({ 
                         message: "Category ID is required",
                         field: "general" 
@@ -191,16 +288,25 @@ class CategoryController{
                   return
             }
 
-            const category = await Category.findByPk(id as string)
-            if(!category){
-                  res.status(404).json({ 
-                        message: "Category not found",
-                        field: "general" 
-                  })
-                  return
+            const category = await Category.findByPk(categoryId as string)
+            if (!category) {
+              res.status(404).json({
+                message: "Category not found",
+                field: "general",
+              });
+              return;
             }
 
-            await category.destroy()
+            const fileName = category.categoryImage.split("/").pop() || "";
+            cloudinary.uploader.destroy(fileName, (error: any, result: any) => {
+              if (error) {
+                console.error("Error deleting image from Cloudinary:", error);
+              } else {
+                console.log("Image deleted from Cloudinary successfully:", result,);
+              }
+            });
+
+            await category.destroy();
 
             res.status(200).json({ 
                   message: "Category deleted successfully"

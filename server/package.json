@@ -15,6 +15,7 @@
   "dependencies": {
     "axios": "^1.16.1",
     "bcrypt": "^6.0.0",
+    "cloudinary": "^2.10.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
@@ -23,7 +24,8 @@
     "nodemon": "^3.1.14",
     "pg": "^8.20.0",
     "sequelize": "^6.37.8",
-    "sequelize-typescript": "^2.1.6"
+    "sequelize-typescript": "^2.1.6",
+    "streamifier": "^0.1.1"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",

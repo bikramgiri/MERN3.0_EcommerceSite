@@ -8,6 +8,7 @@ import OrderDetails from "../../../database/models/orderDetailsModel";
 import Product from "../../../database/models/productModel";
 import Payment from "../../../database/models/paymentModel";
 import User from "../../../database/models/userModel";
+import getFullImageUrl from '../../../services/imageHandler';
 
 // *Note: Difference between findOne and findByPk is that findOne allows you to specify additional options such as where clause, include, etc. while findByPk is a shorthand method for finding a record by its primary key. 
 // In this case, since we want to include related models (OrderDetails, Product, Payment, User), we use findOne with the appropriate include options.
@@ -49,10 +50,28 @@ class AdminOrderController {
         return;
       }
 
+      const ordersWithFullImageUrls = orders.map((order) => {
+        const plainOrder = order.toJSON();
+        if (plainOrder.OrderDetails && Array.isArray(plainOrder.OrderDetails)) {
+          plainOrder.OrderDetails = plainOrder.OrderDetails.map(
+            (detail: any) => {
+              if (detail.Product && detail.Product.productImage) {
+                detail.Product.productImage = getFullImageUrl(
+                  detail.Product.productImage,
+                );
+              }
+              return detail;
+            },
+          );
+        }
+        return plainOrder;
+      });
+
+
       res.status(200).json({
         message: "Orders fetched successfully",
-        totalOrders: orders.length,
-        data: orders,
+        totalOrders: ordersWithFullImageUrls.length,
+        data: ordersWithFullImageUrls,
       });
     } catch (error) {
       res.status(500).json({ message: "Internal server error" });
@@ -104,10 +123,26 @@ class AdminOrderController {
         return;
       }
 
-      res.status(200).json({
-        message: "Order fetched successfully",
-        data: order,
-      });
+        const ordersWithFullImage = order.toJSON();
+        if (
+          ordersWithFullImage.OrderDetails &&
+          Array.isArray(ordersWithFullImage.OrderDetails)
+        ) {
+          ordersWithFullImage.OrderDetails =
+            ordersWithFullImage.OrderDetails.map((detail: any) => {
+              if (detail.Product && detail.Product.productImage) {
+                detail.Product.productImage = getFullImageUrl(
+                  detail.Product.productImage,
+                );
+              }
+              return detail;
+            });
+        }
+
+        res.status(200).json({
+          message: "Order fetched successfully",
+          data: ordersWithFullImage,
+        });
 
     } catch (error) {
       res.status(500).json({ message: "Internal server error" });

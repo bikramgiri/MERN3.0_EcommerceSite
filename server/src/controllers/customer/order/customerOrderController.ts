@@ -18,6 +18,7 @@ import axios from "axios";
 import { generateHmacSha256Hash } from "../../../services/helper";
 import User from "../../../database/models/userModel";
 import Category from "../../../database/models/categoryModel";
+import getFullImageUrl from "../../../services/imageHandler";
 
 class CustomerOrderController {
   // *Create order and integrate payment gateway
@@ -419,12 +420,10 @@ class CustomerOrderController {
       const verifyData = verifyRes.data;
 
       if (verifyData.status !== "COMPLETE") {
-        res
-          .status(400)
-          .json({
-            message: "eSewa payment verification failed",
-            status: verifyData.status,
-          });
+        res.status(400).json({
+          message: "eSewa payment verification failed",
+          status: verifyData.status,
+        });
         return;
       }
 
@@ -479,7 +478,10 @@ class CustomerOrderController {
   }
 
   // *Fetch My orders
-  public static async fetchMyOrders(req: AuthRequest, res: Response): Promise<void> {
+  public static async fetchMyOrders(
+    req: AuthRequest,
+    res: Response,
+  ): Promise<void> {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -503,7 +505,12 @@ class CustomerOrderController {
             include: [
               {
                 model: Product,
-                attributes: ["productName", "productPrice", "productImage", "productStock"],
+                attributes: [
+                  "productName",
+                  "productPrice",
+                  "productImage",
+                  "productStock",
+                ],
               },
             ],
           },
@@ -518,10 +525,27 @@ class CustomerOrderController {
         return;
       }
 
+      const ordersWithFullImage = orders.map((order) => {
+        const plainOrder = order.toJSON();
+        if (plainOrder.OrderDetails && Array.isArray(plainOrder.OrderDetails)) {
+          plainOrder.OrderDetails = plainOrder.OrderDetails.map(
+            (detail: any) => {
+              if (detail.Product && detail.Product.productImage) {
+                detail.Product.productImage = getFullImageUrl(
+                  detail.Product.productImage,
+                );
+              }
+              return detail;
+            },
+          );
+        }
+        return plainOrder;
+      });
+
       res.status(200).json({
         message: "Orders fetched successfully",
-        totalOrders: orders.length,
-        data: orders,
+        totalOrders: ordersWithFullImage.length,
+        data: ordersWithFullImage,
       });
     } catch (err) {
       res.status(500).json({
@@ -559,16 +583,28 @@ class CustomerOrderController {
         include: [
           {
             model: Product,
-            attributes: ["productName", "productPrice", "productImage", "productStock"],
-            include: [{
-              model: Category,
-              attributes: ["categoryName"],
-            }],
+            attributes: [
+              "productName",
+              "productPrice",
+              "productImage",
+              "productStock",
+            ],
+            include: [
+              {
+                model: Category,
+                attributes: ["categoryName"],
+              },
+            ],
           },
           {
             model: Order,
             where: { userId },
-            attributes: ["phoneNumber", "shippingAddress", "totalAmount", "orderStatus"],
+            attributes: [
+              "phoneNumber",
+              "shippingAddress",
+              "totalAmount",
+              "orderStatus",
+            ],
             include: [
               {
                 model: Payment,
@@ -577,9 +613,9 @@ class CustomerOrderController {
               {
                 model: User,
                 attributes: ["username", "email"],
-              }
+              },
             ],
-          }
+          },
         ],
       });
 
@@ -590,9 +626,19 @@ class CustomerOrderController {
         return;
       }
 
+      const orderDetailsWithFullImage = orderDetails.map((detail) => {
+        const plain = detail.toJSON();
+        if (plain.Product && plain.Product.productImage) {
+          plain.Product.productImage = getFullImageUrl(
+            plain.Product.productImage,
+          );
+        }
+        return plain;
+      });
+
       res.status(200).json({
         message: "Order fetched successfully",
-        data: orderDetails,
+        data: orderDetailsWithFullImage,
       });
     } catch (err) {
       res.status(500).json({
@@ -604,7 +650,7 @@ class CustomerOrderController {
   // *Update order
   public static async updateOrder(
     req: AuthRequest,
-    res: Response
+    res: Response,
   ): Promise<void> {
     try {
       const userId = req.user?.id;
@@ -626,143 +672,157 @@ class CustomerOrderController {
       }
 
       const {
-      phoneNumber,
-      shippingAddress,
-      totalAmount,
-      paymentDetails,
-      products,
-    }: OrderDetail = req.body;
-    if (
-      !phoneNumber ||
-      !shippingAddress ||
-      !totalAmount ||
-      !paymentDetails ||
-      !products ||
-      !Array.isArray(products) ||
-      products.length === 0
-    ) {
-      res.status(400).json({
-        message: "All fields are required",
-        field: "general",
-      });
-      return;
-    }
-
-    const phoneRegex = /^\d{10}$/;
-    if (!phoneRegex.test(phoneNumber)) {
-      res.status(400).json({
-        message: "Phone number must be exactly 10 digits",
-        field: "phoneNumber",
-      });
-      return;
-    }
-
-    if (shippingAddress.length < 4 || shippingAddress.length > 20) {
-      res.status(400).json({
-        message: "Shipping address must be between 4 and 20 characters",
-        field: "shippingAddress",
-      });
-      return;
-    }
-
-    const parsedTotalAmount = Number(totalAmount);
-    if (isNaN(parsedTotalAmount) || parsedTotalAmount <= 0) {
-      res.status(400).json({
-        message: "Total amount must be a positive number",
-        field: "totalAmount",
-      });
-      return;
-    }
-
-    const order = await Order.findOne({ where: { id: orderId, userId, orderStatus: OrderStatus.Pending } });
-    if (!order) {
-      res.status(404).json({
-        message: "Order not found",
-      });
-      return;
-    }
-
-    let productsTotalCost = 0;
-    let shippingCost = 50;
-    for (const item of products) {
-      const product = await Product.findByPk(item.productId);
-      if (!product) {
+        phoneNumber,
+        shippingAddress,
+        totalAmount,
+        paymentDetails,
+        products,
+      }: OrderDetail = req.body;
+      if (
+        !phoneNumber ||
+        !shippingAddress ||
+        !totalAmount ||
+        !paymentDetails ||
+        !products ||
+        !Array.isArray(products) ||
+        products.length === 0
+      ) {
         res.status(400).json({
-          message: "Invalid product in order",
-          field: "products",
+          message: "All fields are required",
+          field: "general",
         });
         return;
       }
 
-      if (item.quantity <= 0) {
+      const phoneRegex = /^\d{10}$/;
+      if (!phoneRegex.test(phoneNumber)) {
         res.status(400).json({
-          message: "Quantity must be a positive number",
-          field: "products",
+          message: "Phone number must be exactly 10 digits",
+          field: "phoneNumber",
         });
         return;
       }
 
-      if (item.quantity > product.productStock) {
+      if (shippingAddress.length < 4 || shippingAddress.length > 20) {
         res.status(400).json({
-          message: `Insufficient stock for product ${product.productName}`,
-          field: "products",
+          message: "Shipping address must be between 4 and 20 characters",
+          field: "shippingAddress",
         });
         return;
       }
 
-      const price = Number(product.productPrice) || 0;
-      const qty = Number(item.quantity) || 1;
-      productsTotalCost += price * qty;
-    }
-    const calculatedTotalCost = productsTotalCost + shippingCost;
+      const parsedTotalAmount = Number(totalAmount);
+      if (isNaN(parsedTotalAmount) || parsedTotalAmount <= 0) {
+        res.status(400).json({
+          message: "Total amount must be a positive number",
+          field: "totalAmount",
+        });
+        return;
+      }
 
-    if (calculatedTotalCost <= 0) {
-      res.status(400).json({
-        message: "Calculated total amount must be a positive number",
-        field: "totalAmount",
+      const order = await Order.findOne({
+        where: { id: orderId, userId, orderStatus: OrderStatus.Pending },
       });
-      return;
-    }
+      if (!order) {
+        res.status(404).json({
+          message: "Order not found",
+        });
+        return;
+      }
 
-    if (calculatedTotalCost !== totalAmount) {
-      res.status(400).json({
-        message: "Total amount does not match with products total",
-        field: "totalAmount",
-      });
-      return;
-    }
+      let productsTotalCost = 0;
+      let shippingCost = 50;
+      for (const item of products) {
+        const product = await Product.findByPk(item.productId);
+        if (!product) {
+          res.status(400).json({
+            message: "Invalid product in order",
+            field: "products",
+          });
+          return;
+        }
+
+        if (item.quantity <= 0) {
+          res.status(400).json({
+            message: "Quantity must be a positive number",
+            field: "products",
+          });
+          return;
+        }
+
+        if (item.quantity > product.productStock) {
+          res.status(400).json({
+            message: `Insufficient stock for product ${product.productName}`,
+            field: "products",
+          });
+          return;
+        }
+
+        const price = Number(product.productPrice) || 0;
+        const qty = Number(item.quantity) || 1;
+        productsTotalCost += price * qty;
+      }
+      const calculatedTotalCost = productsTotalCost + shippingCost;
+
+      if (calculatedTotalCost <= 0) {
+        res.status(400).json({
+          message: "Calculated total amount must be a positive number",
+          field: "totalAmount",
+        });
+        return;
+      }
+
+      if (calculatedTotalCost !== totalAmount) {
+        res.status(400).json({
+          message: "Total amount does not match with products total",
+          field: "totalAmount",
+        });
+        return;
+      }
 
       await order.update({
         phoneNumber,
         shippingAddress,
         totalAmount: calculatedTotalCost,
       });
- 
+
       const existingPayment = await Payment.findByPk(order.paymentId as string);
       if (!existingPayment) {
-        res.status(404).json({ message: "Associated payment record not found" });
+        res
+          .status(404)
+          .json({ message: "Associated payment record not found" });
         return;
       }
- 
+
       // const paymentMethodChanged =
       //   existingPayment.paymentMethod !== paymentDetails.paymentMethod;
- 
+
       existingPayment.paymentMethod = paymentDetails.paymentMethod;
       existingPayment.paymentStatus = PaymentStatus.Pending; // reset status on update
-      existingPayment.pidx = null;                           // clear old gateway reference
+      existingPayment.pidx = null; // clear old gateway reference
       await existingPayment.save();
- 
+
       await OrderDetails.destroy({ where: { orderId: order.id } });
- 
+
       const orderDetailsPromises = products.map((product) =>
         OrderDetails.create({
           orderId: order.id,
           productId: product.productId,
           quantity: product.quantity,
-        })
+        }),
       );
       const updatedOrderDetails = await Promise.all(orderDetailsPromises);
- 
+
+      const orderDetailsWithFullImage = updatedOrderDetails.map((detail) => {
+        const plain = detail.toJSON();
+        if (plain.Product?.productImage) {
+          plain.Product.productImage = getFullImageUrl(
+            plain.Product.productImage,
+          );
+        }
+        return plain;
+      });
+
       // If payment method changed to a gateway, initiate new payment process
       if (paymentDetails.paymentMethod === PaymentMethod.Khalti) {
         try {
@@ -773,45 +833,46 @@ class CustomerOrderController {
             purchase_order_id: order.id.toString(),
             purchase_order_name: "orderName_" + order.id,
           };
- 
+
           const response = await axios.post(
             envConfig.khaltiPaymentUrl as string,
             data,
-            { headers: { Authorization: `Key ${envConfig.khaltiSecretKey}` } }
+            { headers: { Authorization: `Key ${envConfig.khaltiSecretKey}` } },
           );
- 
+
           const khaltiResponse: KhaltiResponse = response.data;
           existingPayment.pidx = khaltiResponse.pidx;
           await existingPayment.save();
- 
+
           res.status(200).json({
             message: "Order updated successfully. Proceed to Khalti payment.",
             data: order,
             paymentUrl: khaltiResponse.payment_url,
-            orderDetails: updatedOrderDetails,
+            orderDetails: orderDetailsWithFullImage,
           });
           return;
         } catch {
           res.status(400).json({
-            message: "Order updated but failed to initiate Khalti payment. Please retry payment.",
+            message:
+              "Order updated but failed to initiate Khalti payment. Please retry payment.",
             field: "payment",
           });
           return;
         }
       }
- 
+
       if (paymentDetails.paymentMethod === PaymentMethod.Esewa) {
         try {
           const transactionUuid = order.id.toString();
           const esewaTotal = calculatedTotalCost.toString();
           const productCode = envConfig.esewaMerchantId;
- 
+
           const dataToSign = `total_amount=${esewaTotal},transaction_uuid=${transactionUuid},product_code=${productCode}`;
           const signature = generateHmacSha256Hash(
             dataToSign,
-            envConfig.esewaSecret as string
+            envConfig.esewaSecret as string,
           );
- 
+
           const esewaPaymentData = {
             amount: esewaTotal,
             tax_amount: "0",
@@ -825,31 +886,32 @@ class CustomerOrderController {
             signed_field_names: "total_amount,transaction_uuid,product_code",
             signature,
           };
- 
+
           existingPayment.pidx = order.id.toString();
           await existingPayment.save();
- 
+
           res.status(200).json({
             message: "Order updated successfully. Proceed to eSewa payment.",
             data: order,
             esewaPaymentUrl: envConfig.esewaPaymentUrl,
             esewaPaymentData,
-            orderDetails: updatedOrderDetails,
+            orderDetails: orderDetailsWithFullImage,
           });
           return;
         } catch {
           res.status(400).json({
-            message: "Order updated but failed to initiate eSewa payment. Please retry payment.",
+            message:
+              "Order updated but failed to initiate eSewa payment. Please retry payment.",
             field: "payment",
           });
           return;
         }
       }
- 
+
       res.status(200).json({
         message: "Order updated successfully",
         data: order,
-        orderDetails: updatedOrderDetails,
+        orderDetails: orderDetailsWithFullImage,
       });
     } catch (error) {
       console.error("Error updating order:", error);
@@ -860,7 +922,7 @@ class CustomerOrderController {
   // *Cancel order
   public static async cancelOrder(
     req: AuthRequest,
-    res: Response
+    res: Response,
   ): Promise<void> {
     try {
       const userId = req.user?.id;
@@ -881,7 +943,7 @@ class CustomerOrderController {
         return;
       }
 
-      const order = await Order.findOne({ where: { id: orderId, userId} });
+      const order = await Order.findOne({ where: { id: orderId, userId } });
       if (!order) {
         res.status(404).json({
           message: "Order not found!",
@@ -890,7 +952,11 @@ class CustomerOrderController {
         return;
       }
 
-      if (order.orderStatus === OrderStatus.InTransit || order.orderStatus === OrderStatus.Preparation || order.orderStatus === OrderStatus.Delivered) {
+      if (
+        order.orderStatus === OrderStatus.InTransit ||
+        order.orderStatus === OrderStatus.Preparation ||
+        order.orderStatus === OrderStatus.Delivered
+      ) {
         res.status(400).json({
           message: `Order cannot be cancelled as it is already ${order.orderStatus}`,
         });
@@ -921,7 +987,8 @@ class CustomerOrderController {
   // *Delete order (if needed, but usually we just mark it as cancelled)
   public static async deleteOrder(
     req: AuthRequest,
-    res: Response  ): Promise<void> {
+    res: Response,
+  ): Promise<void> {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -941,7 +1008,9 @@ class CustomerOrderController {
         return;
       }
 
-      const order = await Order.findOne({ where: { id: orderId as string, userId } });
+      const order = await Order.findOne({
+        where: { id: orderId as string, userId },
+      });
       if (!order) {
         res.status(404).json({
           message: "Order not found",
@@ -958,7 +1027,11 @@ class CustomerOrderController {
         return;
       }
 
-      const nonDeletableStatuses = [OrderStatus.Preparation, OrderStatus.InTransit, OrderStatus.Delivered];
+      const nonDeletableStatuses = [
+        OrderStatus.Preparation,
+        OrderStatus.InTransit,
+        OrderStatus.Delivered,
+      ];
       if (nonDeletableStatuses.includes(order.orderStatus as OrderStatus)) {
         res.status(400).json({
           message: `Order cannot be deleted as it is already ${order.orderStatus}`,
@@ -971,7 +1044,7 @@ class CustomerOrderController {
       if (order.paymentId) {
         await Payment.destroy({ where: { id: order.paymentId } });
       }
-      await order.destroy(); 
+      await order.destroy();
 
       res.status(200).json({
         message: "Order deleted successfully",

@@ -21,4 +21,7 @@ export const envConfig = {
   esewaSecret: process.env.ESEWA_SECRET,
   esewaPaymentUrl: process.env.ESEWA_PAYMENT_URL,
   esewaVerificationUrl: process.env.ESEWA_PAYMENT_STATUS_CHECK_URL,
+  cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME,
+  cloudinaryApiKey: process.env.CLOUDINARY_API_KEY,
+  cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET,
 };

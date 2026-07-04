@@ -4,6 +4,8 @@ import Product from "../../../database/models/productModel";
 import Category from "../../../database/models/categoryModel";
 import User from "../../../database/models/userModel";
 import deleteImageFromDisk from "../../../services/helper";
+import getFullImageUrl from "../../../services/imageHandler";
+import { cloudinary } from "../../../cloudinary";
 
 class AdminReviewController {
       // *Fetch all reviews
@@ -27,10 +29,12 @@ class AdminReviewController {
                   ]
             })
 
-            const reviewsWithFullImageUrl = reviews.map(review => {
-                  const reviewData = review.toJSON() as any;
-                  reviewData.reviewImageUrl = reviewData.reviewImage ? `${process.env.BACKEND_URL}/storage/${reviewData.reviewImage}` : null;
-                  return reviewData;
+            const reviewsWithFullImageUrl = reviews.map((review) => {
+                  const plainReview = review.toJSON();
+                  return {
+                        ...plainReview,
+                        reviewImage: getFullImageUrl(plainReview.reviewImage),
+                  };
             });
             reviewsWithFullImageUrl.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
@@ -65,13 +69,29 @@ class AdminReviewController {
             await review.destroy();
 
             if (review.reviewImage) {
-              deleteImageFromDisk(review.reviewImage);
+            const fileName = review.reviewImage.split('/').pop()?.split('.')[0];
+             cloudinary.uploader.destroy(
+               fileName,
+               (error: any, result: any) => {
+                 if (error) {
+                   console.error(
+                     "Error deleting image from Cloudinary:",
+                     error,
+                   );
+                 } else {
+                   console.log(
+                     "Image deleted from Cloudinary successfully:",
+                     result,
+                   );
+                 }
+               },
+             );
             }
 
-            res.status(200).json({
-              success: true,
-              message: "Review deleted successfully",
-            });
+             res.status(200).json({
+               success: true,
+               message: "Review deleted successfully",
+             });
       } 
 
 }
