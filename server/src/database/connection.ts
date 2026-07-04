@@ -8,6 +8,7 @@ import OrderDetails from './models/orderDetailsModel';
 import Payment from './models/paymentModel';
 import Cart from './models/cartModel';
 import Review from './models/reviewModel';
+import Wishlist from './models/wishlistModel';
 
 // const sequelize = new Sequelize(envConfig.dbConnectionString as string, {
 //   models: [__dirname + '/models'] // Path to your models
@@ -29,12 +30,12 @@ const sequelize = new Sequelize(envConfig.dbConnectionString as string, {
 // *Relationships
 
 // Relationship between Product and User
-Product.belongsTo(User, { foreignKey: 'userId'})
-User.hasMany(Product, { foreignKey: 'userId'})
+// Product.belongsTo(User, { foreignKey: 'userId'})
+// User.hasMany(Product, { foreignKey: 'userId'})
 
-// Relationship between Product and Category
-Product.belongsTo(Category, { foreignKey: 'categoryId'})
-Category.hasMany(Product, { foreignKey: 'categoryId'})
+// // Relationship between Product and Category
+// Product.belongsTo(Category, { foreignKey: 'categoryId'})
+// Category.hasMany(Product, { foreignKey: 'categoryId'})
 
 // Relationship between Order and User
 Order.belongsTo(User, { foreignKey: "userId" });
@@ -67,6 +68,29 @@ User.hasMany(Review, { foreignKey: "userId" });
 // Relationship between Review and Product
 Review.belongsTo(Product, { foreignKey: "productId" });
 Product.hasMany(Review, { foreignKey: "productId" });
+
+// // Relationship between Wishlist and User
+// Wishlist.belongsTo(User, { foreignKey: "userId" });
+// User.hasMany(Wishlist, { foreignKey: "userId" });
+
+// // Relationship between Wishlist and Product
+// Wishlist.belongsTo(Product, { foreignKey: "productId" });
+// Product.hasMany(Wishlist, { foreignKey: "productId" });
+
+// Relationship between User and Product (Favorite Products)
+User.belongsToMany(Product, {
+  through: Wishlist,
+  foreignKey: 'userId',
+  otherKey: 'productId',
+  as: 'WishlistProducts'
+});
+
+Product.belongsToMany(User, {
+  through: Wishlist,
+  foreignKey: 'productId',
+  otherKey: 'userId',
+  as: 'UsersWhoWishlisted'   
+});
 
 const connectDB = async () => {
   try {
