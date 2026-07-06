@@ -26,6 +26,17 @@ class CartController {
                   return;
             }
 
+             const product = await Product.findByPk(productId);
+  if (!product) {
+    res.status(404).json({ message: "Product not found.", field: "productId" });
+    return;
+  }
+
+   if (product.productStock <= 0) {
+    res.status(400).json({ message: "Product is out of stock.", field: "productId" });
+    return;
+  }
+
             // check if the product is already in the cart or not
             const existingCartItem = await Cart.findOne({ where: { userId, productId },
                   include:[
@@ -57,7 +68,9 @@ class CartController {
                 message: "Product quantity updated in cart.",
                 data: existingCartItem,
               });
-            } else {
+              return;
+            } 
+
               // If the product is not in the cart, create a new cart item
               const newCartItem = await Cart.create({
                 userId,
@@ -69,7 +82,6 @@ class CartController {
                 message: "Product added to cart.",
                 data: newCartItem,
               });
-            }
       }
 
 //       public static async addToCart(req: AuthRequest, res: Response): Promise<void> {
@@ -178,7 +190,6 @@ class CartController {
                         }
                   ]
             });
-            cartItems.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
             if (!cartItems || cartItems.length === 0) {
                   res.status(404).json({ 
@@ -187,6 +198,8 @@ class CartController {
                   });
                   return;
             }
+
+            cartItems.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
             res.status(200).json({
                   message: "Cart items retrieved successfully.",
@@ -272,9 +285,9 @@ class CartController {
 
             const { quantity } = req.body;
 
-            if (typeof quantity !== 'number' || quantity <= 0) { 
+            if (typeof quantity !== 'number' || !Number.isInteger(quantity) || quantity <= 0) {
                   res.status(400).json({ 
-                        message: "Quantity must be a positive number.",
+                        message: "Quantity must be a positive integer.",
                         field: "quantity"
                   });
                   return;

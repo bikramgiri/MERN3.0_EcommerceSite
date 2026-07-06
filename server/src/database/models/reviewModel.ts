@@ -4,6 +4,7 @@ import {
   Model,
   DataType,
   ForeignKey,
+  BelongsTo,
 } from "sequelize-typescript";
 import User from "./userModel";
 import Product from "./productModel";
@@ -28,12 +29,18 @@ class Review extends Model {
   })
   declare userId: string;
 
+  @BelongsTo(() => User)
+  declare User: User;
+
   @ForeignKey(() => Product)
   @Column({
     type: DataType.UUID,
     allowNull: false,
   })
   declare productId: string;
+
+  @BelongsTo(() => Product)
+  declare Product: Product;
 
   @Column({
     type: DataType.STRING,

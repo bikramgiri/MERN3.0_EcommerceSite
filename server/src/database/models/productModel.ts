@@ -1,6 +1,7 @@
-import {Table, Column, Model, DataType, AllowNull, ForeignKey, BelongsTo} from 'sequelize-typescript'
+import {Table, Column, Model, DataType, AllowNull, ForeignKey, BelongsTo, BelongsToMany} from 'sequelize-typescript'
 import Category from './categoryModel'
 import User from './userModel'
+import Wishlist from './wishlistModel'
 
 @Table({
     tableName : "products", 
@@ -67,6 +68,9 @@ class Product extends Model{
 
     @BelongsTo(() => User)
     declare owner: User
+
+    @BelongsToMany(() => User, () => Wishlist)
+    declare wishlistedBy: User[];
 }
 
 export default Product

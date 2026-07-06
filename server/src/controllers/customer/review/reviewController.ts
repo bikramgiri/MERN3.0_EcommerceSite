@@ -3,9 +3,9 @@ import { AuthRequest } from "../../../middleware/authMiddleware";
 import Review from "../../../database/models/reviewModel";
 import Product from "../../../database/models/productModel";
 import User from "../../../database/models/userModel";
-import deleteImageFromDisk from "../../../services/helper";
 import getFullImageUrl from "../../../services/imageHandler";
 import { cloudinary } from "../../../cloudinary";
+import { getPublicIdFromAvatar } from "../../../services/cloudinaryHelper";
 
 class ReviewController {
   // *Add Review
@@ -23,7 +23,7 @@ class ReviewController {
         return;
       }
 
-      const productId = req.params.id;
+      const productId = req.params.productId;
       if (!productId || typeof productId !== "string") {
         res.status(400).json({
           message: "Valid Product ID is required",
@@ -38,7 +38,7 @@ class ReviewController {
       }; // Default to an empty object if not set
 
       const reviewImage = cloudinaryResult.secure_url || "";
-      const fileName = reviewImage.split("/").pop() || "";
+      const fileName = reviewImage ? getPublicIdFromAvatar(reviewImage) : "";
 
       const { rating, message } = req.body;
 
@@ -132,7 +132,7 @@ class ReviewController {
   // *Get Product Reviews
   public static async getProductReviews(req: Request, res: Response) {
     try {
-      const productId = req.params.id;
+      const productId = req.params.productId;
 
       if (!productId || typeof productId !== "string") {
         res.status(400).json({
@@ -340,29 +340,36 @@ class ReviewController {
 
       // update product image only if a new image is uploaded
       let fileName = review.reviewImage; // Keep old filename
-      let reviewImage = fileName?  getFullImageUrl(fileName) : null; // Default full URL
+      let reviewImage = fileName ? getFullImageUrl(fileName) : null; // Default full URL
 
       // Handle new image upload
       const cloudinaryResult = (req as any).cloudinaryResult;
       if (cloudinaryResult && cloudinaryResult.secure_url) {
-        // Delete old image from Cloudinary
-        const oldReviewImage = review.reviewImage ? review.reviewImage.split("/").pop() || "" : "";
-        cloudinary.uploader.destroy(
-          oldReviewImage,
-          (error: any, result: any) => {
-            if (error) {
-              console.error("Error deleting old image from Cloudinary:", error);
-            } else {
-              console.log(
-                "Old image deleted from Cloudinary successfully:",
-                result,
-              );
-            }
-          },
-        );
+        if (review.reviewImage) {
+          // Delete old image from Cloudinary
+          const oldReviewImage = getPublicIdFromAvatar(
+            review.reviewImage as string,
+          );
+          cloudinary.uploader.destroy(
+            oldReviewImage,
+            (error: any, result: any) => {
+              if (error) {
+                console.error(
+                  "Error deleting old image from Cloudinary:",
+                  error,
+                );
+              } else {
+                console.log(
+                  "Old image deleted from Cloudinary successfully:",
+                  result,
+                );
+              }
+            },
+          );
+        }
 
         reviewImage = cloudinaryResult.secure_url; // update to new image URL
-        fileName = reviewImage? reviewImage.split("/").pop() || "" : ""; // update to new filename
+        fileName = cloudinaryResult.public_id; // update to new filename
       }
 
       const updatedReview = await review.update({
@@ -436,11 +443,25 @@ class ReviewController {
         return;
       }
 
-      await review.destroy();
-
       if (review.reviewImage) {
-        deleteImageFromDisk(review.reviewImage);
+        cloudinary.uploader.destroy(
+          review.reviewImage,
+          (error: any, result: any) => {
+            if (error)
+              console.error(
+                "Error deleting review image from Cloudinary:",
+                error,
+              );
+            else
+              console.log(
+                "Review image deleted from Cloudinary successfully:",
+                result,
+              );
+          },
+        );
       }
+
+      await review.destroy();
 
       res.status(200).json({
         message: "Review deleted successfully.",

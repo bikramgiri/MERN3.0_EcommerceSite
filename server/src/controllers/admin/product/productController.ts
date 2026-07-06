@@ -9,6 +9,7 @@ import { cloudinary } from "../../../cloudinary";
 import Payment from "../../../database/models/paymentModel";
 import Order from "../../../database/models/orderModel";
 import OrderDetails from "../../../database/models/orderDetailsModel";
+import { getPublicIdFromAvatar } from "../../../services/cloudinaryHelper";
 
 class ProductController {
   public static async addProduct(
@@ -41,7 +42,7 @@ class ProductController {
     }
 
     const productImage = cloudinaryResult.secure_url;
-    const fileName = productImage.split("/").pop() || "";
+    const fileName = cloudinaryResult.public_id;
 
     const { productName, productDescription, categoryId } = req.body;
 
@@ -412,7 +413,7 @@ class ProductController {
     const productStock = Number(req.body.productStock);
     const productDiscount = Number(req.body.productDiscount);
 
-    if (productName.length < 3 || productName.length > 30) {
+    if (productName && (productName.length < 3 || productName.length > 30)) {
       res.status(400).json({
         message: "Product name must be between 3 and 30 characters",
         field: "productName",
@@ -420,7 +421,7 @@ class ProductController {
       return;
     }
 
-    if (productDescription.length < 5 || productDescription.length > 500) {
+    if (productDescription && (productDescription.length < 5 || productDescription.length > 500)) {
       res.status(400).json({
         message: "Product description must be between 5 and 500 characters",
         field: "productDescription",
@@ -484,7 +485,7 @@ class ProductController {
     const cloudinaryResult = (req as any).cloudinaryResult;
     if (cloudinaryResult && cloudinaryResult.secure_url) {
       // Delete old image from Cloudinary
-      const oldProductImage = product.productImage.split("/").pop() || "";
+      const oldProductImage = getPublicIdFromAvatar(product.productImage);
       cloudinary.uploader.destroy(
         oldProductImage,
         (error: any, result: any) => {
@@ -500,7 +501,7 @@ class ProductController {
       );
 
       productImage = cloudinaryResult.secure_url; // update to new image URL
-      fileName = productImage.split("/").pop() || ""; // update to new filename
+      fileName = cloudinaryResult.public_id; // update to new filename
     }
 
     // Remove Existing images
@@ -511,18 +512,15 @@ class ProductController {
 
       // Delete from Cloudinary
       if (productImageToRemove.length > 0) {
-        const publicIds = productImageToRemove.map((filename: string) => {
-          const withoutExt = filename.replace(/\.[^/.]+$/, "");
-          return `Mern2_Ecommerce_Website/${withoutExt}`;
-        });
+        const publicIds = productImageToRemove.map((img: string) => getPublicIdFromAvatar(img));
         await cloudinary.uploader.destroy(publicIds, {
           resource_type: "image",
           invalidate: true,
         });
       }
 
-      // Remove from DB productImage
-      await product.update({ productImage: null });
+      fileName = "";
+      productImage = "";
     }
 
     const updatedProduct = await product.update({
@@ -578,10 +576,9 @@ class ProductController {
       return;
     }
 
-    await product.destroy();
-
     // Delete image from Cloudinary
-    const fileName = product.productImage.split("/").pop() || "";
+    const fileName = product.productImage ? getPublicIdFromAvatar(product.productImage) : "";
+    if (fileName) {
     cloudinary.uploader.destroy(fileName, (error: any, result: any) => {
       if (error) {
         console.error("Error deleting image from Cloudinary:", error);
@@ -589,6 +586,9 @@ class ProductController {
         console.log("Image deleted from Cloudinary successfully:", result);
       }
     });
+    }
+
+    await product.destroy();
 
     res.status(200).json({
       message: "Product deleted successfully",
@@ -677,7 +677,7 @@ class ProductController {
 
       const productOrders = await Product.findAll({
         where: { id: productId },
-        attributes: ['id', 'productName', 'productTotalStockQty'],
+        attributes: ['id', 'productName', 'productStock'],
         include: [  
           { 
             model: OrderDetails, 

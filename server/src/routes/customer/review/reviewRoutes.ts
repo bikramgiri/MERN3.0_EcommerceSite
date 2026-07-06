@@ -8,9 +8,11 @@ import { cloudinaryUpload } from "../../../cloudinary";
 
 const router:Router = express.Router();
 
-router.route("/review/:id")
+router.route("/review/product/:productId")
 .post(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Customer), upload.single("reviewImage"), cloudinaryUpload, catchAsyncError(ReviewController.addReview))
 .get(catchAsyncError(ReviewController.getProductReviews))
+
+router.route("/review/:id")
 .patch(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Customer), upload.single("reviewImage"), cloudinaryUpload, catchAsyncError(ReviewController.editReview))
 .delete(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Customer), catchAsyncError(ReviewController.deleteReview));
 

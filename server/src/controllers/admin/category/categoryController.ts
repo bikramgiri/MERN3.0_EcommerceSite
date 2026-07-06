@@ -2,6 +2,7 @@ import { Request, Response } from "express"
 import Category from "../../../database/models/categoryModel"
 import getFullImageUrl from "../../../services/imageHandler"
 import { cloudinary } from "../../../cloudinary"
+import { getPublicIdFromAvatar } from "../../../services/cloudinaryHelper"
 
 class CategoryController{
       categoryData = [
@@ -55,7 +56,7 @@ class CategoryController{
             }
 
             const categoryImage = cloudinaryResult.secure_url
-            const fileName = categoryImage.split("/").pop() || ""
+            const fileName = cloudinaryResult.public_id;
 
             const { categoryName, categoryDescription } = req.body
             if(!categoryName || !categoryDescription){
@@ -189,7 +190,7 @@ class CategoryController{
                   return
             }
 
-            if(categoryName.length < 5 || categoryName.length > 20){
+            if(categoryName && (categoryName.length < 5 || categoryName.length > 20)){
                   res.status(400).json({ 
                         message: "Category name must be between 5 and 20 characters",
                         field: "categoryName" 
@@ -197,7 +198,7 @@ class CategoryController{
                   return
             }
 
-            if(categoryDescription.length < 5 || categoryDescription.length > 100){
+            if(categoryDescription && (categoryDescription.length < 5 || categoryDescription.length > 100)){
                   res.status(400).json({ 
                         message: "Category description must be between 5 and 100 characters",
                         field: "categoryDescription" 
@@ -215,61 +216,61 @@ class CategoryController{
             }
 
             // *For Cloudinary: update category image only if a new image is uploaded
-            let fileName = category.categoryImage; // Keep old filename
-            let categoryImage = fileName? getFullImageUrl(fileName): ""; // Default full URL
+            let fileName = category.categoryImage;
+            let categoryImage = fileName ? getFullImageUrl(fileName) : "";
 
-            // Handle new image upload
+            // new upload
             const cloudinaryResult = (req as any).cloudinaryResult;
             if (cloudinaryResult && cloudinaryResult.secure_url) {
-              const oldCategoryImage = category.categoryImage ? category.categoryImage.split("/").pop() || "" : "";
-              cloudinary.uploader.destroy(oldCategoryImage,
-                  (error: any, result: any) => {
-                  if (error) {
-                    console.error("Error deleting old image from Cloudinary:", error,);
-                  } else {
-                    console.log("Old image deleted from Cloudinary successfully:", result,);
-                  }
-                },
-              );
-
-              categoryImage = cloudinaryResult.secure_url; // update to new image URL
-              fileName = categoryImage.split("/").pop() || ""; // update to new filename
+              if (category.categoryImage) {
+                const oldPublicId = getPublicIdFromAvatar(
+                  category.categoryImage,
+                );
+                if (oldPublicId) {
+                  cloudinary.uploader.destroy(oldPublicId, (error: any, result: any) => {
+                    if (error)
+                      console.error("Error deleting old image:", error);
+                    else console.log("Old image deleted:", result);
+                  });
+                }
+              }
+              categoryImage = cloudinaryResult.secure_url;
+              fileName = cloudinaryResult.public_id;
             }
 
-            // Remove Existing images
+            // explicit removal (no new upload)
             if (req.body.categoryImageToRemove) {
               let categoryImageToRemove = req.body.categoryImageToRemove;
-              if (typeof categoryImageToRemove === "string")
+              if (typeof categoryImageToRemove === "string") {
                 categoryImageToRemove = JSON.parse(categoryImageToRemove);
+              }
 
-              // Delete from Cloudinary
               if (categoryImageToRemove.length > 0) {
-                const publicIds = categoryImageToRemove.map((filename: string) => {
-                  const withoutExt = filename.replace(/\.[^/.]+$/, "");
-                  return `Mern3_Ecommerce_Images/${withoutExt}`;
-                });
+                const publicIds = categoryImageToRemove.map((img: string) =>
+                  getPublicIdFromAvatar(img),
+                );
                 await cloudinary.uploader.destroy(publicIds, {
                   resource_type: "image",
                   invalidate: true,
                 });
               }
 
-              // Remove from DB categoryImage
-              await category.update({ categoryImage: null });
+              fileName = "";
+              categoryImage = "";
             }
 
             const updatedCategory = await category.update({
               categoryName,
               categoryDescription,
-              categoryImage: fileName
+              categoryImage: fileName, // now correctly reflects whichever branch ran
             });
 
             const categoryWithImageUrl = {
-                  ...updatedCategory.toJSON(),
-                  // categoryImage: getFullImageUrl(updatedCategory.categoryImage) // Use the helper function to get full URL
-                  // or
-                  categoryImage: categoryImage
-            }
+              ...updatedCategory.toJSON(),
+              // categoryImage: getFullImageUrl(updatedCategory.categoryImage) // Use the helper function to get full URL
+              // or
+              categoryImage: categoryImage,
+            };
 
             res.status(200).json({ 
                   message: "Category updated successfully",
@@ -297,14 +298,15 @@ class CategoryController{
               return;
             }
 
-            const fileName = category.categoryImage.split("/").pop() || "";
-            cloudinary.uploader.destroy(fileName, (error: any, result: any) => {
-              if (error) {
-                console.error("Error deleting image from Cloudinary:", error);
-              } else {
-                console.log("Image deleted from Cloudinary successfully:", result,);
-              }
-            });
+            if (category.categoryImage) {
+  const publicId = getPublicIdFromAvatar(category.categoryImage);
+  if (publicId) {
+    cloudinary.uploader.destroy(publicId, (error: any, result: any) => {
+      if (error) console.error("Error deleting image from Cloudinary:", error);
+      else console.log("Image deleted from Cloudinary successfully:", result);
+    });
+  }
+}
 
             await category.destroy();
 

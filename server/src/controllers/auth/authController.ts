@@ -63,11 +63,15 @@ class AuthController {
         password: bcrypt.hashSync(password, 10),
       });
 
+      try{
       await sendMail({
         to: email,
         subject: "Welcome to Truvora!",
         text: `Hi ${username},\n\nThank you for registering at Truvora. We're excited to have you on board! If you have any questions or need assistance, feel free to reach out to our support team.\n\nBest regards,\nThe Truvora Team`,
       });
+    } catch (mailError) {
+  console.error("Welcome email failed to send:", mailError);
+}
 
       // Never return password in response
       const { password: _, ...userWithoutPassword } = registerData.toJSON();
@@ -104,7 +108,7 @@ class AuthController {
         return;
       }
 
-      const isPasswordValid = bcrypt.compareSync(password, user.password);
+      const isPasswordValid = await bcrypt.compare(password, user.password);
       if (!isPasswordValid) {
         res.status(400).json({
           message: "Invalid password",
@@ -122,11 +126,15 @@ class AuthController {
         maxAge: 24 * 60 * 60 * 1000, // 1 day
       });
 
+      try {
       await sendMail({
         to: email,
         subject: "Login Alert",
         text: `Hi ${user.username},\n\nWe noticed a login to your Truvora account. If this was you, you can safely ignore this email. If you did not log in, please secure your account immediately by changing your password and enabling two-factor authentication.\n\nBest regards,\nThe Truvora Team`,
       });
+    } catch (mailError) {
+  console.error("Login alert email failed to send:", mailError);
+}
 
       // Never return password in response
       const { password: _, ...userWithoutPassword } = user.toJSON();
@@ -170,7 +178,7 @@ class AuthController {
         return;
       }
 
-      const [user] = await User.findAll({ where: { email } });
+      const user = await User.findOne({ where: { email } });
       if (!user) {
         res.status(400).json({
           message: "Email is not registered",
@@ -362,12 +370,16 @@ class AuthController {
       user.password = bcrypt.hashSync(newPassword, 10);
       user.resetPasswordToken = null;
       await user.save();
-
+    
+      try {
       await sendMail({
         to: user.email,
         subject: "Password Reset Successful",
         text: `Hi ${user.username},\n\nYour password has been reset successfully. If you did not perform this action, please contact our support team immediately.\n\nBest regards,\nThe Truvora Team`,
       });
+    } catch (mailError) {
+  console.error("Password reset confirmation email failed to send:", mailError);
+}
 
       res.status(200).json({
         message: "Password reset successful",

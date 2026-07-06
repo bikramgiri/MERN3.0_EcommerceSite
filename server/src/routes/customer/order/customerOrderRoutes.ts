@@ -1,9 +1,9 @@
-import { Router } from "express";
+import express, { Router } from "express";
 import authMiddleware, { Role } from "../../../middleware/authMiddleware";
 import CustomerOrderController from "../../../controllers/customer/order/customerOrderController";
 import catchAsyncError from "../../../services/catchAsyncError";
 
-const router:Router = require("express").Router();
+const router:Router = express.Router();
 
 router.route("/order")
 .post(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Customer), catchAsyncError(CustomerOrderController.createOrder))
@@ -15,12 +15,12 @@ router.route("/order/:id")
 .delete(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Customer), catchAsyncError(CustomerOrderController.deleteOrder));
 
 router.route('/order/cancel/:id')
-.patch(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Customer), CustomerOrderController.cancelOrder);
+.patch(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Customer), catchAsyncError(CustomerOrderController.cancelOrder));
 
 router.route('/verify-khalti-payment')
-.post(authMiddleware.isAuthenticated, catchAsyncError(CustomerOrderController.verifyKhaltiPayment));
+.post(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Customer), catchAsyncError(CustomerOrderController.verifyKhaltiPayment));
 
 router.route('/verify-esewa-payment')
-.post(authMiddleware.isAuthenticated, catchAsyncError(CustomerOrderController.verifyEsewaPayment));
+.post(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Customer), catchAsyncError(CustomerOrderController.verifyEsewaPayment));
 
 export default router;
