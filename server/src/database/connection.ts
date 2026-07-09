@@ -18,12 +18,12 @@ import Wishlist from './models/wishlistModel';
 const sequelize = new Sequelize(envConfig.dbConnectionString as string, {
   // dialect: 'postgres',
   logging: false,
-  // dialectOptions: {
-  //   ssl: {
-  //     // require: true,
-  //     rejectUnauthorized: false  
-  //   }
-  // },
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false  
+    }
+  },
   models: [__dirname + '/models'] // Path to your models
 });
 
