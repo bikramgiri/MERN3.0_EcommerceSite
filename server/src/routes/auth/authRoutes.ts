@@ -7,6 +7,7 @@ import { loginRateLimiter, otpRateLimiter, registerRateLimiter, resetPasswordRat
 const router:Router = express.Router()
 
 router.route("/register").post(registerRateLimiter, catchAsyncError(AuthController.register))
+router.route("/verify-email").post(otpRateLimiter, catchAsyncError(AuthController.verifyEmail))
 router.route("/login").post(loginRateLimiter, catchAsyncError(AuthController.login))
 router.route("/forgot-password").post(otpRateLimiter, catchAsyncError(AuthController.forgotPassword))
 router.route("/verify-otp").post(otpRateLimiter, catchAsyncError(AuthController.verifyOtp))

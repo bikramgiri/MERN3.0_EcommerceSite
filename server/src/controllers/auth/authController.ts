@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import User from "../../database/models/userModel";
 import bcrypt from "bcrypt";
 import generateToken from "../../services/generateToken";
-import sendMail from "../../services/sendMail";
+import { sendMail, sendVerificationEmailCode } from "../../services/sendMail";
 import generateOtp from "../../services/generateOtp";
 import sendResponse from "../../services/sendResponse";
 import findData from "../../services/findData";
@@ -57,17 +57,22 @@ class AuthController {
         return;
       }
 
+      const generateEmailVerificationToken = generateOtp();
+
+      console.log("Generated Email Verification Token:", generateEmailVerificationToken);
       const registerData = await User.create({
         username,
         email,
         password: bcrypt.hashSync(password, 10),
+        emailVerificationToken: generateEmailVerificationToken,
+        emailVerificationTokenGeneratedTime: new Date(),
       });
 
       try{
-      await sendMail({
-        to: email,
-        subject: "Welcome to Truvora!",
-        text: `Hi ${username},\n\nThank you for registering at Truvora. We're excited to have you on board! If you have any questions or need assistance, feel free to reach out to our support team.\n\nBest regards,\nThe Truvora Team`,
+      await sendVerificationEmailCode({
+        email,
+        subject: "Verify Your Truvora Email",
+        code: generateEmailVerificationToken
       });
     } catch (mailError) {
   console.error("Welcome email failed to send:", mailError);
@@ -77,7 +82,7 @@ class AuthController {
       const { password: _, ...userWithoutPassword } = registerData.toJSON();
 
       res.status(201).json({
-        message: "User registered successfully",
+        message: "User registered successfully! Please check your email for verification.",
         data: userWithoutPassword,
       });
     } catch (error) {
@@ -85,6 +90,63 @@ class AuthController {
         message: "Something went wrong",
       });
     }
+  }
+
+  // *Verify Email
+  static async verifyEmail(req: Request, res: Response) {
+    const { email, emailVerificationToken } = req.body;
+    if (!email || !emailVerificationToken) {
+      res.status(400).json({
+        message: "Email and emailVerificationToken are required",
+        field: "general",
+      });
+      return;
+    }
+
+    const emailExist = await User.findOne({ where: { email } });
+    if (!emailExist) {
+      res.status(400).json({
+        message: "User with this email does not exist",
+        field: "email",
+      });
+      return;
+    }
+
+    if (emailExist.isVerified) {
+      res.status(400).json({
+        message: "Email is already verified",
+        field: "email",
+      });
+      return;
+    }
+
+    if (emailExist.emailVerificationToken !== emailVerificationToken) {
+      res.status(400).json({
+        message: "Invalid email verification token",
+        field: "emailVerificationToken",
+      });
+      return;
+    }
+
+    // Check if the email verification token has expired (4 minutes)
+    const currentTime = Date.now();
+    const emailVerificationTokenGeneratedTime = emailExist.emailVerificationTokenGeneratedTime?.getTime();
+    const tokenAge = emailVerificationTokenGeneratedTime ? currentTime - emailVerificationTokenGeneratedTime : 0;
+    const tokenExpiry = 4 * 60 * 1000; // 4 minutes in milliseconds
+    if (tokenAge > tokenExpiry) {
+      res.status(400).json({
+        message: "Email verification token has expired",
+        field: "emailVerificationToken",
+      });
+      return;
+    }
+
+    // Update the user's verification status
+    await emailExist.update({ isVerified: true, emailVerificationToken: null, emailVerificationTokenGeneratedTime: null });
+
+    res.status(200).json({
+      message: "Email verified successfully",
+    });
   }
 
   // *User Login
@@ -103,6 +165,15 @@ class AuthController {
       if (!user) {
         res.status(400).json({
           message: "Email does not exist",
+          field: "email",
+        });
+        return;
+      }
+
+      // Check if the user's email is verified
+      if (!user.isVerified) {
+        res.status(400).json({
+          message: "Email is not verified. Please verify your email before logging in.",
           field: "email",
         });
         return;
@@ -136,12 +207,12 @@ class AuthController {
   console.error("Login alert email failed to send:", mailError);
 }
 
-      // Never return password in response
-      const { password: _, ...userWithoutPassword } = user.toJSON();
+      // Never return password, emailVerificationToken, otp, resetPasswordToken in response
+      const { password: _, emailVerificationToken: __, emailVerificationTokenGeneratedTime: ___, otp: ____, otpGeneratedTime: _____, resetPasswordToken: ______, createdAt: ________, updatedAt: _________, ...userWithoutSensitiveData } = user.toJSON();
 
       res.status(200).json({
         message: "User logged in successfully",
-        data: userWithoutPassword,
+        data: userWithoutSensitiveData,
         token: token,
       });
     } catch (error) {
@@ -193,11 +264,15 @@ class AuthController {
       user.otpGeneratedTime = new Date();
       await user.save();
 
+      try {
       await sendMail({
         to: email,
         subject: "Password Reset OTP",
         text: `Your OTP for password reset is: ${generatedOtp}. It is valid for 5 minutes. If you did not request this, please ignore this email.`,
       });
+    } catch (mailError) {
+  console.error("Password reset OTP email failed to send:", mailError);
+}
 
       res.status(200).json({
         message:

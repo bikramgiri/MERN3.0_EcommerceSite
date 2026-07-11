@@ -47,7 +47,25 @@ class User extends Model {
     type: DataType.ENUM(UserRole.Customer, UserRole.Admin),
     defaultValue: UserRole.Customer,
   })
-  declare role: string;
+  declare role: UserRole;
+
+  @Column({
+    type: DataType.BOOLEAN,
+    defaultValue: false,
+  })
+  declare isVerified: boolean;
+
+  @AllowNull(true)
+  @Column({
+    type: DataType.STRING,
+  })
+  declare emailVerificationToken: string | null;
+
+  @AllowNull(true)
+  @Column({
+    type: DataType.DATE,
+  })
+  declare emailVerificationTokenGeneratedTime: Date | null;
 
   @AllowNull(true)
   @Column({

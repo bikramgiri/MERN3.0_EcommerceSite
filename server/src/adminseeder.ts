@@ -9,11 +9,13 @@ const adminSeeder = async () => {
         return;
     }
 
+    // set isVerified to true for the seeded admin user
     await User.create({
         username : envConfig.adminUsername,
         email : envConfig.adminEmail,
         password : await bcrypt.hash(envConfig.adminPassword as string, 10),
-        role : 'admin'
+        role : 'admin',
+        isVerified : true
     })
 
     console.log('Admin seeded successfully.');
