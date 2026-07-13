@@ -10,12 +10,33 @@ import isOtpExpired from "../../services/checkOtpExpiration";
 import { envConfig } from "../../config/config";
 import jwt, { Secret } from "jsonwebtoken";
 import { AuthRequest } from "../../middleware/authMiddleware";
+const SENSITIVE_FIELDS = [
+  "password",
+  "emailVerificationToken",
+  "emailVerificationTokenGeneratedTime",
+  "otp",
+  "otpGeneratedTime",
+  "resetPasswordToken",
+  "createdAt",
+  "updatedAt"
+] as const;
+
+function sanitizeUser(user: InstanceType<typeof User>) {
+  const json = user.toJSON() as Record<string, unknown>;
+  for (const field of SENSITIVE_FIELDS) {
+    delete json[field];
+  }
+  return json;
+}
+ 
+const normalizeEmail = (email: string) => email.trim().toLowerCase();
+
 class AuthController {
   // *User Registration
   static async register(req: Request, res: Response) {
     try {
-      const { username, email, password } = req.body;
-      if (!username || !email || !password) {
+      const { username, email: rawEmail, password } = req.body;
+      if (!username || !rawEmail || !password) {
         res.status(400).json({
           message: "All fields username, email and password are required",
           field: "general",
@@ -32,7 +53,7 @@ class AuthController {
       }
 
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
+      if (!emailRegex.test(rawEmail)) {
         res.status(400).json({
           message: "Invalid email format",
           field: "email",
@@ -47,6 +68,8 @@ class AuthController {
         });
         return;
       }
+
+      const email = normalizeEmail(rawEmail);
 
       const existingEmail = await User.findOne({ where: { email } });
       if (existingEmail) {
@@ -63,7 +86,7 @@ class AuthController {
       const registerData = await User.create({
         username,
         email,
-        password: bcrypt.hashSync(password, 10),
+        password: await bcrypt.hash(password, 10),
         emailVerificationToken: generateEmailVerificationToken,
         emailVerificationTokenGeneratedTime: new Date(),
       });
@@ -78,14 +101,14 @@ class AuthController {
   console.error("Welcome email failed to send:", mailError);
 }
 
-      // Never return password in response
-      const { password: _, ...userWithoutPassword } = registerData.toJSON();
+      const userWithoutSensitiveData = sanitizeUser(registerData);
 
       res.status(201).json({
         message: "User registered successfully! Please check your email for verification.",
-        data: userWithoutPassword,
+        data: userWithoutSensitiveData,
       });
     } catch (error) {
+      console.error("Error in register:", error);
       res.status(500).json({
         message: "Something went wrong",
       });
@@ -94,8 +117,9 @@ class AuthController {
 
   // *Verify Email
   static async verifyEmail(req: Request, res: Response) {
-    const { email, emailVerificationToken } = req.body;
-    if (!email || !emailVerificationToken) {
+    try {
+    const { email: rawEmail, emailVerificationToken } = req.body;
+    if (!rawEmail || !emailVerificationToken) {
       res.status(400).json({
         message: "Email and emailVerificationToken are required",
         field: "general",
@@ -103,6 +127,7 @@ class AuthController {
       return;
     }
 
+    const email = normalizeEmail(rawEmail);
     const emailExist = await User.findOne({ where: { email } });
     if (!emailExist) {
       res.status(400).json({
@@ -147,12 +172,76 @@ class AuthController {
     res.status(200).json({
       message: "Email verified successfully",
     });
+  } catch (error) {
+    console.error("Error in verifyEmail:", error);
+    res.status(500).json({
+      message: "Something went wrong",
+    });
+  }
+  }
+
+  // *Resend Verification Email
+  static async resendVerificationEmail(req: Request, res: Response) {
+    try {
+      const { email: rawEmail } = req.body;
+      if (!rawEmail) {
+        res.status(400).json({
+          message: "Email is required",
+          field: "email",
+        });
+        return;
+      }
+
+      const email = normalizeEmail(rawEmail);
+      const user = await User.findOne({ where: { email } });
+      if (!user) {
+        res.status(400).json({
+          message: "User with this email does not exist",
+          field: "email",
+        });
+        return;
+      }
+
+      if (user.isVerified) {
+        res.status(400).json({
+          message: "Email is already verified",
+          field: "email",
+        });
+        return;
+      }
+
+      const newVerificationToken = generateOtp();
+      console.log("Generated New Email Verification Token:", newVerificationToken);
+      user.emailVerificationToken = newVerificationToken;
+      user.emailVerificationTokenGeneratedTime = new Date();
+      await user.save();
+
+      try {
+        await sendVerificationEmailCode({
+          email,
+          subject: "Verify Your Truvora Email",
+          code: newVerificationToken,
+        });
+      } catch (mailError) {
+        console.error("Resend verification email failed to send:", mailError);
+      }
+
+      res.status(200).json({
+        message: "A new verification code has been sent to your email.",
+      });
+    } catch (error) {
+      console.error("Error in resendVerificationEmail:", error);
+      res.status(500).json({
+        message: "Something went wrong",
+      });
+    }
   }
 
   // *User Login
   static async login(req: Request, res: Response) {
     try {
-      const { email, password } = req.body;
+      const { email: rawEmail, password } = req.body;
+      const email = normalizeEmail(rawEmail);
       if (!email || !password) {
         res.status(400).json({
           message: "Email and password are required",
@@ -201,14 +290,15 @@ class AuthController {
       await sendMail({
         to: email,
         subject: "Login Alert",
-        text: `Hi ${user.username},\n\nWe noticed a login to your Truvora account. If this was you, you can safely ignore this email. If you did not log in, please secure your account immediately by changing your password and enabling two-factor authentication.\n\nBest regards,\nThe Truvora Team`,
+        text: `Hi ${user.username},\n\nWe noticed a login to your Truvora account. 
+        If this was you, you can safely ignore this email. 
+        If you did not log in, please secure your account immediately by changing your password and enabling two-factor authentication.\n\nBest regards,\nThe Truvora Team`,
       });
     } catch (mailError) {
   console.error("Login alert email failed to send:", mailError);
 }
 
-      // Never return password, emailVerificationToken, otp, resetPasswordToken in response
-      const { password: _, emailVerificationToken: __, emailVerificationTokenGeneratedTime: ___, otp: ____, otpGeneratedTime: _____, resetPasswordToken: ______, createdAt: ________, updatedAt: _________, ...userWithoutSensitiveData } = user.toJSON();
+    const userWithoutSensitiveData = sanitizeUser(user);
 
       res.status(200).json({
         message: "User logged in successfully",
@@ -216,6 +306,7 @@ class AuthController {
         token: token,
       });
     } catch (error) {
+      console.error("Error in login:", error);
       res.status(500).json({
         message: "Something went wrong",
       });
@@ -225,12 +316,21 @@ class AuthController {
   // *User Logout
   static logout(req: Request, res: Response) {
     try {
-      res.clearCookie("token");
-      res.clearCookie("user");
+       res.clearCookie("token", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+      });
+      res.clearCookie("user", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+      });
       res.status(200).json({
         message: "User logged out successfully",
       });
     } catch (error) {
+      console.error("Error during logout:", error);
       res.status(500).json({
         message: "Something went wrong",
       });
@@ -240,8 +340,8 @@ class AuthController {
   // *Forgot Password
   static async forgotPassword(req: Request, res: Response) {
     try {
-      const { email } = req.body;
-      if (!email) {
+      const { email: rawEmail } = req.body;
+      if (!rawEmail) {
         res.status(400).json({
           message: "Please provide your email",
           field: "email",
@@ -249,6 +349,7 @@ class AuthController {
         return;
       }
 
+      const email = normalizeEmail(rawEmail);
       const user = await User.findOne({ where: { email } });
       if (!user) {
         res.status(400).json({
@@ -268,7 +369,7 @@ class AuthController {
       await sendMail({
         to: email,
         subject: "Password Reset OTP",
-        text: `Your OTP for password reset is: ${generatedOtp}. It is valid for 5 minutes. If you did not request this, please ignore this email.`,
+        text: `Your OTP for password reset is: ${generatedOtp}. It is valid for 4 minutes. If you did not request this, please ignore this email.`,
       });
     } catch (mailError) {
   console.error("Password reset OTP email failed to send:", mailError);
@@ -277,8 +378,10 @@ class AuthController {
       res.status(200).json({
         message:
           "OTP sent to your email address for password reset. Please check your email.",
+          email
       });
     } catch (error) {
+      console.error("Error in forgotPassword:", error);
       res.status(500).json({
         message: "Something went wrong",
       });
@@ -334,7 +437,7 @@ class AuthController {
     //   return;
     // }
     // const timeDifference = currentTime - otpGeneratedTime;
-    // const otpValidityDuration = 5 * 60 * 1000;
+    // const otpValidityDuration = 4 * 60 * 1000;
     // if (timeDifference > otpValidityDuration) {
     //   res.status(400).json({
     //     message: "OTP has expired. Please request a new one.",
@@ -346,7 +449,7 @@ class AuthController {
     // *Or
     const checkOtpExpiration = isOtpExpired(
       user.otpGeneratedTime,
-      5 * 60 * 1000,
+      4 * 60 * 1000,
     );
     if (checkOtpExpiration) {
       sendResponse(
@@ -360,8 +463,8 @@ class AuthController {
       return;
     }
 
-    // Issue a short-lived token for password reset (valid for 5 minutes)
-    const resetToken = generateToken(user.id, "5m");
+    // Issue a short-lived token for password reset (valid for 4 minutes)
+    const resetToken = generateToken(user.id, "4m");
 
     user.otp = null;
     user.otpGeneratedTime = null;
@@ -383,6 +486,7 @@ class AuthController {
       resetToken,
     );
     } catch (error) {
+      console.error("Error in verifyOtp:", error);
       res.status(500).json({
         message: "Something went wrong",
       });
@@ -442,7 +546,7 @@ class AuthController {
         return;
       }
 
-      user.password = bcrypt.hashSync(newPassword, 10);
+      user.password = await bcrypt.hash(newPassword, 10);
       user.resetPasswordToken = null;
       await user.save();
     
@@ -512,7 +616,7 @@ class AuthController {
         return;
       }    
       
-      const isCurrentPasswordValid = bcrypt.compareSync(
+      const isCurrentPasswordValid = await bcrypt.compare(
         currentPassword,
         user.password
       );
@@ -524,13 +628,14 @@ class AuthController {
         return;
       }
 
-      user.password = bcrypt.hashSync(newPassword, 10);
+      user.password = await bcrypt.hash(newPassword, 10);
       await user.save();
 
       res.status(200).json({
         message: "Password changed successfully",
       });
     }  catch (error) {
+      console.error("Error in changePassword:", error);
       res.status(500).json({
         message: "Something went wrong",
       });
