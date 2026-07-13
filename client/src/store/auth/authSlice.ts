@@ -1,6 +1,6 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import { Status } from "../../global/statuses";
-import type { AuthState, changePasswordData, loginData, registerData, resetPasswordData, User, verifyEmailData, VerifyOTPData } from "../../types/authTypes";
+import type { AuthState, changePasswordData, loginData, registerData, resendVerificationEmailData, resetPasswordData, User, verifyEmailData, VerifyOTPData } from "../../types/authTypes";
 import type { AppDispatch } from "../store";
 import { API, APIAuthenticated } from "../../http";
 
@@ -106,6 +106,21 @@ export function verifyEmail(data: verifyEmailData) {
   };
 }
 
+export function resendVerificationEmail(data: resendVerificationEmailData) {
+  return async function resendVerificationEmailThunk(dispatch: AppDispatch) {
+    dispatch(setStatus(Status.LOADING));
+    try {
+      const response = await API.post("/auth/resend-verification-email", data);
+      dispatch(setStatus(Status.SUCCESS));
+      return response.data;
+    } catch (error) {
+      console.error("Error resending verification email:", error);
+      dispatch(setStatus(Status.ERROR));
+      throw error;
+    }
+  };
+}
+
 export function loginUser(data: loginData) {
   return async function loginUserThunk(dispatch: AppDispatch) {
     dispatch(setStatus(Status.LOADING));
@@ -124,12 +139,30 @@ export function loginUser(data: loginData) {
   };
 }
 
+// Hits the backend so the httpOnly session cookie actually gets cleared —
+// document.cookie writes in the `logout` reducer can't touch httpOnly cookies.
+export function logoutUser() {
+  return async function logoutUserThunk(dispatch: AppDispatch) {
+    dispatch(setStatus(Status.LOADING));
+    try {
+      const response = await API.post("/auth/logout");
+      if (response.status === 200) {
+        dispatch(logout());
+        dispatch(setStatus(Status.SUCCESS));
+      }
+    } catch (error) {
+      console.error("Failed to log out on the server:", error);
+      dispatch(setStatus(Status.ERROR));
+    }
+  };
+}
+
 export function forgotPassword(data: { email: string }) {
   return async function forgotPasswordThunk(dispatch: AppDispatch) {
     dispatch(setStatus(Status.LOADING));
     try {
       const response = await API.post("/auth/forgot-password", data);
-      dispatch(setEmail(response.data));
+      dispatch(setEmail(data.email));
       dispatch(setStatus(Status.SUCCESS));
       return response; 
     } catch (error) {

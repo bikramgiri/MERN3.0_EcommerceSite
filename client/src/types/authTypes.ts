@@ -8,7 +8,6 @@ export interface User {
       role: string,
       avatar: string,
       // token: string,
-      status: Status
 }
 
 export interface AuthState {
@@ -29,6 +28,10 @@ export interface verifyEmailData {
       emailVerificationToken: string
 }
 
+export interface resendVerificationEmailData {
+      email: string
+}
+
 export interface loginData {
       email: string,
       password: string
@@ -44,6 +47,48 @@ export interface resetPasswordData {
       newPassword: string,
       confirmNewPassword: string
 }
+
+export interface PasswordChecks {
+      minLength: boolean,
+      hasUppercase: boolean,
+      hasLowercase: boolean,
+      hasSpecialCharacter: boolean,
+      hasNumber: boolean,
+}
+
+export interface ValidationCheckProps {
+      passed: boolean,
+      label: string,
+}
+
+export interface AuthFormProps {
+  type: "login" | "register";
+  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  isSubmitting: boolean;
+  values: {
+    username?: string;
+    email: string;
+    password: string;
+  };
+  errors: {
+    username?: string;
+    email: string;
+    password: string;
+    general: string;
+  };
+  message?: unknown;
+  passwordStrength?: {
+    score?: number;
+    label: string;
+    color: string;
+    width: string;
+  };
+  // Register-only — omitted by Login.tsx, so kept optional here
+  passwordChecks?: PasswordChecks;
+  allChecksPassed?: boolean;
+  ValidationCheck?: (props: ValidationCheckProps) => React.JSX.Element;
+};
 
 export interface changePasswordData {
       currentPassword: string,
