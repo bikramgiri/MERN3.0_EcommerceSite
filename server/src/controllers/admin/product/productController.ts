@@ -10,6 +10,7 @@ import Payment from "../../../database/models/paymentModel";
 import Order from "../../../database/models/orderModel";
 import OrderDetails from "../../../database/models/orderDetailsModel";
 import { getPublicIdFromAvatar } from "../../../services/cloudinaryHelper";
+import Review from "../../../database/models/reviewModel";
 
 class ProductController {
   public static async addProduct(
@@ -186,7 +187,20 @@ class ProductController {
         },
         {
           model: User,
+          as: "owner",
           attributes: ["id", "username"],
+        },
+         {
+          model: Review,
+          as: "reviews",
+          attributes: ["id", "rating", "message", "reviewImage", "createdAt"],
+          include: [
+            {
+              model: User,
+              as: "User",
+              attributes: ["id", "username", "avatar"],
+            },
+          ],
         },
       ],
     });
@@ -203,6 +217,12 @@ class ProductController {
       return {
         ...productData,
         productImage: getFullImageUrl(productData.productImage), // Use the helper function to get full URL
+        reviews: (productData.reviews || []).map((review: any) => ({
+          ...review,
+          reviewImage: review.reviewImage
+            ? getFullImageUrl(review.reviewImage)
+            : null,
+        })),
       };
     });
     productsWithProductImageUrl.sort(
@@ -239,7 +259,20 @@ class ProductController {
         },
         {
           model: User,
+          as: "owner",
           attributes: ["id", "username", "email"],
+        },
+        {
+          model: Review,
+          as: "reviews",
+          attributes: ["id", "rating", "message", "reviewImage", "createdAt"],
+          include: [
+            {
+              model: User,
+              as: "User",
+              attributes: ["id", "username", "avatar"],
+            },
+          ],
         },
       ],
     });
@@ -251,9 +284,16 @@ class ProductController {
       return;
     }
 
+    const productData = product.toJSON() as any;
     const productWithProductImageUrl = {
-      ...product.toJSON(),
+      ...productData,
       productImage: getFullImageUrl(product.productImage), // Use the helper function to get full URL
+       reviews: (productData.reviews || []).map((review: any) => ({
+        ...review,
+        reviewImage: review.reviewImage
+          ? getFullImageUrl(review.reviewImage)
+          : null,
+      })),
     };
 
     res.status(200).json({
@@ -287,7 +327,20 @@ class ProductController {
         },
         {
           model: User,
+          as: "owner",
           attributes: ["id", "username", "email"],
+        },
+         {
+          model: Review,
+          as: "reviews",
+          attributes: ["id", "rating", "message", "reviewImage", "createdAt"],
+          include: [
+            {
+              model: User,
+              as: "User",
+              attributes: ["id", "username", "avatar"],
+            },
+          ],
         },
       ],
     });
@@ -305,6 +358,12 @@ class ProductController {
       return {
         ...productData,
         productImage: getFullImageUrl(productData.productImage), // Use the helper function to get full URL
+        reviews: (productData.reviews || []).map((review: any) => ({
+          ...review,
+          reviewImage: review.reviewImage
+            ? getFullImageUrl(review.reviewImage)
+            : null,
+        })),
       };
     });
     categoryProductsWithImageUrl.sort(
@@ -344,7 +403,20 @@ class ProductController {
         },
         {
           model: User,
+          as: "owner",
           attributes: ["id", "username", "email"],
+        },
+        {
+          model: Review,
+          as: "reviews",
+          attributes: ["id", "rating", "message", "reviewImage", "createdAt"],
+          include: [
+            {
+              model: User,
+              as: "User",
+              attributes: ["id", "username", "avatar"],
+            },
+          ],
         },
       ],
     });
@@ -362,6 +434,12 @@ class ProductController {
       return {
         ...productData,
         productImage: getFullImageUrl(productData.productImage), // Use the helper function to get full URL
+         reviews: (productData.reviews || []).map((review: any) => ({
+          ...review,
+          reviewImage: review.reviewImage
+            ? getFullImageUrl(review.reviewImage)
+            : null,
+        })),
       };
     });
     userProductsWithImageUrl.sort(

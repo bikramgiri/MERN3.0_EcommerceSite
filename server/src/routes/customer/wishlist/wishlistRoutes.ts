@@ -9,6 +9,8 @@ const router:Router = express.Router()
 router.route("/wishlist")
 .post(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Customer), catchAsyncError(WishlistController.addToWishlist))
 .get(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Customer), catchAsyncError(WishlistController.fetchWishlist))
-.delete(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Customer), catchAsyncError(WishlistController.removeFromWishlist))
+
+router.route("/wishlist/:productId")
+.delete(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Customer), catchAsyncError(WishlistController.removeFromWishlist));
 
 export default router;

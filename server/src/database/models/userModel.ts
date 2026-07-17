@@ -7,7 +7,7 @@ import {
 } from "sequelize-typescript";
 import { UserRole } from "../../types";
 import Product from "./productModel";
-import { Association, BelongsToManyAddAssociationMixin, BelongsToManyHasAssociationMixin, BelongsToManyRemoveAssociationMixin } from "sequelize";
+import { Association} from "sequelize";
 
 @Table({
   tableName: "users",
@@ -89,10 +89,6 @@ class User extends Model {
     type: DataType.STRING,
   })
   declare resetPasswordToken: string | null;
-
-  declare addWishlistProduct: BelongsToManyAddAssociationMixin<Product, string>;
-  declare removeWishlistProduct: BelongsToManyRemoveAssociationMixin<Product, string>;
-  declare hasWishlistProduct: BelongsToManyHasAssociationMixin<Product, string>;
 
   declare static associations: { 
     WishlistProducts: Association<User, Product>;

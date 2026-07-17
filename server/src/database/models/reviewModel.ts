@@ -5,6 +5,7 @@ import {
   DataType,
   ForeignKey,
   BelongsTo,
+  AllowNull,
 } from "sequelize-typescript";
 import User from "./userModel";
 import Product from "./productModel";

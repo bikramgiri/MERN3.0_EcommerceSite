@@ -61,13 +61,13 @@ Product.hasMany(OrderDetails, { foreignKey: "productId" });
 // Cart.belongsTo(Product, { foreignKey: "productId" });
 // Product.hasMany(Cart, { foreignKey: "productId" }); 
 
-// Relationship between Review and User
-Review.belongsTo(User, { foreignKey: "userId" });
-User.hasMany(Review, { foreignKey: "userId" });
+// // Relationship between Review and User
+// Review.belongsTo(User, { foreignKey: "userId" });
+// User.hasMany(Review, { foreignKey: "userId" });
 
-// Relationship between Review and Product
-Review.belongsTo(Product, { foreignKey: "productId" });
-Product.hasMany(Review, { foreignKey: "productId" });
+// // Relationship between Review and Product
+// Review.belongsTo(Product, { foreignKey: "productId" });
+// Product.hasMany(Review, { foreignKey: "productId" });
 
 // // Relationship between Wishlist and User
 // Wishlist.belongsTo(User, { foreignKey: "userId" });

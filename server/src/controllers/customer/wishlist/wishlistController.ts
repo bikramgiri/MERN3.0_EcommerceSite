@@ -4,6 +4,7 @@ import User from "../../../database/models/userModel";
 import Product from "../../../database/models/productModel";
 import getFullImageUrl from "../../../services/imageHandler";
 import Category from "../../../database/models/categoryModel";
+import Wishlist from "../../../database/models/wishlistModel";
 
 class WishlistController {
       // Add a product to the wishlist
@@ -35,7 +36,12 @@ class WishlistController {
             return;
             }
 
-            const product = await Product.findByPk(productId);
+            const product = await Product.findByPk(productId,{
+                  include:  [
+        { model: User, as: "owner" },
+        { model: Category, as: "category" },
+      ],
+            });
             if (!product) {
                    res.status(404).json({ 
                         message: "Product not found", 
@@ -45,17 +51,26 @@ class WishlistController {
             }
 
             // check if the product is already in the wishlist
-            const isWishlisted = await user.hasWishlistProduct(productId)
+            const isWishlisted = await Wishlist.findOne({
+                  where: {
+                        userId, productId
+                  }
+            });
             if (isWishlisted) {
-                  await user.removeWishlistProduct(productId)
+                  await isWishlisted.destroy();
                    res.status(200).json({ 
-                        message: "Product removed from wishlist"
+                        action: "removed",
+                        message: "Product removed from wishlist",
+                        data: {id: productId}
                   });
                   return;
             }
 
             // add the product to the wishlist
-            await user.addWishlistProduct(productId);
+            await Wishlist.create({
+                  userId,
+                  productId
+            });
 
             const productData = product.toJSON();
             const wishlistWithProductImage = {
@@ -64,6 +79,7 @@ class WishlistController {
             }
 
              res.status(200).json({ 
+                  action: "added",
                   message: "Product added to wishlist",
                   data: wishlistWithProductImage,
             });
@@ -80,39 +96,37 @@ class WishlistController {
             return;
             }
 
-            const user = await User.findByPk(userId, {
-                  include: [{
-                        model: Product,
-                        as: 'WishlistProducts',
-                        through: { attributes: [] }, // Exclude the join table attributes
-                        include: [{
-                              model: Category,
-                              attributes: ['id', 'categoryName']
-                        }]
-                  }]
-            });
+           const wishlistEntries = await Wishlist.findAll({
+      where: { userId },
+      include: [
+        {
+          model: Product,
+          include: [
+            { 
+                  model: User, 
+                  as: "owner",
+                  attributes: ["id", "username", "email", "avatar"]
+            },
+            { 
+                  model: Category, 
+                  as: "category",
+                  attributes: ["id", "categoryName"]
+            },
+          ],
+        },
+      ],
+    });
 
-            if (!user) {
-                   res.status(404).json({ 
-                        message: "User not found", 
-                        field: "userId" 
-                  });
-            return;
-            }
-
-            const wishlist = ((user as any).WishlistProducts || []) as Product[];
-            const wishlistWithFullImageUrls = wishlist.map((product: any) => {
-                  const productData = product.toJSON();
-                  return {
-                        ...productData,
-                        productImage: getFullImageUrl(productData.productImage),
-                  };
-            });  
+     const products = wishlistEntries.map((wishlist) => {
+      const product = wishlist.product.toJSON();
+      product.productImage = getFullImageUrl(product.productImage);
+      return product;
+    });  
                          
              res.status(200).json({ 
                   message: "Wishlist fetched successfully",
-                  totalItems: wishlistWithFullImageUrls.length,
-                  data: wishlistWithFullImageUrls
+                  totalItems: products.length,
+                  data: products
             });
       }
 
@@ -127,7 +141,7 @@ class WishlistController {
             return;
             }
 
-            const { productId } = req.body;
+            const { productId } = req.params;
             if (!productId) {
                   res.status(400).json({ 
                         message: "Product ID is required", 
@@ -145,7 +159,7 @@ class WishlistController {
             return;
             }
 
-            const product = await Product.findByPk(productId);
+            const product = await Product.findByPk(productId as string);
             if (!product) {
                   res.status(404).json({ 
                         message: "Product not found", 
@@ -154,8 +168,15 @@ class WishlistController {
                   return;
             }
 
-            // Remove the product from the wishlist
-            await user.removeWishlistProduct(productId as string);
+
+    const existing = await Wishlist.findOne({ where: { userId, productId } });
+
+    if (!existing) {
+      res.status(404).json({ success: false, message: "Item not in wishlist" });
+      return;
+    }
+
+    await existing.destroy();
 
              res.status(200).json({ 
                   message: "Product removed from wishlist"

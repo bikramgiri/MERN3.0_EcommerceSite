@@ -18,7 +18,7 @@ router.route("/product/user/:userId")
 .get(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Admin), catchAsyncError(ProductController.fetchProductsByUser))
 
 router.route("/product/:id")
-.get(catchAsyncError(ProductController.fetchSingleProduct))
+.get((ProductController.fetchSingleProduct))
 .patch(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Admin),  upload.single('productImage'), cloudinaryUpload, catchAsyncError(ProductController.updateProduct))
 .delete(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Admin), catchAsyncError(ProductController.deleteProduct))
 

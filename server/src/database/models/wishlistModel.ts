@@ -5,6 +5,7 @@ import {
   DataType,
   ForeignKey,
   AllowNull,
+  BelongsTo,
 } from "sequelize-typescript";
 import User from "./userModel";
 import Product from "./productModel";
@@ -32,10 +33,16 @@ class Wishlist extends Model {
   })
   declare userId: string;
 
+  @BelongsTo(() => User)
+  declare user: User;
+
   @ForeignKey(() => Product)
   @AllowNull(false)
   @Column({ type: DataType.UUID })
   declare productId: string;
+
+  @BelongsTo(() => Product)
+  declare product: Product;
 }
 
 export default Wishlist;
