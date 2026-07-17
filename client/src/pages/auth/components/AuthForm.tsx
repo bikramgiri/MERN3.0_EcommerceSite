@@ -41,16 +41,23 @@ const FEATURES = {
   ],
 };
 
-const TruvoraLogo = ({ dark = false }: { dark?: boolean }) => (
+const TruvoraLogo = () => (
   <Link
     to="/"
-    className={`font-['Fraunces',serif] text-2xl italic font-semibold tracking-tight ${
-      dark ? "text-[#FDF8ED]" : "text-[#1A1613]"
-    }`}
+    className="font-['Fraunces',serif] text-2xl italic font-semibold tracking-tight text-[#1A1613]"
   >
     Truvora<span className="text-[#E6540B]">.</span>
   </Link>
 );
+
+// Brand-consistent strength tiers — reuses the clay / sage / rose family
+// from the product tag badges instead of generic Tailwind red/yellow/green.
+const STRENGTH_COLORS: Record<string, string> = {
+  Weak: "text-[#A63D2F]",
+  Fair: "text-[#B8863B]",
+  Good: "text-[#7C8B6F]",
+  Strong: "text-[#4F6B4A]",
+};
 
 const AuthForm = ({
   type = "login",
@@ -71,19 +78,19 @@ const AuthForm = ({
   return (
     <div className="min-h-screen bg-[#FDF8ED] flex items-center justify-center py-5 md:py-3 px-4">
       <div className="w-full max-w-5xl mx-auto">
-        <div className="grid lg:grid-cols-2 gap-0 bg-white rounded-3xl shadow-2xl overflow-hidden">
+        <div className="grid lg:grid-cols-2 gap-0 bg-[#FFFDF8] rounded-3xl shadow-2xl shadow-[#1A1613]/10 overflow-hidden">
 
-          {/* Left Panel */}
-          <div className="hidden lg:flex flex-col justify-center p-6 bg-[#1A1613] text-[#FDF8ED] relative overflow-hidden">
+          {/* Left Panel — same warm ivory family as the Hero, just a shade deeper to separate it from the form panel */}
+          <div className="hidden lg:flex flex-col justify-center p-6 bg-[#F5E9D8] text-[#1A1613] relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-[#E6540B]/10 rounded-full -mr-32 -mt-32"></div>
             <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#E6540B]/10 rounded-full -ml-48 -mb-48"></div>
 
             <div className="relative z-10">
               <div className="mb-5">
-                <TruvoraLogo dark />
+                <TruvoraLogo />
               </div>
 
-              <h1 className="text-4xl lg:text-5xl font-['Fraunces',serif] font-semibold mb-4 leading-tight">
+              <h1 className="text-4xl lg:text-5xl font-['Fraunces',serif] font-semibold mb-4 leading-tight text-[#1A1613]">
                 {type === "login" ? (
                   "Welcome back."
                 ) : (
@@ -94,7 +101,7 @@ const AuthForm = ({
                   </>
                 )}
               </h1>
-              <p className="text-[#FDF8ED]/70 text-lg mb-8">
+              <p className="text-[#1A1613]/65 text-lg mb-8">
                 {type === "login"
                   ? "Sign in to pick up right where you left off — your cart, your wishlist, your orders."
                   : "Create your Truvora account and start building a collection worth keeping."}
@@ -104,12 +111,12 @@ const AuthForm = ({
                 {features.map(({ icon: Icon, label }) => (
                   <div
                     key={label}
-                    className="flex items-center gap-3 bg-[#FDF8ED]/5 border border-[#FDF8ED]/10 backdrop-blur-sm rounded-xl p-3"
+                    className="flex items-center gap-3 bg-[#FFFDF8] border border-[#1A1613]/10 rounded-xl p-3"
                   >
                     <div className="w-10 h-10 shrink-0 bg-[#E6540B]/15 rounded-lg flex items-center justify-center">
                       <Icon size={18} className="text-[#E6540B]" strokeWidth={1.8} />
                     </div>
-                    <span className="font-medium text-sm">{label}</span>
+                    <span className="font-medium text-sm text-[#1A1613]">{label}</span>
                   </div>
                 ))}
               </div>
@@ -154,7 +161,7 @@ const AuthForm = ({
                     />
                   </div>
                   {errors.username && (
-                    <p className="mt-1 text-xs text-red-600">{errors.username}</p>
+                    <p className="mt-1 text-xs text-[#A63D2F]">{errors.username}</p>
                   )}
                 </div>
               )}
@@ -176,7 +183,7 @@ const AuthForm = ({
                   />
                 </div>
                 {errors.email && (
-                  <p className="mt-1 text-xs text-red-600">{errors.email}</p>
+                  <p className="mt-1 text-xs text-[#A63D2F]">{errors.email}</p>
                 )}
               </div>
 
@@ -195,7 +202,7 @@ const AuthForm = ({
                     placeholder="••••••••"
                     className={`w-full pl-12 pr-12 py-3 border rounded-xl focus:ring-0.5 focus:ring-[#E6540B] focus:border-[#E6540B] outline-none transition-all text-[#1A1613] ${
                       errors.password
-                        ? "border-red-500"
+                        ? "border-[#A63D2F]"
                         : values.password && allChecksPassed
                           ? "border-[#E6540B]"
                           : "border-[#1A1613]/20"
@@ -210,7 +217,7 @@ const AuthForm = ({
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="mt-1 text-xs text-red-600">{errors.password}</p>
+                  <p className="mt-1 text-xs text-[#A63D2F]">{errors.password}</p>
                 )}
 
                 {type !== "login" && (
@@ -221,13 +228,7 @@ const AuthForm = ({
                           <span className="text-xs text-[#1A1613]/50">Password Strength</span>
                           <span
                             className={`text-xs font-semibold ${
-                              passwordStrength.label === "Strong"
-                                ? "text-green-600"
-                                : passwordStrength.label === "Good"
-                                  ? "text-yellow-600"
-                                  : passwordStrength.label === "Fair"
-                                    ? "text-orange-600"
-                                    : "text-red-600"
+                              STRENGTH_COLORS[passwordStrength.label] ?? "text-[#1A1613]/50"
                             }`}
                           >
                             {passwordStrength.label}
@@ -243,7 +244,7 @@ const AuthForm = ({
                     )}
 
                     {values.password && passwordChecks && (
-                      <div className="mt-1 bg-[#1A1613]/3">
+                      <div className="mt-1 bg-[#1A1613]/[0.03]">
                         <p className="text-xs text-[#1A1613]/60">
                           Password Requirements:
                         </p>
@@ -317,7 +318,7 @@ const AuthForm = ({
               </div>
 
               {errors.general && (
-                <p className="text-sm text-red-600 text-center">{errors.general}</p>
+                <p className="text-sm text-[#A63D2F] text-center">{errors.general}</p>
               )}
 
               <button
@@ -357,18 +358,18 @@ const AuthForm = ({
                   <div className="w-full border-t border-[#1A1613]/10" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white text-[#1A1613]/50">
+                  <span className="px-4 bg-[#FFFDF8] text-[#1A1613]/50">
                     Or {type === "login" ? "sign in" : "sign up"} with
                   </span>
                 </div>
               </div>
 
               <div className="mt-4 grid grid-cols-2 gap-3">
-                <button className="cursor-pointer flex items-center justify-center gap-2 bg-white border border-[#1A1613]/15 rounded-lg py-2.5 px-4 hover:bg-[#1A1613]/5 transition-colors text-sm font-medium text-[#1A1613]/80">
+                <button className="cursor-pointer flex items-center justify-center gap-2 bg-[#FFFDF8] border border-[#1A1613]/15 rounded-lg py-2.5 px-4 hover:bg-[#1A1613]/5 transition-colors text-sm font-medium text-[#1A1613]/80">
                   <FcGoogle className="h-5 w-5 flex-shrink-0" />
                   Google
                 </button>
-                <button className="cursor-pointer flex items-center justify-center gap-2 bg-white border border-[#1A1613]/15 rounded-lg py-2.5 px-4 hover:bg-[#1A1613]/5 transition-colors text-sm font-medium text-[#1A1613]/80">
+                <button className="cursor-pointer flex items-center justify-center gap-2 bg-[#FFFDF8] border border-[#1A1613]/15 rounded-lg py-2.5 px-4 hover:bg-[#1A1613]/5 transition-colors text-sm font-medium text-[#1A1613]/80">
                   <FaFacebook className="h-5 w-5 text-blue-600 flex-shrink-0" />
                   Facebook
                 </button>

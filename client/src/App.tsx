@@ -10,6 +10,7 @@ import VerifyEmail from "./pages/auth/VerifyEmail.js"
 import ForgotPassword from "./pages/auth/ForgotPassword.js"
 import VerifyOTP from "./pages/auth/VerifyOTP.js"
 import ResetPassword from "./pages/auth/ResetPassword.js"
+import Wishlist from "./pages/wishlist/wishlist.js"
 
 function App() {
 
@@ -27,6 +28,7 @@ function App() {
 
       <Route element={<Layout />}>
       <Route path="/" element={<Home />} />
+      <Route path="/wishlist" element={<Wishlist />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />

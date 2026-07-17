@@ -11,7 +11,7 @@ const Footer = () => {
 
   return (
     <footer className="bg-[#FDF8ED] border-t border-gray-200">
-      <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 py-8 lg:py-8">
+      <div className="max-w-[1500px] mx-auto px-5 sm:px-6 lg:px-8 py-8 lg:py-8">
         {/* Main content - 3-column grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
           {/* Column 1 - Brand & Description */}
@@ -25,7 +25,6 @@ const Footer = () => {
               Your one-stop shop for everything you need.
             </p>
 
-            {/* Social Icons */}
             {/* <div className="flex justify-center md:justify-start gap-5 mt-6">
               <a href="#" className="text-indigo-600 hover:text-indigo-800 transition-colors" aria-label="Facebook">
                 <Facebook className="h-6 w-6" />
@@ -117,7 +116,6 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* Bottom Bar */}
         <div className="mt-8 pt-8 border-t border-[#1A1613]/30">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-[#1A1613]/60">
             <p>

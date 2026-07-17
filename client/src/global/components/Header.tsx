@@ -1,15 +1,27 @@
 import { useEffect, useState, useRef } from "react";
-import { ShoppingCart, Menu, X, Search, Heart, LogOut, Settings, ChevronDown } from "lucide-react";
+import {
+  ShoppingCart,
+  Menu,
+  X,
+  Search,
+  Heart,
+  LogOut,
+  Settings,
+  ChevronDown,
+  Bell,
+} from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../hooks/hooks";
 import { CgProfile } from "react-icons/cg";
-import { GrDashboard } from "react-icons/gr";
 import { logoutUser } from "../../store/auth/authSlice";
+import { fetchUserWishlist } from "../../store/customer/wishlistSlice";
 
 const Header = () => {
-  const [isOpen, setIsOpen] = useState(false);     
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false); 
-  const [isMoreOpen, setIsMoreOpen] = useState(false); 
+  const [isOpen, setIsOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false); // notifications dropdown
+  const notificationsRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const moreRef = useRef<HTMLDivElement>(null);
   const moreCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -17,41 +29,65 @@ const Header = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { user, token } = useAppSelector((state) => state.auth);
+  const { wishlist } = useAppSelector((state) => state.wishlist);
 
-  const storedToken = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const storedToken =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
   const effectiveToken = token || storedToken;
   const isLoggedIn = !!effectiveToken;
 
-    const favouritesCount = 1;   
-      const cartCount = 3 
+  useEffect(() => {
+    if (effectiveToken) {
+      dispatch(fetchUserWishlist());
+    }
+  }, [dispatch, effectiveToken]);
+
+  const wishlistCount = wishlist?.length;
+  const unreadNotifications = 2;
+
+  const cartCount = 0;
+
+  const markAllAsRead = () => {
+    // Implement marking notifications as read
+    alert("All notifications marked as read!");
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsDropdownOpen(false);
+      }
+      if (
+        notificationsRef.current &&
+        !notificationsRef.current.contains(event.target as Node)
+      ) {
+        setIsNotificationsOpen(false);
       }
       if (moreRef.current && !moreRef.current.contains(event.target as Node)) {
         setIsMoreOpen(false);
       }
     };
 
-    if (isDropdownOpen || isMoreOpen) {
+    if (isDropdownOpen || isMoreOpen || isNotificationsOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isDropdownOpen, isMoreOpen]);
+  }, [isDropdownOpen, isMoreOpen, isNotificationsOpen]);
 
   const openMoreOnHover = () => {
     if (moreCloseTimer.current) clearTimeout(moreCloseTimer.current);
     setIsMoreOpen(true);
   };
- 
+
   const scheduleMoreClose = () => {
     if (moreCloseTimer.current) clearTimeout(moreCloseTimer.current);
     moreCloseTimer.current = setTimeout(() => setIsMoreOpen(false), 150);
   };
- 
+
   useEffect(() => {
     return () => {
       if (moreCloseTimer.current) clearTimeout(moreCloseTimer.current);
@@ -93,7 +129,7 @@ const Header = () => {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 shadow-md border-b border-[#1A1613]/10 bg-[#FDF8ED]/90 backdrop-blur">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1500px] px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <Link
             to="/"
@@ -103,13 +139,19 @@ const Header = () => {
           </Link>
 
           <div className="hidden lg:flex items-center gap-8">
-            <Link to="/" className="text-[#1A1613]/80 hover:hover:text-[#E6540B] font-medium transition-colors">
+            <Link
+              to="/"
+              className="text-[#1A1613]/80 hover:hover:text-[#E6540B] font-medium transition-colors"
+            >
               Home
             </Link>
-            <Link to="/products" className="text-[#1A1613]/80 hover:hover:text-[#E6540B] font-medium transition-colors">
+            <Link
+              to="/products"
+              className="text-[#1A1613]/80 hover:hover:text-[#E6540B] font-medium transition-colors"
+            >
               Explore Products
             </Link>
-           <div
+            <div
               className="relative"
               ref={moreRef}
               onMouseEnter={openMoreOnHover}
@@ -128,7 +170,7 @@ const Header = () => {
                   className={`transition-transform duration-200 ${isMoreOpen ? "rotate-180" : ""}`}
                 />
               </button>
- 
+
               {isMoreOpen && (
                 <div
                   role="menu"
@@ -153,7 +195,6 @@ const Header = () => {
                 </div>
               )}
             </div>
-
           </div>
 
           <div className="hidden md:flex flex-1 items-center justify-center max-w-md">
@@ -168,11 +209,11 @@ const Header = () => {
           </div>
 
           <div className="flex items-center gap-4 md:gap-6">
-            {/* {isLoggedIn && (
+            {isLoggedIn && (
               <div className="relative" ref={notificationsRef}>
                 <button
                   type="button"
-                  className="cursor-pointer relative text-indigo-700 hover:text-indigo-900 p-1.5 rounded-full hover:bg-indigo-50 transition-colors"
+                  className="cursor-pointer relative text-[#1A1613]/80 hover:text-[#E6540B] p-1.5 rounded-full hover:bg-[#E6540B]/10 transition-colors"
                   onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
                 >
                   <Bell className="h-6 w-6" />
@@ -184,65 +225,82 @@ const Header = () => {
                 </button>
 
                 {isNotificationsOpen && (
-                  <div className="absolute right-0 mt-3 w-80 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden z-50">
-                    <div className="flex items-center justify-between px-5 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white">
-                      <h3 className="font-semibold">Notifications</h3>
+                  <div className="absolute right-0 mt-3 w-80 bg-[#FDF8ED] rounded-xl shadow-2xl border border-[#1A1613]/10 overflow-hidden z-50">
+                    <div className="flex items-center justify-between px-5 py-3 bg-gradient-to-r from-[#E6540B] to-[#c94806] text-white">
+                      <h3 className="font-['Fraunces',serif] font-semibold">
+                        Notifications
+                      </h3>
                       <button
                         onClick={markAllAsRead}
-                        className="cursor-pointer text-xs underline hover:text-purple-200 transition-colors"
+                        className="cursor-pointer text-xs underline hover:text-white/80 transition-colors"
                       >
                         Mark all read
                       </button>
                     </div>
 
                     <div className="max-h-96 overflow-y-auto">
-                      <div className="cursor-pointer p-4 border-b border-gray-100 hover:bg-purple-50 transition-colors flex gap-3">
+                      <div className="cursor-pointer p-4 border-b border-[#1A1613]/10 hover:bg-[#F4EEDF] transition-colors flex gap-3">
                         <div className="flex-shrink-0">
                           <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
                             <span className="text-green-600 text-xl">✓</span>
                           </div>
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-900">
-                            Your booking has been <span className="text-green-600 font-semibold">confirmed</span>
+                          <p className="text-sm font-medium text-[#1A1613]">
+                            Your booking has been{" "}
+                            <span className="text-green-600 font-semibold">
+                              confirmed
+                            </span>
                           </p>
-                          <p className="text-xs text-gray-500 mt-1">2 minutes ago</p>
+                          <p className="text-xs text-[#1A1613]/60 mt-1">
+                            2 minutes ago
+                          </p>
                         </div>
                       </div>
 
-                      <div className="cursor-pointer p-4 border-b border-gray-100 hover:bg-purple-50 transition-colors flex gap-3">
+                      <div className="cursor-pointer p-4 border-b border-[#1A1613]/10 hover:bg-[#F4EEDF] transition-colors flex gap-3">
                         <div className="flex-shrink-0">
-                          <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                            <span className="text-purple-600 text-xl">%</span>
+                          <div className="w-10 h-10 rounded-full bg-[#E6540B]/10 flex items-center justify-center">
+                            <span className="text-[#E6540B] text-xl">%</span>
                           </div>
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-900">
-                            Special offer! Get <span className="text-purple-600 font-semibold">20% off</span> your next booking
+                          <p className="text-sm font-medium text-[#1A1613]">
+                            Special offer! Get{" "}
+                            <span className="text-[#E6540B] font-semibold">
+                              20% off
+                            </span>{" "}
+                            your next booking
                           </p>
-                          <p className="text-xs text-gray-500 mt-1">1 hour ago</p>
+                          <p className="text-xs text-[#1A1613]/60 mt-1">
+                            1 hour ago
+                          </p>
                         </div>
                       </div>
 
-                      <div className="cursor-pointer p-4 hover:bg-purple-50 transition-colors flex gap-3">
+                      <div className="cursor-pointer p-4 hover:bg-[#F4EEDF] transition-colors flex gap-3">
                         <div className="flex-shrink-0">
                           <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
                             <span className="text-green-600 text-xl">$</span>
                           </div>
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-900">
-                            Payment of <span className="font-semibold">$150</span> was successful
+                          <p className="text-sm font-medium text-[#1A1613]">
+                            Payment of{" "}
+                            <span className="font-semibold">$150</span> was
+                            successful
                           </p>
-                          <p className="text-xs text-gray-500 mt-1">Yesterday</p>
+                          <p className="text-xs text-[#1A1613]/60 mt-1">
+                            Yesterday
+                          </p>
                         </div>
                       </div>
                     </div>
 
-                    <div className="px-5 py-3 bg-gray-50 text-center border-t border-gray-200">
+                    <div className="px-5 py-3 bg-[#F4EEDF] text-center border-t border-[#1A1613]/10">
                       <Link
                         to="/notifications"
-                        className="text-indigo-600 hover:text-indigo-800 font-medium text-sm transition-colors"
+                        className="text-[#E6540B] hover:text-[#c94806] font-medium text-sm transition-colors"
                         onClick={() => {
                           setIsNotificationsOpen(false);
                           setIsOpen(false);
@@ -254,28 +312,27 @@ const Header = () => {
                   </div>
                 )}
               </div>
-            )} */}
+            )}
 
             {isLoggedIn && (
               <>
-              <Link
-                to="/favorites"
-                className="relative text-[#1A1613]/80 hover:text-[#E6540B] p-1.5 rounded-full transition-colors"
-              >
-                <Heart className="h-6 w-6" />
-                { favouritesCount > 0 ? (
-                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                    {favouritesCount}
-                  </span>
-                ) : (
-                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                    0
-                  </span>
-                ) }
+                <Link
+                  to="/wishlist"
+                  className="relative text-[#1A1613]/80 hover:text-[#E6540B] p-1.5 rounded-full transition-colors"
+                >
+                  <Heart className="h-6 w-6" />
+                  {wishlistCount > 0 ? (
+                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                      {wishlistCount}
+                    </span>
+                  ) : (
+                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                      0
+                    </span>
+                  )}
+                </Link>
 
-              </Link>
-
-            {/* <div {...(items?.length > 0 ? { onClick: () => navigate("/cart") } : {})}
+                {/* <div {...(items?.length > 0 ? { onClick: () => navigate("/cart") } : {})}
               className="cursor-pointer relative text-[#1A1613]/80 hover:text-[#E6540B] p-1.5 rounded-full transition-colors"
             >
               <ShoppingCart className="h-6 w-6" />
@@ -290,16 +347,16 @@ const Header = () => {
               )}
             </div> */}
 
-            <div
-              onClick={() => navigate("/cart")}
-              className="cursor-pointer relative text-[#1A1613]/80 hover:text-[#E6540B] p-1.5 rounded-full transition-colors"
-            >
-              <ShoppingCart className="h-6 w-6" />
-              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                {cartCount}
-              </span>
-            </div>
-            </>
+                <div
+                  onClick={() => navigate("/cart")}
+                  className="cursor-pointer relative text-[#1A1613]/80 hover:text-[#E6540B] p-1.5 rounded-full transition-colors"
+                >
+                  <ShoppingCart className="h-6 w-6" />
+                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                    {cartCount}
+                  </span>
+                </div>
+              </>
             )}
 
             <div className="hidden md:flex items-center gap-3">
@@ -307,14 +364,13 @@ const Header = () => {
                 <>
                   <Link
                     to="/login"
-                   className="cursor-pointer flex rounded-lg px-5 py-2 text-base font-medium text-[#1A1613]/80 border border-[#1A1613]/80 hover:bg-[#1A1613]/6 transition-colors"
+                    className="cursor-pointer flex rounded-lg px-5 py-2 text-base font-medium text-[#1A1613]/80 border border-[#1A1613]/80 hover:bg-[#1A1613]/6 transition-colors"
                   >
                     Login
                   </Link>
                   <Link
                     to="/register"
-                     className="bg-[#E6540B] text-white px-5 py-2 rounded-lg font-medium hover:bg-[#D44A00] transition-colors shadow-sm"
-                   
+                    className="bg-[#E6540B] text-white px-5 py-2 rounded-lg font-medium hover:bg-[#D44A00] transition-colors shadow-sm"
                   >
                     Register
                   </Link>
@@ -335,21 +391,17 @@ const Header = () => {
                         <div className="flex items-center gap-3">
                           {renderAvatar("large")}
                           <div>
-                            <p className="font-medium text-gray-900">{user?.username || "My Account"}</p>
-                            <p className="text-sm text-gray-600 truncate">{user?.email || "user@example.com"}</p>
+                            <p className="font-medium text-gray-900">
+                              {user?.username || "My Account"}
+                            </p>
+                            <p className="text-sm text-gray-600 truncate">
+                              {user?.email || "user@example.com"}
+                            </p>
                           </div>
                         </div>
                       </div>
 
                       <div className="py-2">
-                        <Link
-                          to="/dashboard"
-                          className="flex gap-3 font-normal items-center px-5 py-2 text-gray-900 hover:bg-[#E6540B]/10 hover:text-[#E6540B] transition-colors"
-                          onClick={() => setIsDropdownOpen(false)}
-                        >
-                          <GrDashboard className="h-6 w-6" />
-                          Dashboard
-                        </Link>
                         <Link
                           to="/profile"
                           className="flex gap-3 font-normal items-center px-5 py-2 text-gray-900 hover:bg-[#E6540B]/10 hover:text-[#E6540B] transition-colors"
@@ -365,14 +417,6 @@ const Header = () => {
                         >
                           <ShoppingCart className="h-6 w-6" />
                           My Orders
-                        </Link>
-                        <Link
-                          to="/favorites"
-                          className="flex gap-3 font-normal items-center px-5 py-2 text-gray-900 hover:bg-[#E6540B]/10 hover:text-[#E6540B] transition-colors"
-                          onClick={() => setIsDropdownOpen(false)}
-                        >
-                          <Heart className="h-6 w-6" />
-                          Favourites
                         </Link>
                         <Link
                           to="/settings"
@@ -393,7 +437,7 @@ const Header = () => {
                           Log out
                         </button>
                       </div>
-                     </div>
+                    </div>
                   )}
                 </div>
               )}
@@ -441,44 +485,45 @@ const Header = () => {
             ) : (
               <div className="pt-4 border-t border-gray-100 space-y-4">
                 <div className="flex items-center gap-3 px-2">
-                  <img
-                    className="w-10 h-10 rounded-full object-cover border-2 border-indigo-200"
-                    src={user?.avatar || "https://flowbite.com/docs/images/people/profile-picture-5.jpg"}
-                    alt="User avatar"
-                  />
+                  {renderAvatar("small")}
                   <div>
-                    <p className="font-medium text-gray-900">{user?.username || "Account"}</p>
-                    <p className="text-sm text-gray-600 truncate">{user?.email}</p>
+                    <p className="font-medium text-gray-900">
+                      {user?.username || "Account"}
+                    </p>
+                    <p className="text-sm text-gray-600 truncate">
+                      {user?.email}
+                    </p>
                   </div>
                 </div>
 
-                <Link
-                  to="/profile"
-                  className="block py-2.5 px-2 text-gray-800 hover:text-[#E6540B] hover:bg-[#E6540B]/10 rounded-lg transition-colors"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <CgProfile className="h-5 w-5 inline-block mr-2" />
-                  Profile
-                </Link>
+                <div className="py-2">
+                  <Link
+                    to="/profile"
+                    className="block py-2.5 px-2 text-gray-800 hover:text-[#E6540B] hover:bg-[#E6540B]/10 rounded-lg transition-colors"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <CgProfile className="h-5 w-5 inline-block mr-2" />
+                    Profile
+                  </Link>
 
-                <Link
-                  to="/myorders"
-                  className="block py-2.5 px-2 text-gray-800 hover:text-[#E6540B] hover:bg-[#E6540B]/10 rounded-lg transition-colors"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <ShoppingCart className="h-5 w-5 inline-block mr-2" />
-                  My Orders
-                </Link>
+                  <Link
+                    to="/myorders"
+                    className="block py-2.5 px-2 text-gray-800 hover:text-[#E6540B] hover:bg-[#E6540B]/10 rounded-lg transition-colors"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <ShoppingCart className="h-5 w-5 inline-block mr-2" />
+                    My Orders
+                  </Link>
 
-                <Link
-                  to="/favourites"
-                  className="block py-2.5 px-2 text-gray-800 hover:text-[#E6540B] hover:bg-[#E6540B]/10 rounded-lg transition-colors"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <Heart className="h-5 w-5 inline-block mr-2" />
-                  Favourites
-                </Link>
-
+                  <Link
+                    to="/settings"
+                    className="block py-2.5 px-2 text-gray-800 hover:text-[#E6540B] hover:bg-[#E6540B]/10 rounded-lg transition-colors"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <Settings className="h-5 w-5 inline-block mr-2" />
+                    Settings
+                  </Link>
+                </div>
                 <button
                   onClick={handleLogOut}
                   className="cursor-pointer w-full text-left py-2.5 px-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
