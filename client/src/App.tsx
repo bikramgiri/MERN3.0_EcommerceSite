@@ -11,6 +11,7 @@ import ForgotPassword from "./pages/auth/ForgotPassword.js"
 import VerifyOTP from "./pages/auth/VerifyOTP.js"
 import ResetPassword from "./pages/auth/ResetPassword.js"
 import Wishlist from "./pages/wishlist/wishlist.js"
+import ProductDetails from "./pages/productDetails/ProductDetails.js"
 
 function App() {
 
@@ -28,6 +29,7 @@ function App() {
 
       <Route element={<Layout />}>
       <Route path="/" element={<Home />} />
+      <Route path="/productdetails/:id" element={<ProductDetails />} />
       <Route path="/wishlist" element={<Wishlist />} />
       </Route>
 

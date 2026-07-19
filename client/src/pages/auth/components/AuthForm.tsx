@@ -280,7 +280,6 @@ const AuthForm = ({
                   <input
                     type="checkbox"
                     id="rememberandterms"
-                    required
                     className="mt-1.5 h-4 w-4 text-[#E6540B] focus:ring-[#E6540B] border-[#1A1613]/30 rounded cursor-pointer"
                   />
                   <label htmlFor="rememberandterms" className="ml-2 block text-sm text-[#1A1613]/60">

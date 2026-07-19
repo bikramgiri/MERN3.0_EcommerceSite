@@ -21,7 +21,7 @@ export default function Categories() {
     /// eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch]);
 
-  if (status === Status.LOADING) {
+  if (!categories || categories.length === 0 || status === Status.LOADING) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#FDF8ED] to-[#FAF3E4]">
         <div className="text-center">

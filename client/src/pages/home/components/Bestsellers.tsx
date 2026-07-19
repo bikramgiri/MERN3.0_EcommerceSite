@@ -6,6 +6,7 @@ import { useAppDispatch, useAppSelector } from "../../../hooks/hooks";
 import { Link } from "react-router-dom";
 import { AddToWishlist } from "../../../store/customer/wishlistSlice";
 import type { Product } from "../../../types/productTypes";
+import { toast } from "react-toastify";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -17,22 +18,16 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 export default function Bestsellers() {
   const dispatch = useAppDispatch();
-  const { product: products = [], status } = useAppSelector((state) => state.product);
+  const { product: products = [], status } = useAppSelector(
+    (state) => state.product,
+  );
   const { wishlist } = useAppSelector((state) => state.wishlist);
 
   useEffect(() => {
     dispatch(fetchProducts());
   }, [dispatch]);
 
-  if (!products || products.length === 0) {
-    return (
-      <div className="text-center py-20 text-xl text-[#9B3A2E] min-h-[70vh] flex items-center justify-center">
-        Product not found
-      </div>
-    );
-  }
-
-  if (status === Status.LOADING) {
+  if (!products || products.length === 0 || status === Status.LOADING) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#FDF8ED] to-[#FAF3E4]">
         <div className="text-center">
@@ -43,8 +38,18 @@ export default function Bestsellers() {
     );
   }
 
-  const handleWishlistToggle = (product: Product) => {
-    dispatch(AddToWishlist({ id: product.id }));
+  const handleWishlistToggle = async (product: Product) => {
+    try {
+      const action = await dispatch(AddToWishlist({ id: product.id }));
+      if (action === "removed") {
+        toast.success("Product removed from wishlist!");
+      } else {
+        toast.success("Product added to wishlist!");
+      }
+    } catch (error) {
+      console.error("Error toggling wishlist:", error);
+      toast.error("Something went wrong. Please try again.");
+    }
   };
 
   return (
@@ -86,19 +91,33 @@ export default function Bestsellers() {
             {products.length > 0 ? (
               products
                 .filter((p) =>
-                  ["Mobile", "Vest", "Biscuit", "Soap"].includes(p.productName)
+                  ["Mobile", "Vest", "Biscuit", "Soap"].includes(p.productName),
                 )
                 .map((product) => {
                   const isWishlisted = wishlist.some(
-                    (item) => item.id === product.id
+                    (item) => item.id === product.id,
                   );
+
+                  const averageRating =
+                    product.reviews && product.reviews.length > 0
+                      ? (
+                          product.reviews.reduce(
+                            (acc, r) => acc + Number(r.rating || 0),
+                            0,
+                          ) / product.reviews.length
+                        ).toFixed(1)
+                      : "0.0";
+                  const reviewCount = product.reviews?.length || 0;
 
                   return (
                     <div
                       key={product.id}
                       className="group overflow-hidden rounded-xl border border-[#1A1613]/10 bg-[#FDF8ED] shadow-sm transition-all hover:shadow-lg hover:border-[#E6540B]/40"
                     >
-                      <Link to={`/productdetails/${product.id}`} key={product.id}>
+                      <Link
+                        to={`/productdetails/${product.id}`}
+                        key={product.id}
+                      >
                         <div className="relative h-56 overflow-hidden bg-[#F4EEDF]">
                           <img
                             src={product.productImage}
@@ -121,7 +140,11 @@ export default function Bestsellers() {
                             {[...Array(5)].map((_, i) => (
                               <svg
                                 key={i}
-                                className="h-5 w-5 text-[#E6540B]"
+                                className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                                  i < Math.round(Number(averageRating))
+                                    ? "text-[#E6540B]"
+                                    : "text-[#1A1613]/15"
+                                }`}
                                 fill="currentColor"
                                 viewBox="0 0 20 20"
                               >
@@ -129,9 +152,11 @@ export default function Bestsellers() {
                               </svg>
                             ))}
                             <span className="ml-1 text-sm font-medium text-[#1A1613]/80">
-                              4.8
+                              {averageRating}
                             </span>
-                            <span className="text-sm text-[#1A1613]/50">(5)</span>
+                            <span className="text-sm text-[#1A1613]/50">
+                              ({reviewCount})
+                            </span>
                           </div>
 
                           <div className="mb-3 flex items-center gap-2">

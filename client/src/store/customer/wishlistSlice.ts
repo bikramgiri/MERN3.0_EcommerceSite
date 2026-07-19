@@ -56,6 +56,7 @@ export function AddToWishlist(product: AddToWishlistData) {
         dispatch(addToWishlist(response.data.data));
       }
       dispatch(setStatus(Status.SUCCESS));
+      return response.data.action; // "added" | "removed"
     } catch (error) {
       dispatch(setStatus(Status.ERROR));
       throw error;
