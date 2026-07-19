@@ -13,6 +13,20 @@ async function startServer() {
   const server = app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
   });
+
+  //  server.on("listening", () => {
+  //   console.log("🟢 SERVER 'listening' EVENT FIRED — server.listening:", server.listening);
+  // });
+
+  // server.on("close", () => {
+  //   console.log("🔴 SERVER 'close' EVENT FIRED");
+  //   console.trace("close trace");
+  // });
+
+  // server.on("error", (err) => {
+  //   console.error("🔴 SERVER ERROR EVENT:", err);
+  // });
+
   await adminSeeder();
   await CategoryController.seedCategory();
 

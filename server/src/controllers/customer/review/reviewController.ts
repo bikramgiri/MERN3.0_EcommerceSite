@@ -158,7 +158,7 @@ class ReviewController {
         include: [
           {
             model: Product,
-            attributes: ["id", "productName", "productImage"],
+            attributes: ["id", "productName", "productImage", "productDescription"],
           },
           {
             model: User,
@@ -230,7 +230,7 @@ class ReviewController {
         include: [
           {
             model: Product,
-            attributes: ["id", "productName", "productImage"],
+            attributes: ["id", "productName", "productImage", "productDescription"],
           },
         ],
       });
@@ -339,19 +339,14 @@ class ReviewController {
       }
 
       // update product image only if a new image is uploaded
-      let fileName = review.reviewImage; // Keep old filename
-      let reviewImage = fileName ? getFullImageUrl(fileName) : null; // Default full URL
+      let fileName = review.reviewImage;
 
       // Handle new image upload
       const cloudinaryResult = (req as any).cloudinaryResult;
       if (cloudinaryResult && cloudinaryResult.secure_url) {
         if (review.reviewImage) {
-          // Delete old image from Cloudinary
-          const oldReviewImage = getPublicIdFromAvatar(
-            review.reviewImage as string,
-          );
           cloudinary.uploader.destroy(
-            oldReviewImage,
+            review.reviewImage as string,
             (error: any, result: any) => {
               if (error) {
                 console.error(
@@ -367,20 +362,32 @@ class ReviewController {
             },
           );
         }
-
-        reviewImage = cloudinaryResult.secure_url; // update to new image URL
         fileName = cloudinaryResult.public_id; // update to new filename
       }
 
-      const updatedReview = await review.update({
+      await review.update({
         rating: rating !== undefined ? parseInt(rating) : review.rating,
         message: message !== undefined ? message : review.message,
-        reviewImage: fileName, // store only the filename in the database
+        reviewImage: fileName, 
       });
 
+      const updatedReview = await Review.findByPk(reviewId, {
+        include: [
+          {
+            model: Product,
+            attributes: ["id", "productName", "productImage", "productDescription"],
+          },
+          {
+            model: User,
+            attributes: ["id", "username", "avatar"],
+          },
+        ],
+      });
+
+      const reviewData = updatedReview!.toJSON(); 
       const reviewResponse = {
-        ...updatedReview.toJSON(),
-        reviewImageUrl: reviewImage, // send full URL in response
+        ...reviewData,
+        reviewImage: getFullImageUrl(reviewData.reviewImage),
       };
 
       res.status(200).json({
