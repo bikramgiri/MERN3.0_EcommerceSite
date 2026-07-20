@@ -343,6 +343,7 @@ class ReviewController {
 
       // Handle new image upload
       const cloudinaryResult = (req as any).cloudinaryResult;
+      const removeExistingImage = req.body.reviewImageToRemove === "true";
       if (cloudinaryResult && cloudinaryResult.secure_url) {
         if (review.reviewImage) {
           cloudinary.uploader.destroy(
@@ -363,6 +364,26 @@ class ReviewController {
           );
         }
         fileName = cloudinaryResult.public_id; // update to new filename
+      } else if (removeExistingImage) {
+        if (review.reviewImage) {
+          cloudinary.uploader.destroy(
+            review.reviewImage as string,
+            (error: any, result: any) => {
+              if (error) {
+                console.error(
+                  "Error deleting review image from Cloudinary:",
+                  error,
+                );
+              } else {
+                console.log(
+                  "Review image deleted from Cloudinary successfully:",
+                  result,
+                );
+              }
+            },
+          );
+        }
+        fileName = "";
       }
 
       await review.update({
