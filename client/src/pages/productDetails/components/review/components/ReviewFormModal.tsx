@@ -26,6 +26,9 @@ interface ReviewFormModalProps {
   file: File | null;
   review?: Review;
   onClose: () => void;
+  onClearFile?: () => void; // *Clears a newly-selected (not yet uploaded) file
+  onRemoveExistingImage?: () => void; // *Marks the already-saved review image for removal (edit only)
+  imageRemoved?: boolean; 
 }
 
 const ReviewFormModal: React.FC<ReviewFormModalProps> = ({
@@ -42,6 +45,9 @@ const ReviewFormModal: React.FC<ReviewFormModalProps> = ({
   isSubmitting,
   formData,
   onRatingChange,
+  onClearFile,
+  onRemoveExistingImage,
+  imageRemoved = false,
 }) => {
   const isEdit = type === "edit";
 
@@ -56,7 +62,8 @@ const ReviewFormModal: React.FC<ReviewFormModalProps> = ({
       const noChange =
         formData.rating === String(review?.rating ?? "") &&
         formData.message.trim() === review?.message &&
-        !file; // no new image uploaded
+        !file && // no new image uploaded
+        !imageRemoved; // existing image not removed
 
       return noChange;
     }
@@ -64,8 +71,10 @@ const ReviewFormModal: React.FC<ReviewFormModalProps> = ({
     return false;
   };
 
+  const showCurrentImage = !file && !imageRemoved && review?.reviewImage && review.reviewImage.length > 0;
+
   return (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 overflow-y-auto">
+ <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 overflow-y-auto">
       <div className="w-full max-w-xl my-8 bg-[#FDF8ED] rounded-2xl shadow-lg flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between px-8 py-4 bg-[#E6540B] rounded-t-xl">
           <h2 className="text-2xl font-['Fraunces',serif] font-semibold text-[#FDF8ED]">
@@ -152,20 +161,46 @@ const ReviewFormModal: React.FC<ReviewFormModalProps> = ({
                 <input {...getInputProps()} />
                 {file ? (
                   <div className="space-y-2">
-                    <img
-                      src={URL.createObjectURL(file)}
-                      alt="Preview"
-                      className="mx-auto max-h-60 rounded-lg object-cover"
-                    />
+                    <div className="relative inline-block">
+                      <img
+                        src={URL.createObjectURL(file)}
+                        alt="Preview"
+                        className="mx-auto max-h-60 rounded-lg object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onClearFile?.();
+                        }}
+                        className="cursor-pointer absolute -top-2 -right-2 p-1 rounded-full bg-[#9B3A2E] hover:bg-[#7a2e24] text-[#FDF8ED] shadow-md transition"
+                        title="Remove selected image"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
                     <p className="text-sm text-[#1A1613]/70">{file.name}</p>
                   </div>
-                ) : review?.reviewImage && review?.reviewImage?.length > 0 ? (
+                ) : showCurrentImage ? (
                   <div className="space-y-2">
-                    <img
-                      src={review.reviewImage}
-                      alt="Current"
-                      className="mx-auto max-h-60 rounded-lg object-cover"
-                    />
+                    <div className="relative inline-block">
+                      <img
+                        src={review!.reviewImage}
+                        alt="Current"
+                        className="mx-auto max-h-60 rounded-lg object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onRemoveExistingImage?.();
+                        }}
+                        className="cursor-pointer absolute -top-2 -right-2 p-1 rounded-full bg-[#9B3A2E] hover:bg-[#7a2e24] text-[#FDF8ED] shadow-md transition"
+                        title="Remove current image"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
                     <p className="text-sm text-[#1A1613]/70">
                       Current image (upload new to replace)
                     </p>
@@ -191,6 +226,11 @@ const ReviewFormModal: React.FC<ReviewFormModalProps> = ({
                     <p className="text-xs text-[#1A1613]/50">
                       PNG, JPG, JPEG (MAX. 1MB)
                     </p>
+                    {isEdit && imageRemoved && (
+                      <p className="text-xs text-[#9B3A2E] font-medium">
+                        Current image will be removed on update
+                      </p>
+                    )}
                   </div>
                 )}
               </div>

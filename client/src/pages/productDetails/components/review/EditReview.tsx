@@ -30,11 +30,13 @@ const EditReview = ({ review, onClose, onSuccess }: EditReviewProps) => {
   });
 
   const [file, setFile] = useState<File | null>(null);
+  const [imageRemoved, setImageRemoved] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const onDrop = (acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
       setFile(acceptedFiles[0]);
+      setImageRemoved(false); 
     }
   };
 
@@ -57,6 +59,17 @@ const EditReview = ({ review, onClose, onSuccess }: EditReviewProps) => {
 
   const handleRating = (rating: string) => {
     setFormData((prev) => ({ ...prev, rating }));
+  };
+
+  // Clears a newly-selected (not yet uploaded) file
+  const handleClearFile = () => {
+    setFile(null);
+  };
+
+  // Marks the already-saved review image for removal
+  const handleRemoveExistingImage = () => {
+    setImageRemoved(true);
+    setFile(null);
   };
 
   const validateForm = () => {
@@ -98,6 +111,8 @@ const EditReview = ({ review, onClose, onSuccess }: EditReviewProps) => {
     formDataToSend.append("message", formData.message.trim());
     if (file) {
       formDataToSend.append("reviewImage", file);
+    } else if (imageRemoved) {
+      formDataToSend.append("reviewImageToRemove", "true");
     }
 
     try {
@@ -162,6 +177,9 @@ const EditReview = ({ review, onClose, onSuccess }: EditReviewProps) => {
       review={review}
       onRatingChange={handleRating}
       onClose={onClose}
+      onClearFile={handleClearFile}
+      onRemoveExistingImage={handleRemoveExistingImage}
+      imageRemoved={imageRemoved}
     />
   );
 };

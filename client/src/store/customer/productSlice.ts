@@ -83,8 +83,8 @@ export function fetchProducts(){
 // *Fetch Single product without API call
 export function fetchSingleProduct(productId: string){
   return async function fetchSingleProductThunk(dispatch: AppDispatch, getState: () => RootState) {
-      const state = getState();
-      const products = state.product.product;
+      const store = getState();
+      const products = store.product.product;
       const existProduct = products.find(
         (product: Product) => product.id === productId,
       );

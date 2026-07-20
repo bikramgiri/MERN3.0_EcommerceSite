@@ -57,6 +57,10 @@ const AddReview = ({ productId, onClose, onSuccess }: AddReviewProps) => {
     setErrors((prev) => ({ ...prev, [name]: "", general: "" }));
   };
 
+  const handleClearFile = () => {
+    setFile(null);
+  };
+
   const validateForm = () => {
     const newErrors = { rating: "", message: "", reviewImage: "", general: "" };
 
@@ -163,6 +167,7 @@ const AddReview = ({ productId, onClose, onSuccess }: AddReviewProps) => {
       isSubmitting={isSubmitting}
       file={file}
       onClose={onClose}
+      onClearFile={handleClearFile}
     />
   );
 };
