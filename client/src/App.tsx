@@ -10,8 +10,10 @@ import VerifyEmail from "./pages/auth/VerifyEmail.js"
 import ForgotPassword from "./pages/auth/ForgotPassword.js"
 import VerifyOTP from "./pages/auth/VerifyOTP.js"
 import ResetPassword from "./pages/auth/ResetPassword.js"
-import Wishlist from "./pages/wishlist/wishlist.js"
+import ProductsWishlist from "./pages/wishlist/ProductWishlist.js"
 import ProductDetails from "./pages/productDetails/ProductDetails.js"
+import CategoryProducts from "./pages/category/Categoryproducts .js"
+import Products from "./pages/products/Products.js"
 
 function App() {
 
@@ -29,8 +31,10 @@ function App() {
 
       <Route element={<Layout />}>
       <Route path="/" element={<Home />} />
+      <Route path="/category/:categoryId" element={<CategoryProducts />} />
+      <Route path="/products" element={<Products />} />
       <Route path="/productdetails/:id" element={<ProductDetails />} />
-      <Route path="/wishlist" element={<Wishlist />} />
+      <Route path="/wishlist" element={<ProductsWishlist />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />

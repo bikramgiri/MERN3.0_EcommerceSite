@@ -3,6 +3,7 @@ import { Status } from "../../../global/statuses";
 import { useAppDispatch, useAppSelector } from "../../../hooks/hooks";
 import { fetchCategories } from "../../../store/customer/categorySlice";
 import { useEffect } from "react";
+import { Link } from "react-router-dom";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -58,9 +59,10 @@ export default function Categories() {
 
         <div className="mt-6 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-6">
           {categories.map((cat) => (
-            <a
+            <Link
               key={cat.id}
-              href="#"
+              // to={`/category/${cat.id}`}
+              to={`/products?category=${cat.id}`}
               className="group relative overflow-hidden rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E6540B]"
             >
               <img
@@ -83,7 +85,7 @@ export default function Categories() {
                   />
                 </div>
               </div>
-            </a>
+            </Link>
           ))}
         </div>
       </section>

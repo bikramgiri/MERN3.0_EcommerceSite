@@ -3,7 +3,6 @@ import {
   ShoppingCart,
   Menu,
   X,
-  Search,
   Heart,
   LogOut,
   Settings,
@@ -15,6 +14,7 @@ import { useAppDispatch, useAppSelector } from "../../hooks/hooks";
 import { CgProfile } from "react-icons/cg";
 import { logoutUser } from "../../store/auth/authSlice";
 import { fetchUserWishlist } from "../../store/customer/wishlistSlice";
+import SearchProducts from "./SearchProducts";
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -197,16 +197,7 @@ const Header = () => {
             </div>
           </div>
 
-          <div className="hidden md:flex flex-1 items-center justify-center max-w-md">
-            <div className="relative w-full">
-              <input
-                type="text"
-                placeholder="Search products..."
-                className="w-full pl-10 pr-4 py-2.5 rounded-full border border-[#1A1613]/30 focus:outline-none focus:ring-1 focus:ring-[#E6540B] focus:border-transparent text-[#1A1613] placeholder:text-[#1A1613]/60 text-sm shadow-sm"
-              />
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#1A1613]/60" />
-            </div>
-          </div>
+          <SearchProducts />
 
           <div className="flex items-center gap-4 md:gap-6">
             {isLoggedIn && (
@@ -456,14 +447,7 @@ const Header = () => {
       {isOpen && (
         <div className="md:hidden bg-[#FDF8ED] border-t border-gray-100 shadow-md">
           <div className="px-5 py-6 space-y-6">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search products..."
-                className="w-full pl-11 pr-5 py-3 rounded-full border border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#E6540B] text-gray-900 placeholder-gray-500"
-              />
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
-            </div>
+           <SearchProducts variant="mobile" onNavigate={() => setIsOpen(false)} />
 
             {!isLoggedIn ? (
               <div className="pt-4 border-t border-gray-100 flex flex-col gap-3">

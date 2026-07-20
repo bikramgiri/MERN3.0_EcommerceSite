@@ -3,18 +3,16 @@ import {
   ArrowLeft,
   ArrowRight,
   Heart,
-  Loader2,
   ShoppingCart,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../hooks/hooks";
 import { fetchUserWishlist, removeWishlistItem } from "../../store/customer/wishlistSlice";
-import { Status } from "../../global/statuses";
 import Breadcrumb from "../../global/components/Breadcrumb";
 
-const Wishlist = () => {
+const ProductWishlist = () => {
   const dispatch = useAppDispatch();
-  const { wishlist, status } = useAppSelector(
+  const { wishlist } = useAppSelector(
     (state) => state.wishlist,
   );
 
@@ -35,16 +33,16 @@ const Wishlist = () => {
     currentPage * itemsPerPage,
   );
     
-  if (status === Status.LOADING) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#FDF8ED] to-[#FAF3E4]">
-        <div className="text-center">
-          <Loader2 className="w-16 h-16 animate-spin text-[#E6540B] mx-auto mb-4" />
-          <p className="text-xl text-gray-600">Loading wishlist.....</p>
-        </div>
-      </div>
-    );
-  }
+  // if (status === Status.LOADING) {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#FDF8ED] to-[#FAF3E4]">
+  //       <div className="text-center">
+  //         <Loader2 className="w-16 h-16 animate-spin text-[#E6540B] mx-auto mb-4" />
+  //         <p className="text-xl text-gray-600">Loading wishlist.....</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <section className="py-8 md:py-12 bg-[#FDF8ED] pb-16 mt-9 md:pt-18 font-['Inter',sans-serif] text-[#1A1613]">
@@ -127,14 +125,14 @@ const Wishlist = () => {
                   <button
                     type="button"
                     disabled={product.productStock === 0}
-                    className="cursor-pointer gap-2 flex items-center justify-center rounded-xl px-9 py-3 text-base font-semibold disabled:bg-[#1A1613]/20 disabled:cursor-not-allowed text-[#FDF8ED] bg-[#E6540B] hover:bg-[#c94806] transition-colors"
+                    className="cursor-pointer gap-2 flex flex-1 items-center justify-center rounded-xl px-4 py-3 text-sm sm:text-base font-semibold disabled:bg-[#1A1613]/20 disabled:cursor-not-allowed text-[#FDF8ED] bg-[#E6540B] hover:bg-[#c94806] transition-colors"
                   >
                     <ShoppingCart className="w-6 h-6" />
-                    Add
+                    Add to Cart
                   </button>
                   <button
                     onClick={() => handleRemove(product.id)}
-                    className="cursor-pointer flex items-center justify-center rounded-xl px-9 py-3 text-base font-semibold border-2 border-[#9B3A2E] text-[#9B3A2E] hover:bg-[#9B3A2E]/10 transition-colors"
+                    className="cursor-pointer flex shrink-0 items-center justify-center rounded-xl px-4 py-3 text-base font-semibold border-2 border-[#9B3A2E] text-[#9B3A2E] hover:bg-[#9B3A2E]/10 transition-colors"
                     title="Remove from favorites"
                   >
                     <Heart className="w-6 h-6 fill-current" />
@@ -190,4 +188,4 @@ const Wishlist = () => {
   );
 };
 
-export default Wishlist;
+export default ProductWishlist;

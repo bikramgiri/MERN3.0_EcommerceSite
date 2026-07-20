@@ -81,7 +81,7 @@ export default function Bestsellers() {
             </div>
             <Link
               to="/products"
-              className="font-medium text-md tracking-widest text-[#E6540B] transition hover:text-[#9B3A2E] hover:underline"
+              className="font-medium text-md tracking-widest text-[#E6540B] transition hover:text-[#9B3A2E] underline"
             >
               View All Products
             </Link>
@@ -91,7 +91,7 @@ export default function Bestsellers() {
             {products.length > 0 ? (
               products
                 .filter((p) =>
-                  ["Mobile", "Vest", "Biscuit", "Soap"].includes(p.productName),
+                  ["Mobile", "Vest", "Biscuit", "Soap", "Perfume", "Sofa", "Headphone", "Copy"].includes(p.productName),
                 )
                 .map((product) => {
                   const isWishlisted = wishlist.some(

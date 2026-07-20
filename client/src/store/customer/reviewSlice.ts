@@ -50,6 +50,20 @@ export function fetchProductReviews(productId: string){
       }
 }
 
+export function fetchAllReviews(){
+      return async function fetchAllReviewsThunk(dispatch: AppDispatch) {
+        dispatch(setStatus(Status.LOADING));
+            try {
+                  const response = await API.get('/admin/review');
+                  dispatch(setReviews(response.data.data));
+                  dispatch(setStatus(Status.SUCCESS));
+            } catch (error) {
+                  dispatch(setStatus(Status.ERROR));
+                  throw error;
+            }
+      }
+}
+
 export function addReview(payload: { productId: string, data: FormData }){
       return async function addReviewThunk(dispatch: AppDispatch) {
             dispatch(setStatus(Status.LOADING));

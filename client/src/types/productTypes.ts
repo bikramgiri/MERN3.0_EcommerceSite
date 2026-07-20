@@ -46,3 +46,9 @@ export interface ProductState{
       status: string,
       singleProduct: Product | null
 }
+
+export interface FilterOptions {
+  minPrice?: number;
+  maxPrice?: number;
+  minRating?: number;
+}
