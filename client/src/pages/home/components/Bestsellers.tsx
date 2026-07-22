@@ -3,10 +3,11 @@ import { Status } from "../../../global/statuses";
 import { fetchProducts } from "../../../store/customer/productSlice";
 import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "../../../hooks/hooks";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { AddToWishlist } from "../../../store/customer/wishlistSlice";
 import type { Product } from "../../../types/productTypes";
 import { toast } from "react-toastify";
+import { addToCart } from "../../../store/customer/cartSlice";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -17,6 +18,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 }
 
 export default function Bestsellers() {
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { product: products = [], status } = useAppSelector(
     (state) => state.product,
@@ -91,7 +93,16 @@ export default function Bestsellers() {
             {products.length > 0 ? (
               products
                 .filter((p) =>
-                  ["Mobile", "Vest", "Biscuit", "Soap", "Perfume", "Sofa", "Headphone", "Copy"].includes(p.productName),
+                  [
+                    "Mobile",
+                    "Vest",
+                    "Biscuit",
+                    "Soap",
+                    "Perfume",
+                    "Sofa",
+                    "Headphone",
+                    "Copy",
+                  ].includes(p.productName),
                 )
                 .map((product) => {
                   const isWishlisted = wishlist.some(
@@ -108,6 +119,21 @@ export default function Bestsellers() {
                         ).toFixed(1)
                       : "0.0";
                   const reviewCount = product.reviews?.length || 0;
+
+                  const handleAddToCart = async () => {
+                    if (!localStorage.getItem("token")) {
+                      navigate("/login");
+                      return;
+                    }
+                    if (product.id && product) {
+                      try {
+                        await dispatch(addToCart(product.id));
+                        toast.success("Product added to cart!");
+                      } catch {
+                        toast.error("Something went wrong. Please try again.");
+                      }
+                    }
+                  };
 
                   return (
                     <div
@@ -166,14 +192,15 @@ export default function Bestsellers() {
                           </div>
                         </div>
                       </Link>
-                      <div className="p-5 border-t gap-4 border-[#1A1613]/10 flex justify-between">
+                      <div className="p-5 border-t gap-2 border-[#1A1613]/10 flex justify-between">
                         <button
                           type="button"
+                          onClick={handleAddToCart}
                           disabled={product.productStock === 0}
-                          className="cursor-pointer gap-2 flex items-center justify-center rounded-xl px-9 py-3 text-base font-semibold disabled:bg-[#1A1613]/20 disabled:cursor-not-allowed text-[#FDF8ED] bg-[#E6540B] hover:bg-[#c94806] transition-colors"
+                          className="cursor-pointer gap-2 flex flex-1 items-center justify-center rounded-xl px-4 py-3 text-sm sm:text-base font-semibold disabled:bg-[#1A1613]/20 disabled:cursor-not-allowed text-[#FDF8ED] bg-[#E6540B] hover:bg-[#c94806] transition-colors"
                         >
                           <ShoppingCart className="w-6 h-6" />
-                          Add
+                          Add to Cart
                         </button>
                         <button
                           onClick={() => handleWishlistToggle(product)}

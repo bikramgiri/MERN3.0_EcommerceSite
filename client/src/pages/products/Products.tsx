@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   SlidersHorizontal,
   ChevronDown,
@@ -24,6 +24,7 @@ import { fetchAllReviews } from "../../store/customer/reviewSlice";
 import { AddToWishlist } from "../../store/customer/wishlistSlice";
 import { toast } from "react-toastify";
 import { Status } from "../../global/statuses";
+import { addToCart } from "../../store/customer/cartSlice";
 
 const SORT_OPTIONS = [
   { value: "relevance", label: "Relevance" },
@@ -59,7 +60,9 @@ const Stars = ({ rating, count }: { rating: string; count?: number }) => (
         <span className="text-[11px] sm:text-xs font-['IBM_Plex_Mono',monospace] text-[#1A1613]/80">
           {parseFloat(rating).toFixed(1)}
         </span>
-        <span className="text-[11px] sm:text-xs text-[#1A1613]/50">({count})</span>
+        <span className="text-[11px] sm:text-xs text-[#1A1613]/50">
+          ({count})
+        </span>
       </>
     )}
   </div>
@@ -82,10 +85,11 @@ function getVisiblePages(current: number, total: number) {
 }
 
 export default function Products() {
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
 
   const { product: allProducts = [], status } = useAppSelector(
-    (state) => state.product
+    (state) => state.product,
   );
   const { review } = useAppSelector((state) => state.review);
   const { wishlist } = useAppSelector((state) => state.wishlist);
@@ -97,6 +101,8 @@ export default function Products() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [isSortOpen, setIsSortOpen] = useState(false);
+  const sortRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     dispatch(fetchProducts());
@@ -113,11 +119,11 @@ export default function Products() {
   }, [searchParams]);
 
   useEffect(() => {
-  const search = searchParams.get("search");
-  setTimeout(() => {
-    setSearchQuery(search ?? "");
-  }, 100);
-}, [searchParams]);
+    const search = searchParams.get("search");
+    setTimeout(() => {
+      setSearchQuery(search ?? "");
+    }, 100);
+  }, [searchParams]);
 
   useEffect(() => {
     setTimeout(() => {
@@ -127,7 +133,7 @@ export default function Products() {
 
   const processedProducts = useMemo(() => {
     let result = allProducts.filter((p) =>
-      p.productName.toLowerCase().includes(searchQuery.toLowerCase())
+      p.productName.toLowerCase().includes(searchQuery.toLowerCase()),
     );
     result = filterProducts(result, filters, review, categoryFilter);
     result = sortProducts(result, sortBy, review);
@@ -137,7 +143,7 @@ export default function Products() {
   const totalPages = Math.ceil(processedProducts.length / ITEMS_PER_PAGE);
   const currentItems = processedProducts.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+    currentPage * ITEMS_PER_PAGE,
   );
 
   const activeFilterCount = [
@@ -146,6 +152,21 @@ export default function Products() {
     filters.maxPrice !== undefined,
     filters.minRating !== undefined,
   ].filter(Boolean).length;
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sortRef.current && !sortRef.current.contains(event.target as Node)) {
+        setIsSortOpen(false);
+      }
+    };
+    if (isSortOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isSortOpen]);
+
+  const currentSortLabel =
+    SORT_OPTIONS.find((opt) => opt.value === sortBy)?.label ?? "Sort";
 
   const handleWishlistToggle = async (product: Product) => {
     try {
@@ -172,11 +193,11 @@ export default function Products() {
   };
 
   const handleClearSearch = () => {
-  setSearchQuery("");
-  const newParams = new URLSearchParams(searchParams);
-  newParams.delete("search");
-  setSearchParams(newParams);
-};
+    setSearchQuery("");
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete("search");
+    setSearchParams(newParams);
+  };
 
   if (status === Status.LOADING && allProducts.length === 0) {
     return (
@@ -205,19 +226,82 @@ export default function Products() {
             </p>
           </div>
 
-          <div className="relative w-full sm:w-auto">
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="cursor-pointer w-full sm:w-52 pl-4 pr-10 py-2.5 bg-[#FDF8ED] border border-[#1A1613]/15 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#E6540B]/40 appearance-none text-[#1A1613]"
+          <div className="relative w-full sm:w-auto" ref={sortRef}>
+            <button
+              type="button"
+              onClick={() => setIsSortOpen((v) => !v)}
+              className="cursor-pointer w-full sm:w-52 flex items-center justify-between gap-2 pl-4 pr-4 py-2.5 bg-[#FDF8ED] border border-[#1A1613]/15 rounded-xl text-sm text-[#1A1613] hover:bg-[#F4EEDF] transition-colors"
             >
-              {SORT_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1A1613]/40 pointer-events-none" />
+              <span className="truncate">{currentSortLabel}</span>
+              <ChevronDown
+                className={`w-4 h-4 text-[#1A1613]/40 flex-shrink-0 transition-transform duration-200 ${
+                  isSortOpen ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+
+            {isSortOpen && (
+              <>
+                {/* Mobile: bottom sheet with its own backdrop */}
+                <div className="sm:hidden fixed inset-0 z-50">
+                  <div
+                    className="absolute inset-0 bg-[#1A1613]/50 backdrop-blur-sm"
+                    onClick={() => setIsSortOpen(false)}
+                  />
+                  <div className="absolute inset-x-0 bottom-0 bg-[#FDF8ED] rounded-t-2xl shadow-2xl max-h-[70vh] overflow-y-auto">
+                    <div className="sticky top-0 bg-[#FDF8ED] flex items-center justify-between px-5 py-4 border-b border-[#1A1613]/10">
+                      <h3 className="font-['Fraunces',serif] font-semibold text-[#1A1613]">
+                        Sort By
+                      </h3>
+                      <button
+                        onClick={() => setIsSortOpen(false)}
+                        className="cursor-pointer p-1 rounded-full hover:bg-[#F4EEDF]"
+                      >
+                        <X className="w-5 h-5 text-[#1A1613]/60" />
+                      </button>
+                    </div>
+                    <div className="py-2 pb-[env(safe-area-inset-bottom)]">
+                      {SORT_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.value}
+                          onClick={() => {
+                            setSortBy(opt.value);
+                            setIsSortOpen(false);
+                          }}
+                          className={`cursor-pointer w-full text-left px-5 py-3 text-sm font-medium transition-colors ${
+                            sortBy === opt.value
+                              ? "bg-[#E6540B]/10 text-[#E6540B]"
+                              : "text-[#1A1613] hover:bg-[#F4EEDF]"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Desktop: small anchored dropdown */}
+                <div className="hidden sm:block absolute right-0 top-full mt-2 w-52 bg-[#FDF8ED] rounded-xl shadow-lg border border-[#1A1613]/10 py-1.5 z-50">
+                  {SORT_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => {
+                        setSortBy(opt.value);
+                        setIsSortOpen(false);
+                      }}
+                      className={`cursor-pointer w-full text-left px-4 py-2 text-sm font-medium transition-colors ${
+                        sortBy === opt.value
+                          ? "bg-[#E6540B]/10 text-[#E6540B]"
+                          : "text-[#1A1613] hover:bg-[#F4EEDF]"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -330,6 +414,24 @@ export default function Products() {
                     );
                     const avgRating = getAverageRatingNumber(product.reviews);
                     const reviewCount = product.reviews?.length || 0;
+
+                    const handleAddToCart = async () => {
+                      if (!localStorage.getItem("token")) {
+                        navigate("/login");
+                        return;
+                      }
+                      if (product.id && product) {
+                        try {
+                          await dispatch(addToCart(product.id));
+                          toast.success("Product added to cart!");
+                        } catch {
+                          toast.error(
+                            "Something went wrong. Please try again.",
+                          );
+                        }
+                      }
+                    };
+
                     return (
                       <div
                         key={product.id}
@@ -367,6 +469,7 @@ export default function Products() {
                         <div className="px-3 sm:px-4 pb-3 sm:pb-4 flex gap-2">
                           <button
                             disabled={product.productStock === 0}
+                            onClick={handleAddToCart}
                             className="cursor-pointer flex-1 flex items-center justify-center gap-1.5 rounded-lg px-2 sm:px-3 py-2 text-xs sm:text-sm font-semibold text-[#FDF8ED] bg-[#E6540B] hover:bg-[#c94806] disabled:bg-[#1A1613]/20 disabled:cursor-not-allowed transition-colors"
                           >
                             <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -377,7 +480,7 @@ export default function Products() {
                           </button>
                           <button
                             onClick={() => handleWishlistToggle(product)}
-                            className={`cursor-pointer w-9 sm:w-10 flex-shrink-0 flex items-center justify-center rounded-lg border-2 transition-all ${
+                            className={`cursor-pointer w-14 sm:w-20 flex-shrink-0 flex items-center justify-center rounded-lg border-2 transition-all ${
                               isWishlisted
                                 ? "border-[#9B3A2E] bg-[#9B3A2E]/10 text-[#9B3A2E]"
                                 : "border-[#1A1613]/15 text-[#1A1613]/40 hover:border-[#9B3A2E] hover:text-[#9B3A2E] hover:bg-[#9B3A2E]/10"

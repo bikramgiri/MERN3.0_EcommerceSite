@@ -15,6 +15,7 @@ import { CgProfile } from "react-icons/cg";
 import { logoutUser } from "../../store/auth/authSlice";
 import { fetchUserWishlist } from "../../store/customer/wishlistSlice";
 import SearchProducts from "./SearchProducts";
+import { fetchCartItems } from "../../store/customer/cartSlice";
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -30,6 +31,7 @@ const Header = () => {
   const navigate = useNavigate();
   const { user, token } = useAppSelector((state) => state.auth);
   const { wishlist } = useAppSelector((state) => state.wishlist);
+  const { cart } = useAppSelector((state) => state.cart);
 
   const storedToken =
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
@@ -39,13 +41,14 @@ const Header = () => {
   useEffect(() => {
     if (effectiveToken) {
       dispatch(fetchUserWishlist());
+      dispatch(fetchCartItems());
     }
   }, [dispatch, effectiveToken]);
 
   const wishlistCount = wishlist?.length;
   const unreadNotifications = 2;
 
-  const cartCount = 0;
+  const cartCount = cart.length;
 
   const markAllAsRead = () => {
     // Implement marking notifications as read
@@ -204,7 +207,7 @@ const Header = () => {
               <div className="relative" ref={notificationsRef}>
                 <button
                   type="button"
-                  className="cursor-pointer relative text-[#1A1613]/80 hover:text-[#E6540B] p-1.5 rounded-full hover:bg-[#E6540B]/10 transition-colors"
+                  className="cursor-pointer relative text-[#1A1613]/80 hover:text-[#E6540B] p-1.5 rounded-full transition-colors"
                   onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
                 >
                   <Bell className="h-6 w-6" />
@@ -216,9 +219,16 @@ const Header = () => {
                 </button>
 
                 {isNotificationsOpen && (
-                  <div className="absolute right-0 mt-3 w-80 bg-[#FDF8ED] rounded-xl shadow-2xl border border-[#1A1613]/10 overflow-hidden z-50">
-                    <div className="flex items-center justify-between px-5 py-3 bg-gradient-to-r from-[#E6540B] to-[#c94806] text-white">
-                      <h3 className="font-['Fraunces',serif] font-semibold">
+                  <div
+                    className="
+      fixed left-3 right-3 top-16
+      sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-3 sm:w-80
+      max-w-full sm:max-w-none
+      bg-[#FDF8ED] rounded-xl shadow-2xl border border-[#1A1613]/10 overflow-hidden z-50
+    "
+                  >
+                    <div className="flex items-center justify-between px-4 sm:px-5 py-3 bg-gradient-to-r from-[#E6540B] to-[#c94806] text-white">
+                      <h3 className="font-['Fraunces',serif] font-semibold text-sm sm:text-base">
                         Notifications
                       </h3>
                       <button
@@ -229,15 +239,17 @@ const Header = () => {
                       </button>
                     </div>
 
-                    <div className="max-h-96 overflow-y-auto">
-                      <div className="cursor-pointer p-4 border-b border-[#1A1613]/10 hover:bg-[#F4EEDF] transition-colors flex gap-3">
+                    <div className="max-h-[60vh] sm:max-h-96 overflow-y-auto">
+                      <div className="cursor-pointer p-3 sm:p-4 border-b border-[#1A1613]/10 hover:bg-[#F4EEDF] transition-colors flex gap-3">
                         <div className="flex-shrink-0">
-                          <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                            <span className="text-green-600 text-xl">✓</span>
+                          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-green-100 flex items-center justify-center">
+                            <span className="text-green-600 text-lg sm:text-xl">
+                              ✓
+                            </span>
                           </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-medium text-[#1A1613]">
+                        <div className="min-w-0">
+                          <p className="text-xs sm:text-sm font-medium text-[#1A1613] break-words">
                             Your booking has been{" "}
                             <span className="text-green-600 font-semibold">
                               confirmed
@@ -249,14 +261,16 @@ const Header = () => {
                         </div>
                       </div>
 
-                      <div className="cursor-pointer p-4 border-b border-[#1A1613]/10 hover:bg-[#F4EEDF] transition-colors flex gap-3">
+                      <div className="cursor-pointer p-3 sm:p-4 border-b border-[#1A1613]/10 hover:bg-[#F4EEDF] transition-colors flex gap-3">
                         <div className="flex-shrink-0">
-                          <div className="w-10 h-10 rounded-full bg-[#E6540B]/10 flex items-center justify-center">
-                            <span className="text-[#E6540B] text-xl">%</span>
+                          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#E6540B]/10 flex items-center justify-center">
+                            <span className="text-[#E6540B] text-lg sm:text-xl">
+                              %
+                            </span>
                           </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-medium text-[#1A1613]">
+                        <div className="min-w-0">
+                          <p className="text-xs sm:text-sm font-medium text-[#1A1613] break-words">
                             Special offer! Get{" "}
                             <span className="text-[#E6540B] font-semibold">
                               20% off
@@ -269,14 +283,16 @@ const Header = () => {
                         </div>
                       </div>
 
-                      <div className="cursor-pointer p-4 hover:bg-[#F4EEDF] transition-colors flex gap-3">
+                      <div className="cursor-pointer p-3 sm:p-4 hover:bg-[#F4EEDF] transition-colors flex gap-3">
                         <div className="flex-shrink-0">
-                          <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                            <span className="text-green-600 text-xl">$</span>
+                          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-green-100 flex items-center justify-center">
+                            <span className="text-green-600 text-lg sm:text-xl">
+                              $
+                            </span>
                           </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-medium text-[#1A1613]">
+                        <div className="min-w-0">
+                          <p className="text-xs sm:text-sm font-medium text-[#1A1613] break-words">
                             Payment of{" "}
                             <span className="font-semibold">$150</span> was
                             successful
@@ -288,7 +304,7 @@ const Header = () => {
                       </div>
                     </div>
 
-                    <div className="px-5 py-3 bg-[#F4EEDF] text-center border-t border-[#1A1613]/10">
+                    <div className="px-4 sm:px-5 py-3 bg-[#F4EEDF] text-center border-t border-[#1A1613]/10">
                       <Link
                         to="/notifications"
                         className="text-[#E6540B] hover:text-[#c94806] font-medium text-sm transition-colors"
@@ -323,22 +339,25 @@ const Header = () => {
                   )}
                 </Link>
 
-                {/* <div {...(items?.length > 0 ? { onClick: () => navigate("/cart") } : {})}
-              className="cursor-pointer relative text-[#1A1613]/80 hover:text-[#E6540B] p-1.5 rounded-full transition-colors"
-            >
-              <ShoppingCart className="h-6 w-6" />
-              {cartCount > 0 ? (
-                <span className="absolute top-2 right-50 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                    {cartCount}
-                  </span>
-                ) : (
-                  <span className="absolute top-2 right-50 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                    0
-                  </span>
-              )}
-            </div> */}
-
                 <div
+                  {...(cart?.length > 0
+                    ? { onClick: () => navigate("/cart") }
+                    : {})}
+                  className="cursor-pointer relative text-[#1A1613]/80 hover:text-[#E6540B] p-1.5 rounded-full transition-colors"
+                >
+                  <ShoppingCart className="h-6 w-6" />
+                  {cartCount > 0 ? (
+                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                      {cartCount}
+                    </span>
+                  ) : (
+                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                      0
+                    </span>
+                  )}
+                </div>
+
+                {/* <div
                   onClick={() => navigate("/cart")}
                   className="cursor-pointer relative text-[#1A1613]/80 hover:text-[#E6540B] p-1.5 rounded-full transition-colors"
                 >
@@ -346,7 +365,7 @@ const Header = () => {
                   <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
                     {cartCount}
                   </span>
-                </div>
+                </div> */}
               </>
             )}
 
@@ -447,7 +466,10 @@ const Header = () => {
       {isOpen && (
         <div className="md:hidden bg-[#FDF8ED] border-t border-gray-100 shadow-md">
           <div className="px-5 py-6 space-y-6">
-           <SearchProducts variant="mobile" onNavigate={() => setIsOpen(false)} />
+            <SearchProducts
+              variant="mobile"
+              onNavigate={() => setIsOpen(false)}
+            />
 
             {!isLoggedIn ? (
               <div className="pt-4 border-t border-gray-100 flex flex-col gap-3">

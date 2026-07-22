@@ -1,20 +1,20 @@
 import { useEffect, useState } from "react";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Heart,
-  ShoppingCart,
-} from "lucide-react";
-import { Link } from "react-router-dom";
+import { ArrowLeft, ArrowRight, Heart, ShoppingCart } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../hooks/hooks";
-import { fetchUserWishlist, removeWishlistItem } from "../../store/customer/wishlistSlice";
+import {
+  fetchUserWishlist,
+  removeWishlistItem,
+} from "../../store/customer/wishlistSlice";
 import Breadcrumb from "../../global/components/Breadcrumb";
+import { getAverageRatingNumber } from "../../utils/helpers";
+import { toast } from "react-toastify";
+import { addToCart } from "../../store/customer/cartSlice";
 
 const ProductWishlist = () => {
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { wishlist } = useAppSelector(
-    (state) => state.wishlist,
-  );
+  const { wishlist } = useAppSelector((state) => state.wishlist);
 
   useEffect(() => {
     dispatch(fetchUserWishlist());
@@ -32,7 +32,7 @@ const ProductWishlist = () => {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage,
   );
-    
+
   // if (status === Status.LOADING) {
   //   return (
   //     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#FDF8ED] to-[#FAF3E4]">
@@ -48,13 +48,11 @@ const ProductWishlist = () => {
     <section className="py-8 md:py-12 bg-[#FDF8ED] pb-16 mt-9 md:pt-18 font-['Inter',sans-serif] text-[#1A1613]">
       <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mt-1 mb-1 ">
-          <Breadcrumb items={[{ label: "Wishlist"}]} /> 
+          <Breadcrumb items={[{ label: "Wishlist" }]} />
         </div>
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl md:text-3xl font-['Fraunces',serif] font-semibold text-[#1A1613]">
+          <h1 className="mb-6 text-3xl md:text-3xl font-['Fraunces',serif] font-semibold text-[#1A1613]">
             My Wishlist
           </h1>
-        </div>
 
         {wishlist.length === 0 ? (
           <div className="text-center py-20">
@@ -74,72 +72,98 @@ const ProductWishlist = () => {
           </div>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {currentItems.map((product) => (
-              <div
-                key={product.id}
-                className="group overflow-hidden rounded-xl border border-[#1A1613]/10 bg-[#FDF8ED] shadow-sm transition-all hover:shadow-lg hover:border-[#E6540B]/40"
-              >
-                <Link to={`/productdetails/${product.id}`} key={product.id}>
-                  <div className="relative h-56 overflow-hidden bg-[#F4EEDF]">
-                    <img
-                      src={product.productImage}
-                      alt={product.productName}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    {product.productDiscount && (
-                      <span className="absolute left-3 top-3 rounded-full bg-[#9B3A2E] px-3 py-1 text-xs font-bold text-[#FDF8ED]">
-                        {product.productDiscount}% OFF
-                      </span>
-                    )}
-                  </div>
+            {currentItems.map((product) => {
+              const averageRating = getAverageRatingNumber(product.reviews);
 
-                  <div className="p-5">
-                    <h3 className="mb-2 text-lg font-['Fraunces',serif] font-semibold text-[#1A1613] line-clamp-2 group-hover:text-[#E6540B]">
-                      {product.productName}
-                    </h3>
+              const reviewCount = product.reviews?.length || 0;
 
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="flex items-center">
-                        {[...Array(5)].map((_, i) => (
-                          <svg
-                            key={i}
-                            className="w-5 h-5 text-[#E6540B]"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                        ))}
+              const handleAddToCart = async () => {
+                if (!localStorage.getItem("token")) {
+                  navigate("/login");
+                  return;
+                }
+                if (product.id && product) {
+                  try {
+                    await dispatch(addToCart(product.id));
+                    toast.success("Product added to cart!");
+                  } catch {
+                    toast.error("Something went wrong. Please try again.");
+                  }
+                }
+              };
+              return (
+                <div
+                  key={product.id}
+                  className="group overflow-hidden rounded-xl border border-[#1A1613]/10 bg-[#FDF8ED] shadow-sm transition-all hover:shadow-lg hover:border-[#E6540B]/40"
+                >
+                  <Link to={`/productdetails/${product.id}`} key={product.id}>
+                    <div className="relative h-56 overflow-hidden bg-[#F4EEDF]">
+                      <img
+                        src={product.productImage}
+                        alt={product.productName}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      {product.productDiscount && (
+                        <span className="absolute left-3 top-3 rounded-full bg-[#9B3A2E] px-3 py-1 text-xs font-bold text-[#FDF8ED]">
+                          {product.productDiscount}% OFF
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="p-5">
+                      <h3 className="mb-2 text-lg font-['Fraunces',serif] font-semibold text-[#1A1613] line-clamp-2 group-hover:text-[#E6540B]">
+                        {product.productName}
+                      </h3>
+
+                      <div className="flex items-center gap-1 mb-2">
+                        <div className="flex items-center">
+                          {[...Array(5)].map((_, i) => (
+                            <svg
+                              key={i}
+                              className="w-5 h-5 text-[#E6540B]"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                          ))}
+                        </div>
+                        <span className="ml-1 text-sm font-medium text-[#1A1613]/80">
+                          {averageRating}
+                        </span>
+                        <span className="text-sm text-[#1A1613]/50">
+                          ({reviewCount})
+                        </span>
                       </div>
-                      <p className="text-sm font-medium text-[#1A1613]/70">(5.0)</p>
-                    </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="font-['IBM_Plex_Mono',monospace] text-xl font-bold text-[#8A3B12]">
-                        Rs {product.productPrice}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-['IBM_Plex_Mono',monospace] text-xl font-bold text-[#8A3B12]">
+                          Rs {product.productPrice}
+                        </span>
+                      </div>
                     </div>
+                  </Link>
+                  <div className="p-5 border-t gap-2 border-[#1A1613]/10 flex justify-between">
+                    <button
+                      type="button"
+                      onClick={handleAddToCart}
+                      disabled={product.productStock === 0}
+                      className="cursor-pointer gap-2 flex flex-1 items-center justify-center rounded-xl px-4 py-3 text-sm sm:text-base font-semibold disabled:bg-[#1A1613]/20 disabled:cursor-not-allowed text-[#FDF8ED] bg-[#E6540B] hover:bg-[#c94806] transition-colors"
+                    >
+                      <ShoppingCart className="w-6 h-6" />
+                      Add to Cart
+                    </button>
+                    <button
+                      onClick={() => handleRemove(product.id)}
+                      className="cursor-pointer flex items-center justify-center rounded-xl px-8 py-3 text-base font-semibold border-2 border-[#9B3A2E] text-[#9B3A2E] hover:bg-[#9B3A2E]/10 transition-colors"
+                      title="Remove from favorites"
+                    >
+                      <Heart className="w-6 h-6 fill-current" />
+                    </button>
                   </div>
-                </Link>
-                <div className="p-5 border-t gap-2 border-[#1A1613]/10 flex justify-between">
-                  <button
-                    type="button"
-                    disabled={product.productStock === 0}
-                    className="cursor-pointer gap-2 flex flex-1 items-center justify-center rounded-xl px-4 py-3 text-sm sm:text-base font-semibold disabled:bg-[#1A1613]/20 disabled:cursor-not-allowed text-[#FDF8ED] bg-[#E6540B] hover:bg-[#c94806] transition-colors"
-                  >
-                    <ShoppingCart className="w-6 h-6" />
-                    Add to Cart
-                  </button>
-                  <button
-                    onClick={() => handleRemove(product.id)}
-                    className="cursor-pointer flex shrink-0 items-center justify-center rounded-xl px-4 py-3 text-base font-semibold border-2 border-[#9B3A2E] text-[#9B3A2E] hover:bg-[#9B3A2E]/10 transition-colors"
-                    title="Remove from favorites"
-                  >
-                    <Heart className="w-6 h-6 fill-current" />
-                  </button>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

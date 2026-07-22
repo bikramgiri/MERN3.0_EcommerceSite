@@ -4,23 +4,23 @@ import { Heart, Loader2, Minus, Plus } from "lucide-react";
 import { BsMessenger, BsWhatsapp } from "react-icons/bs";
 import { fetchSingleProduct } from "../../../../store/customer/productSlice";
 import { Status } from "../../../../global/statuses";
-import {
-  AddToWishlist,
-  removeFromWishlist,
-} from "../../../../store/customer/wishlistSlice";
+import { AddToWishlist, removeFromWishlist } from "../../../../store/customer/wishlistSlice";
 import { FaFacebook } from "react-icons/fa";
 import Breadcrumb from "../../../../global/components/Breadcrumb";
 import { toast } from "react-toastify";
+import { addToCart, updateCartItems } from "../../../../store/customer/cartSlice";
+import { useNavigate } from "react-router-dom";
 
 interface SingleProductProps {
   productId: string;
 }
 
 const SingleProduct = ({ productId }: SingleProductProps) => {
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { singleProduct, status } = useAppSelector((state) => state.product);
-
   const { wishlist } = useAppSelector((state) => state.wishlist);
+  const { cart } = useAppSelector((state) => state.cart);
 
   useEffect(() => {
     if (productId && productId !== "undefined") {
@@ -43,6 +43,56 @@ const SingleProduct = ({ productId }: SingleProductProps) => {
       setLocalQuantity((prev) => prev - 1);
     }
   };
+
+  //  const handleAddToCart = async () => {
+  //    if (!localStorage.getItem("token")) {
+  //      navigate("/login");
+  //      return;
+  //    }
+
+  //    if (!singleProduct) return;
+
+  //    const existingItem = cart.find((i) => i.productId === productId);
+
+     
+  //    if (existingItem) {
+  //      await dispatch(updateCartItems({ ...existingItem, quantity: localQuantity }));
+  //      toast.success("Cart updated successfully!");
+  //    } else {
+  //      // Add new item with selected quantity
+  //      // Since addToCart adds 1 each time, call it localQuantity times
+  //      for (let i = 0; i < localQuantity; i++) {
+  //        await dispatch(addToCart(productId));
+  //        toast.success("Product added to cart successfully!");
+  //      }
+  //    }
+  //  };
+
+  // or
+
+  const handleAddToCart = async () => {
+  if (!localStorage.getItem("token")) {
+    navigate("/login");
+    return;
+  }
+
+  if (!singleProduct) return;
+
+  const existingItem = cart.find((i) => i.productId === productId);
+
+  try {
+    if (existingItem) {
+      await dispatch(updateCartItems({ ...existingItem, quantity: existingItem.quantity + localQuantity }));
+      toast.success("Cart updated successfully!");
+    } else {
+      await dispatch(addToCart(productId, localQuantity));
+      toast.success("Product added to cart successfully!");
+    }
+  } catch {
+    toast.error("Something went wrong. Please try again.");
+  }
+};
+
 
   if (!singleProduct || status === Status.LOADING) {
     return (
@@ -199,6 +249,7 @@ const SingleProduct = ({ productId }: SingleProductProps) => {
           <div className="flex flex-col sm:flex-row gap-8">
             <button
               type="button"
+              onClick={handleAddToCart}
               disabled={singleProduct.productStock === 0}
               className="cursor-pointer flex-1 disabled:bg-[#1A1613]/20 disabled:cursor-not-allowed flex items-center justify-center rounded-xl px-8 py-4 text-base font-semibold text-[#FDF8ED] bg-[#E6540B] hover:bg-[#c94806] transition-colors shadow-md"
             >

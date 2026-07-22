@@ -14,6 +14,7 @@ import ProductsWishlist from "./pages/wishlist/ProductWishlist.js"
 import ProductDetails from "./pages/productDetails/ProductDetails.js"
 import CategoryProducts from "./pages/category/Categoryproducts .js"
 import Products from "./pages/products/Products.js"
+import Cart from "./pages/cart/Cart.js"
 
 function App() {
 
@@ -35,6 +36,7 @@ function App() {
       <Route path="/products" element={<Products />} />
       <Route path="/productdetails/:id" element={<ProductDetails />} />
       <Route path="/wishlist" element={<ProductsWishlist />} />
+      <Route path="/cart" element={<Cart />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />
