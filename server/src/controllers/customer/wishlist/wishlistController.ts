@@ -5,6 +5,7 @@ import Product from "../../../database/models/productModel";
 import getFullImageUrl from "../../../services/imageHandler";
 import Category from "../../../database/models/categoryModel";
 import Wishlist from "../../../database/models/wishlistModel";
+import Review from "../../../database/models/reviewModel";
 
 class WishlistController {
       // Add a product to the wishlist
@@ -112,6 +113,18 @@ class WishlistController {
                   as: "category",
                   attributes: ["id", "categoryName"]
             },
+              {
+          model: Review,
+          as: "reviews",
+          attributes: ["id", "rating", "message", "reviewImage", "createdAt"],
+          include: [
+            {
+              model: User,
+              as: "User",
+              attributes: ["id", "username", "avatar"],
+            },
+          ],
+        },
           ],
         },
       ],

@@ -12,7 +12,13 @@ import Product from './productModel';
 @Table({
       tableName: 'carts',
       modelName: 'cart',
-      timestamps: true
+      timestamps: true,
+      indexes: [
+            {
+                  unique: true,
+                  fields: ['userId', 'productId']
+            }
+      ]
 })
 
 class Cart extends Model {
