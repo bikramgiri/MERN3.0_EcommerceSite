@@ -4,11 +4,17 @@ import { Heart, Loader2, Minus, Plus } from "lucide-react";
 import { BsMessenger, BsWhatsapp } from "react-icons/bs";
 import { fetchSingleProduct } from "../../../../store/customer/productSlice";
 import { Status } from "../../../../global/statuses";
-import { AddToWishlist, removeFromWishlist } from "../../../../store/customer/wishlistSlice";
+import {
+  AddToWishlist,
+  removeFromWishlist,
+} from "../../../../store/customer/wishlistSlice";
 import { FaFacebook } from "react-icons/fa";
 import Breadcrumb from "../../../../global/components/Breadcrumb";
 import { toast } from "react-toastify";
-import { addToCart, updateCartItems } from "../../../../store/customer/cartSlice";
+import {
+  addToCart,
+  updateCartItems,
+} from "../../../../store/customer/cartSlice";
 import { useNavigate } from "react-router-dom";
 
 interface SingleProductProps {
@@ -44,55 +50,33 @@ const SingleProduct = ({ productId }: SingleProductProps) => {
     }
   };
 
-  //  const handleAddToCart = async () => {
-  //    if (!localStorage.getItem("token")) {
-  //      navigate("/login");
-  //      return;
-  //    }
-
-  //    if (!singleProduct) return;
-
-  //    const existingItem = cart.find((i) => i.productId === productId);
-
-     
-  //    if (existingItem) {
-  //      await dispatch(updateCartItems({ ...existingItem, quantity: localQuantity }));
-  //      toast.success("Cart updated successfully!");
-  //    } else {
-  //      // Add new item with selected quantity
-  //      // Since addToCart adds 1 each time, call it localQuantity times
-  //      for (let i = 0; i < localQuantity; i++) {
-  //        await dispatch(addToCart(productId));
-  //        toast.success("Product added to cart successfully!");
-  //      }
-  //    }
-  //  };
-
-  // or
-
   const handleAddToCart = async () => {
-  if (!localStorage.getItem("token")) {
-    navigate("/login");
-    return;
-  }
-
-  if (!singleProduct) return;
-
-  const existingItem = cart.find((i) => i.productId === productId);
-
-  try {
-    if (existingItem) {
-      await dispatch(updateCartItems({ ...existingItem, quantity: existingItem.quantity + localQuantity }));
-      toast.success("Cart updated successfully!");
-    } else {
-      await dispatch(addToCart(productId, localQuantity));
-      toast.success("Product added to cart successfully!");
+    if (!localStorage.getItem("token")) {
+      navigate("/login");
+      return;
     }
-  } catch {
-    toast.error("Something went wrong. Please try again.");
-  }
-};
 
+    if (!singleProduct) return;
+
+    const existingItem = cart.find((i) => i.productId === productId);
+
+    try {
+      if (existingItem) {
+        await dispatch(
+          updateCartItems({
+            ...existingItem,
+            quantity: existingItem.quantity + localQuantity,
+          }),
+        );
+        toast.success("Cart updated successfully!");
+      } else {
+        await dispatch(addToCart(productId, localQuantity));
+        toast.success("Product added to cart successfully!");
+      }
+    } catch {
+      toast.error("Something went wrong. Please try again.");
+    }
+  };
 
   if (!singleProduct || status === Status.LOADING) {
     return (
@@ -127,10 +111,12 @@ const SingleProduct = ({ productId }: SingleProductProps) => {
         ).toFixed(1)
       : "0.0";
 
+  const reviewCount = singleProduct.reviews?.length || 0;
+
   return (
     <section className="py-8 md:py-8 bg-[#FDF8ED] font-['Inter',sans-serif] text-[#1A1613]">
       <div className="mt-10 ml-4 md:ml-9">
-        <Breadcrumb items={[{ label: "Product Details" }]} />
+        <Breadcrumb  items={[{ label: "Products", href: "/products" }, { label: singleProduct.productName }]} />
       </div>
 
       <div className="flex flex-col lg:flex-row lg:gap-12 bg-[#FDF8ED] shadow-sm overflow-hidden">
@@ -167,34 +153,48 @@ const SingleProduct = ({ productId }: SingleProductProps) => {
           </div>
 
           <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
-            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-              <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
+            <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+              {reviewCount > 0 ? (
+                <>
+                  {[...Array(5)].map((_, i) => (
+                    <svg
+                      key={i}
+                      className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                        i < Math.round(Number(averageRating))
+                          ? "text-[#E6540B]"
+                          : "text-[#1A1613]/15"
+                      }`}
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  ))}
+                  <span className="ml-1 text-sm font-medium text-[#1A1613]/80">
+                    {averageRating}
+                  </span>
+                  <a
+                    href="#reviews"
+                    className="cursor-pointer text-sm font-medium leading-none text-[#1A1613] underline hover:text-[#E6540B]"
+                  >
+                    ({reviewCount} Reviews)
+                  </a>
+                </>
+              ) : (
+                <>
                   <svg
-                    key={i}
-                    className={`w-6 h-6 sm:w-7 sm:h-7 ${
-                      i < Math.round(Number(averageRating))
-                        ? "text-[#E6540B]"
-                        : "text-[#1A1613]/15"
-                    }`}
+                    className="w-4 h-4 sm:w-5 sm:h-5 text-[#1A1613]/15"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
-                ))}
-              </div>
-
-              <p className="text-sm font-medium text-[#1A1613]/70 whitespace-nowrap">
-                {averageRating}
-              </p>
-
-              <a
-                href="#reviews"
-                className="cursor-pointer text-sm font-medium leading-none text-[#1A1613] underline hover:text-[#E6540B]"
-              >
-                {singleProduct.reviews?.length || 0} Reviews
-              </a>
+                  <span className="ml-1 text-sm font-medium text-[#1A1613]/80">
+                    0.0
+                  </span>
+                  <span className="text-sm text-[#1A1613]/50">(0)</span>
+                </>
+              )}
             </div>
 
             <div className="flex items-center gap-4 sm:gap-5">

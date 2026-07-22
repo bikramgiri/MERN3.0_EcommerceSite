@@ -74,7 +74,7 @@ const Cart = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-              <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+              <div className="lg:col-span-2 space-y-3 sm:space-y-4">
                 {cart.map((item) => {
                   const averageRating = getAverageRatingNumber(
                     item.product.reviews,
@@ -85,7 +85,7 @@ const Cart = () => {
                   return (
                     <div
                       key={item.productId}
-                      className={`bg-[#FDF8ED] border border-[#1A1613]/10 rounded-xl p-4 sm:p-6 flex flex-col sm:flex-row gap-4 sm:gap-6
+                      className={`bg-[#FDF8ED] border border-[#1A1613]/10 rounded-2xl px-4 py-3 sm:px-6 sm:py-5 flex items-center gap-4
 
               shadow-[0_-4px_25px_-8px_rgba(0,0,0,0.6),0_3px_20px_-8px_rgba(0,0,0,0.04)]
               dark:shadow-[0_-2px_34px_-14px_rgba(0,0,0,0.2),0_2px_14px_-8px_rgba(0,0,0,0.20)]
@@ -95,114 +95,125 @@ const Cart = () => {
               dark:hover:shadow-[0_-8px_36px_-6px_rgba(0,0,0,0.12),0_6px_12px_-2px_rgba(0,0,0,0.14)]
 
               transition-all duration-500
-              
 
               ${isRemoving ? "opacity-50 pointer-events-none" : ""}
               `}
                     >
                       <Link
                         to={`/productdetails/${item.product.id}`}
-                        className="overflow-hidden flex-shrink-0 rounded-sm self-center sm:self-auto"
+                        className="flex-shrink-0 overflow-hidden rounded-xl"
                       >
                         <img
                           src={item.product.productImage || "/placeholder.jpg"}
                           alt={item.product.productName}
-                          className="w-full sm:w-40 md:w-50 h-48 sm:h-40 object-cover rounded-md bg-[#F4EEDF]"
+                          className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-xl bg-[#F4EEDF]"
                         />
                       </Link>
 
-                      <div className="flex-1 flex flex-col justify-between min-w-0">
-                        <span className="mb-2">
-                          <Link
-                            to={`/productdetails/${item.product.id}`}
-                            className="text-lg sm:text-xl font-['Fraunces',serif] font-semibold text-[#1A1613] hover:text-[#E6540B] transition break-words"
-                          >
-                            {item.product.productName}
-                          </Link>
-                          <p className="text-xl sm:text-2xl font-['IBM_Plex_Mono',monospace] font-bold text-[#8A3B12] mt-2">
-                            Rs. {item.product.productPrice}
-                          </p>
-                        </span>
+                      <div className="flex-1 min-w-0">
+                        <Link
+                          to={`/productdetails/${item.product.id}`}
+                          className="block text-lg sm:text-xl font-['Fraunces',serif] font-bold text-[#1A1613] hover:text-[#E6540B] transition truncate"
+                        >
+                          {item.product.productName}
+                        </Link>
 
-                        <div className="flex items-center gap-1 mb-3 sm:mb-0">
-                          <div className="flex items-center gap-1">
-                            {[...Array(5)].map((_, i) => (
-                              <svg
-                                key={i}
-                                className={`w-4 h-4 sm:w-5 sm:h-5 ${
-                                  i < Math.round(Number(averageRating))
-                                    ? "text-[#E6540B]"
-                                    : "text-[#1A1613]/15"
-                                }`}
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                              >
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                              </svg>
-                            ))}
-                          </div>
-                          <span className="ml-1 text-sm font-medium text-[#1A1613]/80">
-                            {averageRating}
-                          </span>
-                          <span className="text-sm text-[#1A1613]/50">
-                            ({reviewCount})
-                          </span>
-                        </div>
-
-                        <div className="flex flex-col xs:flex-row sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
-                          <div className="flex items-center justify-center sm:justify-start gap-4">
-                            <button
-                              onClick={() =>
-                                handleQuantityChange(
-                                  item.productId,
-                                  item.quantity - 1,
-                                )
-                              }
-                              disabled={item.quantity === 1 || isRemoving}
-                              className="cursor-pointer p-1 rounded-xl border border-[#1A1613]/25 flex items-center justify-center hover:bg-[#F4EEDF] disabled:opacity-50 disabled:cursor-not-allowed transition"
-                            >
-                              <Minus className="w-5 h-5 text-[#1A1613]" />
-                            </button>
-
-                            <span className="text-lg font-['IBM_Plex_Mono',monospace] font-medium text-[#1A1613]">
-                              {item.quantity}
-                            </span>
-
-                            <button
-                              onClick={() =>
-                                handleQuantityChange(
-                                  item.productId,
-                                  item.quantity + 1,
-                                )
-                              }
-                              disabled={
-                                item.quantity >= item.product.productStock ||
-                                isRemoving
-                              }
-                              className="cursor-pointer p-1 rounded-xl border border-[#1A1613]/25 flex items-center justify-center hover:bg-[#F4EEDF] disabled:opacity-50 disabled:cursor-not-allowed transition"
-                            >
-                              <Plus className="w-5 h-5 text-[#1A1613]" />
-                            </button>
-                          </div>
-
-                          <button
-                            onClick={() => handleDeleteItem(item.id)}
-                            disabled={isRemoving}
-                            className="px-3 py-3 cursor-pointer border border-[#1A1613]/15 text-[#9B3A2E] hover:text-[#7a2f24] font-medium flex items-center justify-center gap-2 bg-[#F4EEDF] text-base sm:text-lg rounded-xl hover:bg-[#9B3A2E]/10 transition shadow-sm disabled:opacity-70 disabled:cursor-not-allowed w-full sm:w-auto"
-                          >
-                            {isRemoving ? (
+                        <div className="flex items-center gap-1 mt-1">
+                          {reviewCount > 0 ? (
                               <>
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                                Removing...
+                                {[...Array(5)].map((_, i) => (
+                                  <svg
+                                    key={i}
+                                    className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                                      i < Math.round(Number(averageRating))
+                                        ? "text-[#E6540B]"
+                                        : "text-[#1A1613]/15"
+                                    }`}
+                                    fill="currentColor"
+                                    viewBox="0 0 20 20"
+                                  >
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                  </svg>
+                                ))}
+                                <span className="ml-1 text-sm font-medium text-[#1A1613]/80">
+                                  {averageRating}
+                                </span>
+                                <span className="text-sm text-[#1A1613]/50">
+                                  ({reviewCount})
+                                </span>
                               </>
                             ) : (
                               <>
-                                <Trash2 className="w-5 h-5" />
-                                Remove
+                                <svg
+                                    className="w-4 h-4 sm:w-5 sm:h-5 text-[#1A1613]/15"
+                                    fill="currentColor"
+                                    viewBox="0 0 20 20"
+                                  >
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                  </svg>
+                                <span className="ml-1 text-sm font-medium text-[#1A1613]/80">
+                                  0.0
+                                </span>
+                                <span className="text-sm text-[#1A1613]/50">
+                                  (0)
+                                </span>
                               </>
                             )}
+                        </div>
+
+                        <p className="text-base sm:text-lg font-['IBM_Plex_Mono',monospace] font-bold text-[#8A3B12] mt-1">
+                          Rs. {item.product.productPrice}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                        <div className="flex items-center gap-1 sm:gap-2 bg-[#F4EEDF] rounded-full p-1">
+                          <button
+                            onClick={() =>
+                              handleQuantityChange(
+                                item.productId,
+                                item.quantity - 1,
+                              )
+                            }
+                            disabled={item.quantity === 1 || isRemoving}
+                            className="cursor-pointer w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#FDF8ED] border border-[#1A1613]/10 flex items-center justify-center hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition"
+                          >
+                            <Minus className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#1A1613]" />
+                          </button>
+
+                          <span className="w-5 text-center text-sm sm:text-base font-['IBM_Plex_Mono',monospace] font-semibold text-[#1A1613]">
+                            {item.quantity}
+                          </span>
+
+                          <button
+                            onClick={() =>
+                              handleQuantityChange(
+                                item.productId,
+                                item.quantity + 1,
+                              )
+                            }
+                            disabled={
+                              item.quantity >= item.product.productStock ||
+                              isRemoving
+                            }
+                            className="cursor-pointer w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#FDF8ED] border border-[#1A1613]/10 flex items-center justify-center hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition"
+                          >
+                            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#1A1613]" />
                           </button>
                         </div>
+
+                        <button
+                          onClick={() => handleDeleteItem(item.id)}
+                          disabled={isRemoving}
+                          aria-label="Remove item"
+                          className="cursor-pointer w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#9B3A2E]/10 text-[#9B3A2E] hover:bg-[#9B3A2E]/20 flex items-center justify-center transition disabled:opacity-70 disabled:cursor-not-allowed"
+                        >
+                          {isRemoving ? (
+                            <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                          )}
+                        </button>
                       </div>
                     </div>
                   );

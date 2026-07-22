@@ -447,15 +447,33 @@ export default function Products() {
                           </div>
 
                           <div className="p-3 sm:p-4 flex-1">
-                            <h3 className="mb-1.5 text-xs sm:text-sm font-['Fraunces',serif] font-semibold text-[#1A1613] line-clamp-2 group-hover:text-[#E6540B] transition-colors leading-tight">
+                            <h3 className="mb-1.5 text-md sm:text-xl font-['Fraunces',serif] font-semibold text-[#1A1613] line-clamp-2 group-hover:text-[#E6540B] transition-colors leading-tight">
                               {product.productName}
                             </h3>
 
                             <div className="mb-2">
-                              <Stars
+                             {reviewCount > 0 ? (
+                                <Stars
                                 rating={avgRating.toString()}
                                 count={reviewCount}
                               />
+                              ) : (
+                                <div className="flex items-center gap-1 flex-wrap">
+                                  <svg
+                                    className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#1A1613]/15"
+                                    fill="currentColor"
+                                    viewBox="0 0 20 20"
+                                  >
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                  </svg>
+                                  <span className="ml-1 text-[11px] sm:text-xs font-['IBM_Plex_Mono',monospace] text-[#1A1613]/80">
+                                    0.0
+                                  </span>
+                                  <span className="ml-1 text-[11px] sm:text-xs font-['IBM_Plex_Mono',monospace] text-[#1A1613]/50">
+                                    (0)
+                                  </span>
+                                </div>
+                              )}
                             </div>
 
                             <div className="flex items-baseline gap-2 flex-wrap">
