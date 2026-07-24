@@ -267,7 +267,7 @@ public static async addToCart(
     });
 
     if (!cartItems || cartItems.length === 0) {
-      res.status(404).json({
+      res.status(200).json({
         message: "No cart items found for this user.",
         field: "cartItems",
       });
