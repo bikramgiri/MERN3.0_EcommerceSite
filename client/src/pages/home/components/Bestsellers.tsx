@@ -1,7 +1,7 @@
 import { Heart, Loader2, ShoppingCart } from "lucide-react";
 import { Status } from "../../../global/statuses";
 import { fetchProducts } from "../../../store/customer/productSlice";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../../hooks/hooks";
 import { Link, useNavigate } from "react-router-dom";
 import { AddToWishlist } from "../../../store/customer/wishlistSlice";
@@ -24,6 +24,8 @@ export default function Bestsellers() {
     (state) => state.product,
   );
   const { wishlist } = useAppSelector((state) => state.wishlist);
+
+  const [addingIds, setAddingIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     dispatch(fetchProducts());
@@ -109,6 +111,8 @@ export default function Bestsellers() {
                     (item) => item.id === product.id,
                   );
 
+                  const isAdding = addingIds.has(product.id);
+
                   const reviewCount = product.reviews?.length || 0;
                   const averageRating =
                     reviewCount > 0
@@ -125,13 +129,20 @@ export default function Bestsellers() {
                       navigate("/login");
                       return;
                     }
-                    if (product.id && product) {
-                      try {
-                        await dispatch(addToCart(product.id));
-                        toast.success("Product added to cart!");
-                      } catch {
-                        toast.error("Something went wrong. Please try again.");
-                      }
+                    if (!product.id || isAdding) return;
+
+                    setAddingIds((prev) => new Set(prev).add(product.id));
+                    try {
+                      await dispatch(addToCart(product.id));
+                      toast.success("Product added to cart!");
+                    } catch {
+                      toast.error("Something went wrong. Please try again.");
+                    } finally {
+                      setAddingIds((prev) => {
+                        const next = new Set(prev);
+                        next.delete(product.id);
+                        return next;
+                      });
                     }
                   };
 
@@ -216,11 +227,15 @@ export default function Bestsellers() {
                         <button
                           type="button"
                           onClick={handleAddToCart}
-                          disabled={product.productStock === 0}
+                          disabled={product.productStock === 0 || isAdding}
                           className="cursor-pointer gap-2 flex flex-1 items-center justify-center rounded-xl px-4 py-3 text-sm sm:text-base font-semibold disabled:bg-[#1A1613]/20 disabled:cursor-not-allowed text-[#FDF8ED] bg-[#E6540B] hover:bg-[#c94806] transition-colors"
                         >
-                          <ShoppingCart className="w-6 h-6" />
-                          Add to Cart
+                          {isAdding ? (
+                            <Loader2 className="animate-spin inline-block w-5 h-5 mr-2" />
+                          ) : (
+                            <ShoppingCart className="w-6 h-6" />
+                          )}
+                          {isAdding ? "Adding..." : "Add to Cart"}
                         </button>
                         <button
                           onClick={() => handleWishlistToggle(product)}

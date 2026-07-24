@@ -15,6 +15,10 @@ import ProductDetails from "./pages/productDetails/ProductDetails.js"
 import CategoryProducts from "./pages/category/Categoryproducts .js"
 import Products from "./pages/products/Products.js"
 import Cart from "./pages/cart/Cart.js"
+import CheckOut from "./pages/checkout/CheckOut.js"
+import KhaltiPaymentCallback from "./pages/checkout/KhaltiPaymentCallback.js"
+import EsewaPaymentCallback from "./pages/checkout/EsewaPaymentCallback.js"
+import EsewaPaymentFailure from "./pages/checkout/EsewaPaymentFailure.js"
 
 function App() {
 
@@ -37,6 +41,10 @@ function App() {
       <Route path="/productdetails/:id" element={<ProductDetails />} />
       <Route path="/wishlist" element={<ProductsWishlist />} />
       <Route path="/cart" element={<Cart />} />
+      <Route path="/checkout" element={<CheckOut />} />
+      <Route path="/payment/khalti-callback" element={<KhaltiPaymentCallback />} />
+      <Route path="/payment/esewa-callback" element={<EsewaPaymentCallback />} />
+      <Route path="/payment/esewa-failure" element={<EsewaPaymentFailure />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />

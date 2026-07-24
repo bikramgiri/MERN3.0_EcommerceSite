@@ -103,7 +103,8 @@ export default function Products() {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [isSortOpen, setIsSortOpen] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
-
+  const [addingIds, setAddingIds] = useState<Set<string>>(new Set());
+   
   useEffect(() => {
     dispatch(fetchProducts());
     dispatch(fetchAllReviews());
@@ -409,6 +410,8 @@ export default function Products() {
               <>
                 <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
                   {currentItems.map((product) => {
+                    const isAdding = addingIds.has(product.id);
+
                     const isWishlisted = wishlist.some(
                       (item) => item.id === product.id,
                     );
@@ -421,6 +424,7 @@ export default function Products() {
                         return;
                       }
                       if (product.id && product) {
+                        setAddingIds((prev) => new Set(prev).add(product.id));
                         try {
                           await dispatch(addToCart(product.id));
                           toast.success("Product added to cart!");
@@ -428,6 +432,12 @@ export default function Products() {
                           toast.error(
                             "Something went wrong. Please try again.",
                           );
+                        } finally {
+                          setAddingIds((prev) => {
+                            const newSet = new Set(prev);
+                            newSet.delete(product.id);
+                            return newSet;
+                          });
                         }
                       }
                     };
@@ -452,11 +462,11 @@ export default function Products() {
                             </h3>
 
                             <div className="mb-2">
-                             {reviewCount > 0 ? (
+                              {reviewCount > 0 ? (
                                 <Stars
-                                rating={avgRating.toString()}
-                                count={reviewCount}
-                              />
+                                  rating={avgRating.toString()}
+                                  count={reviewCount}
+                                />
                               ) : (
                                 <div className="flex items-center gap-1 flex-wrap">
                                   <svg
@@ -484,21 +494,76 @@ export default function Products() {
                           </div>
                         </Link>
 
-                        <div className="px-3 sm:px-4 pb-3 sm:pb-4 flex gap-2">
+                        {/* <div className="px-3 sm:px-4 pb-3 sm:pb-4 flex gap-2">
                           <button
-                            disabled={product.productStock === 0}
+                            disabled={product.productStock === 0 || isAdding}
                             onClick={handleAddToCart}
                             className="cursor-pointer flex-1 flex items-center justify-center gap-1.5 rounded-lg px-2 sm:px-3 py-2 text-xs sm:text-sm font-semibold text-[#FDF8ED] bg-[#E6540B] hover:bg-[#c94806] disabled:bg-[#1A1613]/20 disabled:cursor-not-allowed transition-colors"
                           >
-                            <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                            <span className="hidden md:inline">
+                            {isAdding ? (
+                              <Loader2 className="animate-spin inline-block w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            ) : (
+                              <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            )}
+                            {isAdding ? (
+                              "Adding..."
+                              ) : (
+                                <>
+                              <span className="hidden md:inline">
                               Add to Cart
                             </span>
                             <span className="md:hidden">Add</span>
+                            </>
+                            )}
                           </button>
                           <button
                             onClick={() => handleWishlistToggle(product)}
                             className={`cursor-pointer w-14 sm:w-20 flex-shrink-0 flex items-center justify-center rounded-lg border-2 transition-all ${
+                              isWishlisted
+                                ? "border-[#9B3A2E] bg-[#9B3A2E]/10 text-[#9B3A2E]"
+                                : "border-[#1A1613]/15 text-[#1A1613]/40 hover:border-[#9B3A2E] hover:text-[#9B3A2E] hover:bg-[#9B3A2E]/10"
+                            }`}
+                          >
+                            <Heart
+                              className="w-3.5 h-3.5 sm:w-4 sm:h-4"
+                              fill={isWishlisted ? "currentColor" : "none"}
+                            />
+                          </button>
+                        </div> */}
+
+                        <div className="px-3 sm:px-4 pb-3 sm:pb-4 flex gap-2">
+                          <button
+                            disabled={product.productStock === 0 || isAdding}
+                            onClick={handleAddToCart}
+                            className="cursor-pointer flex-1 flex items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-2 sm:px-3 py-2 text-xs sm:text-sm font-semibold text-[#FDF8ED] bg-[#E6540B] hover:bg-[#c94806] disabled:bg-[#1A1613]/20 disabled:cursor-not-allowed transition-colors min-w-0"
+                          >
+                            {isAdding ? (
+                              <Loader2 className="animate-spin flex-shrink-0 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            ) : (
+                              <ShoppingCart className="flex-shrink-0 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            )}
+                            <span className="truncate">
+                              {isAdding ? (
+                                "Adding..."
+                              ) : (
+                                <>
+                                  <span className="hidden md:inline">
+                                    Add to Cart
+                                  </span>
+                                  <span className="md:hidden">Add</span>
+                                </>
+                              )}
+                            </span>
+                          </button>
+
+                          <button
+                            onClick={() => handleWishlistToggle(product)}
+                            aria-label={
+                              isWishlisted
+                                ? "Remove from wishlist"
+                                : "Add to wishlist"
+                            }
+                            className={`cursor-pointer flex-shrink-0 w-10 sm:w-14 flex items-center justify-center rounded-lg border-2 transition-all ${
                               isWishlisted
                                 ? "border-[#9B3A2E] bg-[#9B3A2E]/10 text-[#9B3A2E]"
                                 : "border-[#1A1613]/15 text-[#1A1613]/40 hover:border-[#9B3A2E] hover:text-[#9B3A2E] hover:bg-[#9B3A2E]/10"

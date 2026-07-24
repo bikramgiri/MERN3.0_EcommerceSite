@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, Heart, ShoppingCart } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Heart,
+  Loader2,
+  ShoppingCart,
+} from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../hooks/hooks";
 import {
@@ -15,6 +21,7 @@ const ProductWishlist = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { wishlist } = useAppSelector((state) => state.wishlist);
+  const [addingIds, setAddingIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     dispatch(fetchUserWishlist());
@@ -73,6 +80,8 @@ const ProductWishlist = () => {
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {currentItems.map((product) => {
+              const isAdding = addingIds.has(product.id);
+
               const averageRating = getAverageRatingNumber(product.reviews);
 
               const reviewCount = product.reviews?.length || 0;
@@ -83,11 +92,18 @@ const ProductWishlist = () => {
                   return;
                 }
                 if (product.id && product) {
+                  setAddingIds((prev) => new Set(prev).add(product.id));
                   try {
                     await dispatch(addToCart(product.id));
                     toast.success("Product added to cart!");
                   } catch {
                     toast.error("Something went wrong. Please try again.");
+                  } finally {
+                    setAddingIds((prev) => {
+                      const next = new Set(prev);
+                      next.delete(product.id);
+                      return next;
+                    });
                   }
                 }
               };
@@ -116,46 +132,46 @@ const ProductWishlist = () => {
                       </h3>
 
                       <div className="flex items-center gap-1 mb-2">
-                         {reviewCount > 0 ? (
-                              <>
-                                {[...Array(5)].map((_, i) => (
-                                  <svg
-                                    key={i}
-                                    className={`w-4 h-4 sm:w-5 sm:h-5 ${
-                                      i < Math.round(Number(averageRating))
-                                        ? "text-[#E6540B]"
-                                        : "text-[#1A1613]/15"
-                                    }`}
-                                    fill="currentColor"
-                                    viewBox="0 0 20 20"
-                                  >
-                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                  </svg>
-                                ))}
-                                <span className="ml-1 text-sm font-medium text-[#1A1613]/80">
-                                  {averageRating}
-                                </span>
-                                <span className="text-sm text-[#1A1613]/50">
-                                  ({reviewCount})
-                                </span>
-                              </>
-                            ) : (
-                              <>
-                                <svg
-                                    className="w-4 h-4 sm:w-5 sm:h-5 text-[#1A1613]/15"
-                                    fill="currentColor"
-                                    viewBox="0 0 20 20"
-                                  >
-                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                  </svg>
-                                <span className="ml-1 text-sm font-medium text-[#1A1613]/80">
-                                  0.0
-                                </span>
-                                <span className="text-sm text-[#1A1613]/50">
-                                  (0)
-                                </span>
-                              </>
-                            )}
+                        {reviewCount > 0 ? (
+                          <>
+                            {[...Array(5)].map((_, i) => (
+                              <svg
+                                key={i}
+                                className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                                  i < Math.round(Number(averageRating))
+                                    ? "text-[#E6540B]"
+                                    : "text-[#1A1613]/15"
+                                }`}
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                              </svg>
+                            ))}
+                            <span className="ml-1 text-sm font-medium text-[#1A1613]/80">
+                              {averageRating}
+                            </span>
+                            <span className="text-sm text-[#1A1613]/50">
+                              ({reviewCount})
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <svg
+                              className="w-4 h-4 sm:w-5 sm:h-5 text-[#1A1613]/15"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                            <span className="ml-1 text-sm font-medium text-[#1A1613]/80">
+                              0.0
+                            </span>
+                            <span className="text-sm text-[#1A1613]/50">
+                              (0)
+                            </span>
+                          </>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-2">
@@ -169,11 +185,15 @@ const ProductWishlist = () => {
                     <button
                       type="button"
                       onClick={handleAddToCart}
-                      disabled={product.productStock === 0}
+                      disabled={product.productStock === 0 || isAdding}
                       className="cursor-pointer gap-2 flex flex-1 items-center justify-center rounded-xl px-4 py-3 text-sm sm:text-base font-semibold disabled:bg-[#1A1613]/20 disabled:cursor-not-allowed text-[#FDF8ED] bg-[#E6540B] hover:bg-[#c94806] transition-colors"
                     >
-                      <ShoppingCart className="w-6 h-6" />
-                      Add to Cart
+                      {isAdding ? (
+                        <Loader2 className="animate-spin inline-block w-5 h-5 mr-2" />
+                      ) : (
+                        <ShoppingCart className="w-6 h-6" />
+                      )}
+                      {isAdding ? "Adding..." : "Add to Cart"}
                     </button>
                     <button
                       onClick={() => handleRemove(product.id)}

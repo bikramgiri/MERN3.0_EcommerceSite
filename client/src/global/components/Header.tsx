@@ -48,7 +48,7 @@ const Header = () => {
   const wishlistCount = wishlist?.length;
   const unreadNotifications = 2;
 
-  const cartCount = cart.length;
+  const cartCount = cart?.length;
 
   const markAllAsRead = () => {
     // Implement marking notifications as read

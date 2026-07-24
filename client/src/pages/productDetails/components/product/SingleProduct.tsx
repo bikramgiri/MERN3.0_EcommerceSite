@@ -27,6 +27,7 @@ const SingleProduct = ({ productId }: SingleProductProps) => {
   const { singleProduct, status } = useAppSelector((state) => state.product);
   const { wishlist } = useAppSelector((state) => state.wishlist);
   const { cart } = useAppSelector((state) => state.cart);
+  const [addingIds, setAddingIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (productId && productId !== "undefined") {
@@ -56,9 +57,11 @@ const SingleProduct = ({ productId }: SingleProductProps) => {
       return;
     }
 
-    if (!singleProduct) return;
+    if (!singleProduct || isAdding) return;
 
-    const existingItem = cart.find((i) => i.productId === productId);
+    const existingItem = cart?.find((i) => i.productId === productId);
+
+    setAddingIds((prev) => new Set(prev).add(singleProduct.id));
 
     try {
       if (existingItem) {
@@ -75,6 +78,12 @@ const SingleProduct = ({ productId }: SingleProductProps) => {
       }
     } catch {
       toast.error("Something went wrong. Please try again.");
+    } finally {
+      setAddingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(singleProduct.id);
+        return next;
+      });
     }
   };
 
@@ -112,11 +121,16 @@ const SingleProduct = ({ productId }: SingleProductProps) => {
       : "0.0";
 
   const reviewCount = singleProduct.reviews?.length || 0;
-
+  const isAdding = addingIds.has(singleProduct.id);
   return (
     <section className="py-8 md:py-8 bg-[#FDF8ED] font-['Inter',sans-serif] text-[#1A1613]">
       <div className="mt-10 ml-4 md:ml-9">
-        <Breadcrumb  items={[{ label: "Products", href: "/products" }, { label: singleProduct.productName }]} />
+        <Breadcrumb
+          items={[
+            { label: "Products", href: "/products" },
+            { label: singleProduct.productName },
+          ]}
+        />
       </div>
 
       <div className="flex flex-col lg:flex-row lg:gap-12 bg-[#FDF8ED] shadow-sm overflow-hidden">
@@ -250,10 +264,43 @@ const SingleProduct = ({ productId }: SingleProductProps) => {
             <button
               type="button"
               onClick={handleAddToCart}
-              disabled={singleProduct.productStock === 0}
+              disabled={singleProduct.productStock === 0 || isAdding}
               className="cursor-pointer flex-1 disabled:bg-[#1A1613]/20 disabled:cursor-not-allowed flex items-center justify-center rounded-xl px-8 py-4 text-base font-semibold text-[#FDF8ED] bg-[#E6540B] hover:bg-[#c94806] transition-colors shadow-md"
             >
-              <svg
+              {isAdding ? (
+                <Loader2 className="animate-spin inline-block w-5 h-5 mr-2" />
+              ) : (
+                <>
+                  <svg
+                    className="w-6 h-6 mr-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                    />
+                  </svg>
+                  <svg
+                    className="w-6 h-6 mr-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                    />
+                  </svg>
+                </>
+              )}
+              {isAdding ? "Adding..." : "Add to Cart"}
+              {/* <svg
                 className="w-6 h-6 mr-3"
                 fill="none"
                 stroke="currentColor"
@@ -266,7 +313,7 @@ const SingleProduct = ({ productId }: SingleProductProps) => {
                   d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
                 />
               </svg>
-              Add to Cart
+              Add to Cart */}
             </button>
 
             <button

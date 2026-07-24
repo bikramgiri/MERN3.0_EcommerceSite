@@ -1,4 +1,11 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Leaf, RotateCcw, Star, Truck } from "lucide-react";
+
+const stats = [
+  { icon: Truck, label: "12,000+ pieces shipped" },
+  { icon: Star, label: "48 independent makers" },
+  { icon: RotateCcw, label: "30-day returns, no questions" },
+  { icon: Leaf, label: "Carbon-neutral shipping" },
+];
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -121,6 +128,38 @@ export default function Hero() {
             </div>
           </div>
         </div>
+
+      <section className="border-y border-[#1A1613]/10 bg-[#F4EEDF]">
+  <div className="mx-auto max-w-[1500px] px-6 lg:px-10">
+    <div className="grid grid-cols-2 divide-x divide-y divide-[#1A1613]/10 sm:grid-cols-4 sm:divide-y-0">
+      {stats.map(({ icon: Icon, label }) => (
+        <div
+          key={label}
+          className="group flex flex-col items-start gap-3 px-6 py-8 transition-colors hover:bg-[#EDE5D0] sm:px-8"
+        >
+          {/* Icon in a warm pill */}
+          <span className="inline-flex items-center justify-center rounded-sm bg-[#E6540B]/10 p-2.5 transition-colors group-hover:bg-[#E6540B]/18">
+            <Icon
+              size={18}
+              strokeWidth={1.6}
+              className="text-[#E6540B]"
+            />
+          </span>
+
+          {/* Stat number pulled from label, shown large */}
+          <div>
+            <p className="font-['Fraunces',serif] text-2xl font-semibold leading-none text-[#1A1613]">
+              {label.match(/[\d,k+]+/i)?.[0] ?? "✓"}
+            </p>
+            <p className="mt-1.5 text-[12.5px] leading-snug tracking-wide text-[#1A1613]/60 font-['IBM_Plex_Mono',monospace] uppercase">
+              {label.replace(/^[\d,k+\s]+/i, "")}
+            </p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
       </section>
     </div>
   );

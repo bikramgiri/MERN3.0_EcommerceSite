@@ -29,23 +29,23 @@ const Cart = () => {
 
   const handleQuantityChange = async (productId: string, newQuantity: number) => {
     const quantity = Math.max(1, newQuantity);
-    const item = cart.find((i) => i.productId === productId);
+    const item = cart?.find((i) => i.productId === productId);
     if (!item) return;
     if (quantity > item.product.productStock) return;
     await dispatch(updateCartItems({ ...item, quantity }));
   };
 
-  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const subtotal = cart.reduce(
+  const totalItems = cart?.reduce((sum, item) => sum + item.quantity, 0);
+  const subtotal = cart?.reduce(
     (sum, item) => sum + item.product.productPrice * item.quantity,
     0,
   );
-  const shipping = 70;
+  const shipping = 50;
   const total = subtotal + shipping;
 
   return (
     <>
-      {!cart || cart.length === 0 ? (
+      {!cart || cart?.length === 0 ? (
         <section className="py-16 sm:py-20 bg-[#FDF8ED] font-['Inter',sans-serif]">
           <div className="max-w-[1500px] mx-auto px-4 text-center">
             <Breadcrumb items={[{ label: "Cart" }]} />
@@ -75,7 +75,7 @@ const Cart = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
               <div className="lg:col-span-2 space-y-3 sm:space-y-4">
-                {cart.map((item) => {
+                {cart?.map((item) => {
                   const averageRating = getAverageRatingNumber(
                     item.product.reviews,
                   );

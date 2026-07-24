@@ -5,6 +5,7 @@ import productSlice from "./customer/productSlice";
 import wishlistSlice from "./customer/wishlistSlice";
 import reviewSlice from "./customer/reviewSlice";
 import cartSlice from "./customer/cartSlice";
+import checkoutSlice from "./customer/checkoutSlice";
 
 const store = configureStore({
       reducer: {
@@ -14,6 +15,7 @@ const store = configureStore({
             wishlist: wishlistSlice,
             review: reviewSlice,
             cart: cartSlice,
+            checkout: checkoutSlice
       }
 })
 
