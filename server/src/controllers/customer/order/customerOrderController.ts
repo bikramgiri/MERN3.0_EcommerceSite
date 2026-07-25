@@ -21,6 +21,8 @@ import Category from "../../../database/models/categoryModel";
 import getFullImageUrl from "../../../services/imageHandler";
 import Cart from "../../../database/models/cartModel";
 import { sequelize } from "../../../database/connection";
+import Review from "../../../database/models/reviewModel";
+import { Op } from "sequelize";
 
 class CustomerOrderController {
   // *Create order and integrate payment gateway
@@ -69,9 +71,9 @@ class CustomerOrderController {
       return;
     }
 
-    if (shippingAddress.length < 4 || shippingAddress.length > 20) {
+    if (shippingAddress.length < 4 || shippingAddress.length > 200) {
       res.status(400).json({
-        message: "Shipping address must be between 4 and 20 characters",
+        message: "Shipping address must be between 4 and 200 characters",
         field: "shippingAddress",
       });
       return;
@@ -129,7 +131,9 @@ class CustomerOrderController {
       return;
     }
 
-    if (Math.abs(calculatedTotalCost - totalAmount) > 0.01) {
+    const roundToCents = (n: number) => Math.round(n * 100);
+
+    if (roundToCents(calculatedTotalCost) !== roundToCents(parsedTotalAmount)) {
       res.status(400).json({
         message: "Total amount does not match with products total",
         field: "totalAmount",
@@ -177,18 +181,22 @@ class CustomerOrderController {
 
           // *OR
 
-          // Safely wait for all order details to be created using Promise.all
-          // const orderDetailsPromises = products.map(async function (product) {
-          //   return await OrderDetails.create({
-          //     orderId: order.id,
-          //     productId: product.productId,
-          //     quantity: product.quantity,
-          //   });
-          // });
-          // const orderDetailResponse = await Promise.all(orderDetailsPromises);
-
           const orderDetailResponse = [];
           for (const item of products) {
+            // Guarded decrement: only succeeds if enough stock remains at this instant
+            const [, affectedRows] = await Product.decrement("productStock", {
+              by: item.quantity,
+              where: {
+                id: item.productId,
+                productStock: { [Op.gte]: item.quantity },
+              },
+              transaction: t,
+            });
+
+            if (!affectedRows) {
+              throw new Error("INSUFFICIENT_STOCK");
+            }
+
             const detail = await OrderDetails.create(
               {
                 orderId: order.id,
@@ -198,20 +206,10 @@ class CustomerOrderController {
               { transaction: t },
             );
             orderDetailResponse.push(detail);
-
-            // Re-check stock inside the transaction to guard against race conditions
-            const [affectedCount] = await Product.decrement("productStock", {
-              by: item.quantity,
-              where: { id: item.productId },
-              transaction: t,
-            });
           }
 
           return { paymentData, order, orderDetailResponse };
         });
-
-      // *Clear user's cart after order placement
-      await Cart.destroy({ where: { userId } });
 
       // Payment gateway integration
       if (paymentDetails.paymentMethod === PaymentMethod.Khalti) {
@@ -237,6 +235,8 @@ class CustomerOrderController {
           paymentData.pidx = khaltiResponse.pidx;
           await paymentData.save();
 
+          await Cart.destroy({ where: { userId } });
+
           res.status(201).json({
             message: "Order placed successfully, proceed to Khalti payment",
             data: order,
@@ -247,25 +247,39 @@ class CustomerOrderController {
           return;
         } catch (khaltiError) {
           // Gateway failed after commit — restore stock and remove the order/payment/details
-          await sequelize.transaction(async (t) => {
-            for (const item of products) {
-              await Product.increment("productStock", {
-                by: item.quantity,
-                where: { id: item.productId },
+          try {
+            await sequelize.transaction(async (t) => {
+              for (const item of products) {
+                await Product.increment("productStock", {
+                  by: item.quantity,
+                  where: { id: item.productId },
+                  transaction: t,
+                });
+              }
+              await OrderDetails.destroy({
+                where: { orderId: order.id },
                 transaction: t,
               });
-            }
-            await OrderDetails.destroy({
-              where: { orderId: order.id },
-              transaction: t,
+              await order.destroy({ transaction: t });
+              await paymentData.destroy({ transaction: t });
             });
-            await order.destroy({ transaction: t });
-            await paymentData.destroy({ transaction: t });
-          });
-          res.status(400).json({
-            message: "Failed to initiate Khalti payment. Please try again.",
-            field: "payment",
-          });
+
+            res.status(400).json({
+              message: "Failed to initiate Khalti payment. Please try again.",
+              field: "payment",
+            });
+          } catch (rollbackError) {
+            console.error(
+              `CRITICAL: Failed to roll back order ${order.id} after Khalti init failure. Manual intervention required.`,
+              rollbackError,
+            );
+            res.status(500).json({
+              message:
+                "Payment could not be initiated and automatic cleanup failed. Please contact support with your order reference.",
+              field: "payment",
+              orderId: order.id,
+            });
+          }
           return;
         }
       }
@@ -299,6 +313,8 @@ class CustomerOrderController {
           paymentData.pidx = order.id.toString();
           await paymentData.save();
 
+          await Cart.destroy({ where: { userId } });
+
           res.status(201).json({
             message: "Order created. Proceed to eSewa payment.",
             data: order,
@@ -308,28 +324,45 @@ class CustomerOrderController {
           });
           return;
         } catch (esewaError) {
-          await sequelize.transaction(async (t) => {
-            for (const item of products) {
-              await Product.increment("productStock", {
-                by: item.quantity,
-                where: { id: item.productId },
+          try {
+            await sequelize.transaction(async (t) => {
+              for (const item of products) {
+                await Product.increment("productStock", {
+                  by: item.quantity,
+                  where: { id: item.productId },
+                  transaction: t,
+                });
+              }
+              await OrderDetails.destroy({
+                where: { orderId: order.id },
                 transaction: t,
               });
-            }
-            await OrderDetails.destroy({
-              where: { orderId: order.id },
-              transaction: t,
+              await order.destroy({ transaction: t });
+              await paymentData.destroy({ transaction: t });
             });
-            await order.destroy({ transaction: t });
-            await paymentData.destroy({ transaction: t });
-          });
-          res.status(400).json({
-            message: "Failed to initiate eSewa payment. Please try again.",
-            field: "payment",
-          });
+
+            res.status(400).json({
+              message: "Failed to initiate eSewa payment. Please try again.",
+              field: "payment",
+            });
+          } catch (rollbackError) {
+            console.error(
+              `CRITICAL: Failed to roll back order ${order.id} after eSewa init failure. Manual intervention required.`,
+              rollbackError,
+            );
+            res.status(500).json({
+              message:
+                "Payment could not be initiated and automatic cleanup failed. Please contact support with your order reference.",
+              field: "payment",
+              orderId: order.id,
+            });
+          }
           return;
         }
       }
+
+      // Clear user's cart after order placement
+      await Cart.destroy({ where: { userId } });
 
       res.status(201).json({
         message: "Order created successfully",
@@ -388,32 +421,23 @@ class CustomerOrderController {
           });
           return;
         }
-        payment.paymentStatus = PaymentStatus.Paid;
-        await payment.save();
 
         const order = await Order.findOne({ where: { paymentId: payment.id } });
-        if (order) {
-          order.orderStatus = OrderStatus.Preparation;
-          await order.save();
+        if (!order || order.userId !== userId) {
+          res.status(404).json({
+            message: "Order not found or not owned by the user",
+            field: "order",
+          });
+          return;
         }
 
-        // const fullOrderDetails = await Order.findOne({
-        //   where: { paymentId: payment.id },
-        //   include: [
-        //     {
-        //       model: Payment,
-        //       attributes: ["paymentMethod", "paymentStatus"],
-        //     },
-        //     {
-        //       model: OrderDetails,
-        //       attributes: ["productId", "quantity"],
-        //     },
-        //     {
-        //       model: User,
-        //       attributes: ["username", "email"],
-        //     },
-        //   ],
-        // });
+        await sequelize.transaction(async (t) => {
+          payment.paymentStatus = PaymentStatus.Paid;
+          await payment.save({ transaction: t });
+
+          order.orderStatus = OrderStatus.Preparation;
+          await order.save({ transaction: t });
+        });
 
         res.status(200).json({
           message: "Khalti payment verified and order confirmed successfully",
@@ -436,10 +460,16 @@ class CustomerOrderController {
         });
         return;
       } else {
-        await Payment.update(
-          { paymentStatus: PaymentStatus.Failed },
-          { where: { pidx: pidx } },
-        );
+        const payment = await Payment.findOne({ where: { pidx: pidx } });
+        if (payment) {
+          const order = await Order.findOne({
+            where: { paymentId: payment.id },
+          });
+          if (order && order.userId === userId) {
+            payment.paymentStatus = PaymentStatus.Failed;
+            await payment.save();
+          }
+        }
 
         res.status(400).json({
           message: "Payment failed or was cancelled.",
@@ -492,8 +522,16 @@ class CustomerOrderController {
       }
 
       // Double-check with eSewa status API
-      const verifyUrl = `${envConfig.esewaVerificationUrl}?product_code=${product_code}&total_amount=${total_amount}&transaction_uuid=${transaction_uuid}`;
+      const verifyParams = new URLSearchParams({
+        product_code: String(product_code),
+        total_amount: String(total_amount),
+        transaction_uuid: String(transaction_uuid),
+      });
+      const verifyUrl = `${envConfig.esewaVerificationUrl}?${verifyParams.toString()}`;
+      // or
+      // const verifyUrl = `${envConfig.esewaVerificationUrl}?product_code=${product_code}&total_amount=${total_amount}&transaction_uuid=${transaction_uuid}`;
       const verifyRes = await axios.get(verifyUrl);
+
       const verifyData = verifyRes.data;
 
       if (verifyData.status !== "COMPLETE") {
@@ -513,33 +551,24 @@ class CustomerOrderController {
         });
         return;
       }
-      payment.paymentStatus = PaymentStatus.Paid;
-      payment.pidx = transaction_code; // Store transaction_uuid in pidx for reference
-      await payment.save();
 
       const order = await Order.findOne({ where: { paymentId: payment.id } });
-      if (order) {
-        order.orderStatus = OrderStatus.Preparation;
-        await order.save();
+      if (!order || order.userId !== userId) {
+        res.status(404).json({
+          message: "Order not found or not owned by the user",
+          field: "order",
+        });
+        return;
       }
 
-      // const fullOrderDetails = await Order.findOne({
-      //   where: { paymentId: payment.id },
-      //   include: [
-      //     {
-      //       model: Payment,
-      //       attributes: ["paymentMethod", "paymentStatus"],
-      //     },
-      //     {
-      //       model: OrderDetails,
-      //       attributes: ["productId", "quantity"],
-      //     },
-      //     {
-      //       model: User,
-      //       attributes: ["username", "email"],
-      //     },
-      //   ],
-      // });
+      await sequelize.transaction(async (t) => {
+        payment.paymentStatus = PaymentStatus.Paid;
+        payment.pidx = transaction_code; // Store transaction_code in pidx for reference
+        await payment.save({ transaction: t });
+
+        order.orderStatus = OrderStatus.Preparation;
+        await order.save({ transaction: t });
+      });
 
       res.status(200).json({
         message: "eSewa payment verified and order delivered successfully",
@@ -681,6 +710,30 @@ class CustomerOrderController {
                   "productImage",
                   "productStock",
                 ],
+                include: [
+                  {
+                    model: Category,
+                    attributes: ["categoryName"],
+                  },
+                  {
+                    model: Review,
+                    as: "reviews",
+                    attributes: [
+                      "id",
+                      "rating",
+                      "message",
+                      "reviewImage",
+                      "createdAt",
+                    ],
+                    include: [
+                      {
+                        model: User,
+                        as: "User",
+                        attributes: ["id", "username", "avatar"],
+                      },
+                    ],
+                  },
+                ],
               },
             ],
           },
@@ -731,7 +784,7 @@ class CustomerOrderController {
       if (!userId) {
         res.status(401).json({
           message: "User not authenticated",
-          field: "user",
+          field: "userId",
         });
         return;
       }
@@ -777,9 +830,9 @@ class CustomerOrderController {
         return;
       }
 
-      if (shippingAddress.length < 4 || shippingAddress.length > 20) {
+      if (shippingAddress.length < 4 || shippingAddress.length > 200) {
         res.status(400).json({
-          message: "Shipping address must be between 4 and 20 characters",
+          message: "Shipping address must be between 4 and 200 characters",
           field: "shippingAddress",
         });
         return;
@@ -800,6 +853,7 @@ class CustomerOrderController {
       if (!order) {
         res.status(404).json({
           message: "Order not found",
+          field: "orderId",
         });
         return;
       }
@@ -850,7 +904,11 @@ class CustomerOrderController {
         return;
       }
 
-      if (Math.abs(calculatedTotalCost - totalAmount) > 0.01) {
+      const roundToCents = (n: number) => Math.round(n * 100);
+
+      if (
+        roundToCents(calculatedTotalCost) !== roundToCents(parsedTotalAmount)
+      ) {
         res.status(400).json({
           message: "Total amount does not match with products total",
           field: "totalAmount",
@@ -941,6 +999,19 @@ class CustomerOrderController {
 
         // Apply new line items and decrement stock for them
         for (const item of products) {
+          const [, affectedRows] = await Product.decrement("productStock", {
+            by: item.quantity,
+            where: {
+              id: item.productId,
+              productStock: { [Op.gte]: item.quantity },
+            },
+            transaction: t,
+          });
+
+          if (!affectedRows) {
+            throw new Error("INSUFFICIENT_STOCK");
+          }
+
           const detail = await OrderDetails.create(
             {
               orderId: order.id,
@@ -950,12 +1021,6 @@ class CustomerOrderController {
             { transaction: t },
           );
           updatedOrderDetails.push(detail);
-
-          await Product.decrement("productStock", {
-            by: item.quantity,
-            where: { id: item.productId },
-            transaction: t,
-          });
         }
 
         await order.update(
@@ -1087,81 +1152,6 @@ class CustomerOrderController {
   }
 
   // *Cancel order
-  // public static async cancelOrder(
-  //   req: AuthRequest,
-  //   res: Response,
-  // ): Promise<void> {
-  //   try {
-  //     const userId = req.user?.id;
-  //     if (!userId) {
-  //       res.status(401).json({
-  //         message: "User not authenticated",
-  //         field: "user",
-  //       });
-  //       return;
-  //     }
-
-  //     const orderId = req.params.id;
-  //     if (!orderId) {
-  //       res.status(400).json({
-  //         message: "Order ID is required",
-  //         field: "orderId",
-  //       });
-  //       return;
-  //     }
-
-  //     const order = await Order.findOne({ where: { id: orderId, userId } });
-  //     if (!order) {
-  //       res.status(404).json({
-  //         message: "Order not found!",
-  //         field: "orderId",
-  //       });
-  //       return;
-  //     }
-
-  //     if (
-  //       order.orderStatus === OrderStatus.InTransit ||
-  //       order.orderStatus === OrderStatus.Preparation ||
-  //       order.orderStatus === OrderStatus.Delivered
-  //     ) {
-  //       res.status(400).json({
-  //         message: `Order cannot be cancelled as it is already ${order.orderStatus}`,
-  //       });
-  //       return;
-  //     }
-
-  //     if (order.orderStatus === OrderStatus.Cancelled) {
-  //       res.status(400).json({
-  //         message: "Order is already cancelled",
-  //         field: "orderId",
-  //       });
-  //       return;
-  //     }
-
-  //     const orderDetails = await OrderDetails.findAll({ where: { orderId: order.id } });
-
-  //   await sequelize.transaction(async (t) => {
-  //     for (const detail of orderDetails) {
-  //       await Product.increment(
-  //         "productStock",
-  //         { by: detail.quantity, where: { id: detail.productId }, transaction: t },
-  //       );
-  //     }
-  //     order.orderStatus = OrderStatus.Cancelled;
-  //     await order.save({ transaction: t });
-  //   });
-
-  //     res.status(200).json({
-  //       message: "Order cancelled successfully",
-  //       data: order,
-  //     });
-  //   } catch (error) {
-  //     console.error("Error cancelling order:", error);
-  //     res.status(500).json({ message: "Internal server error" });
-  //   }
-  // }
-
-  // *Or
   public static async cancelOrder(
     req: AuthRequest,
     res: Response,
@@ -1171,7 +1161,7 @@ class CustomerOrderController {
       if (!userId) {
         res.status(401).json({
           message: "User not authenticated",
-          field: "user",
+          field: "userId",
         });
         return;
       }
@@ -1186,11 +1176,31 @@ class CustomerOrderController {
       }
 
       const order = await Order.findOne({
-        where: { id: orderId, userId, orderStatus: OrderStatus.Pending },
+        where: { id: orderId, userId },
       });
       if (!order) {
         res.status(404).json({
           message: "Order not found!",
+          field: "order",
+        });
+        return;
+      }
+
+      if (
+        order.orderStatus === OrderStatus.InTransit ||
+        order.orderStatus === OrderStatus.Preparation ||
+        order.orderStatus === OrderStatus.Delivered
+      ) {
+        res.status(400).json({
+          message: `Order cannot be cancelled as it is already ${order.orderStatus}`,
+          field: "orderStatus",
+        });
+        return;
+      }
+
+      if (order.orderStatus === OrderStatus.Cancelled) {
+        res.status(400).json({
+          message: "Order is already cancelled",
           field: "orderId",
         });
         return;
@@ -1201,8 +1211,6 @@ class CustomerOrderController {
       });
 
       await sequelize.transaction(async (t) => {
-        // Re-fetch and lock inside the transaction — guards against a payment
-        // verification webhook flipping status between the check above and here.
         const lockedOrder = await Order.findOne({
           where: { id: order.id, orderStatus: OrderStatus.Pending },
           transaction: t,
@@ -1228,100 +1236,11 @@ class CustomerOrderController {
       });
     } catch (error) {
       console.error("Error cancelling order:", error);
-      if (
-        error instanceof Error &&
-        error.message === "ORDER_NO_LONGER_CANCELLABLE"
-      ) {
-        res.status(409).json({
-          message:
-            "This order can no longer be cancelled — payment may already be confirmed.",
-        });
-        return;
-      }
       res.status(500).json({ message: "Internal server error" });
     }
   }
 
   // *Delete order (if needed, but usually we just mark it as cancelled)
-  //   public static async deleteOrder(
-  //     req: AuthRequest,
-  //     res: Response,
-  //   ): Promise<void> {
-  //     try {
-  //       const userId = req.user?.id;
-  //       if (!userId) {
-  //         res.status(401).json({
-  //           message: "User not authenticated",
-  //           field: "user",
-  //         });
-  //         return;
-  //       }
-
-  //       const orderId = req.params.id;
-  //       if (!orderId) {
-  //         res.status(400).json({
-  //           message: "Order ID is required",
-  //           field: "orderId",
-  //         });
-  //         return;
-  //       }
-
-  //       const order = await Order.findOne({
-  //         where: { id: orderId as string, userId },
-  //       });
-  //       if (!order) {
-  //         res.status(404).json({
-  //           message: "Order not found",
-  //           field: "orderId",
-  //         });
-  //         return;
-  //       }
-
-  //       if (order.userId !== userId) {
-  //         res.status(403).json({
-  //           message: "You do not have permission to delete this order",
-  //           field: "orderId",
-  //         });
-  //         return;
-  //       }
-
-  //       const nonDeletableStatuses = [
-  //         OrderStatus.Preparation,
-  //         OrderStatus.InTransit,
-  //         OrderStatus.Delivered,
-  //       ];
-  //       if (nonDeletableStatuses.includes(order.orderStatus as OrderStatus)) {
-  //         res.status(400).json({
-  //           message: `Order cannot be deleted as it is already ${order.orderStatus}`,
-  //           field: "orderId",
-  //         });
-  //         return;
-  //       }
-
-  // const orderDetails = await OrderDetails.findAll({ where: { orderId: order.id } });
-
-  // await sequelize.transaction(async (t) => {
-  //   for (const detail of orderDetails) {
-  //     await Product.increment(
-  //       "productStock",
-  //       { by: detail.quantity, where: { id: detail.productId }, transaction: t },
-  //     );
-  //   }
-  //   await OrderDetails.destroy({ where: { orderId: order.id }, transaction: t });
-  //   if (order.paymentId) {
-  //     await Payment.destroy({ where: { id: order.paymentId }, transaction: t });
-  //   }
-  //   await order.destroy({ transaction: t });
-  // });
-
-  // res.status(200).json({ message: "Order deleted successfully" });
-  //     } catch (error) {
-  //       console.error("Error deleting order:", error);
-  //       res.status(500).json({ message: "Internal server error" });
-  //     }
-  //   }
-
-  // *OR
   public static async deleteOrder(
     req: AuthRequest,
     res: Response,
@@ -1331,7 +1250,7 @@ class CustomerOrderController {
       if (!userId) {
         res.status(401).json({
           message: "User not authenticated",
-          field: "user",
+          field: "userId",
         });
         return;
       }
@@ -1348,14 +1267,12 @@ class CustomerOrderController {
       const order = await Order.findOne({
         where: {
           id: orderId as string,
-          userId,
-          orderStatus: OrderStatus.Pending,
         },
       });
       if (!order) {
         res.status(404).json({
           message: "Order not found",
-          field: "orderId",
+          field: "order",
         });
         return;
       }
@@ -1364,6 +1281,20 @@ class CustomerOrderController {
         res.status(403).json({
           message: "You do not have permission to delete this order",
           field: "orderId",
+        });
+        return;
+      }
+
+      const nonDeletableStatuses = [
+        OrderStatus.Preparation,
+        OrderStatus.InTransit,
+        OrderStatus.Delivered,
+        OrderStatus.Cancelled,
+      ];
+      if (nonDeletableStatuses.includes(order.orderStatus as OrderStatus)) {
+        res.status(400).json({
+          message: `Order cannot be deleted as it is already ${order.orderStatus}`,
+          field: "orderStatus",
         });
         return;
       }
@@ -1409,7 +1340,8 @@ class CustomerOrderController {
       ) {
         res.status(409).json({
           message:
-            "This order can no longer be deleted — payment may already be confirmed.",
+            "This order can no longer be deleted — payment may already be in progress or confirmed.",
+          field: "general",
         });
         return;
       }

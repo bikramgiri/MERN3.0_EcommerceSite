@@ -21,8 +21,7 @@ const sequelize = new Sequelize(envConfig.dbConnectionString as string, {
   dialectOptions: {
     ssl: {
       require: true,
-      rejectUnauthorized: false  
-    }
+      rejectUnauthorized: false    }
   },
   models: [__dirname + '/models'] // Path to your models
 });

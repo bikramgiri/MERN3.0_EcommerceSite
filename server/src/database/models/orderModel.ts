@@ -28,13 +28,13 @@ class Order extends Model {
   })
   declare phoneNumber: string;
 
-  @AllowNull(true)
+  @AllowNull(false)
   @Column({
     type: DataType.STRING,
     validate: {
       len: {
-        args: [4, 20],
-        msg: "Shipping address must be between 4 and 20 characters.",
+        args: [4, 200],
+        msg: "Shipping address must be between 4 and 200 characters.",
       },
     },
   })
@@ -42,7 +42,7 @@ class Order extends Model {
 
   @AllowNull(false)
   @Column({
-    type: DataType.FLOAT,
+    type: DataType.DECIMAL(10, 2),
   })
   declare totalAmount: number;
 

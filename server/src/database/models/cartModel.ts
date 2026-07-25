@@ -39,14 +39,16 @@ class Cart extends Model {
       @ForeignKey(() => User)
       @Column({
             type : DataType.UUID,
-            allowNull : false
+            allowNull : false,
+            onDelete : 'CASCADE'
       })
       declare userId : string;
 
       @ForeignKey(() => Product)
       @Column({
             type : DataType.UUID,
-            allowNull : false
+            allowNull : false,
+            onDelete : 'CASCADE'
       })
       declare productId : string;
 

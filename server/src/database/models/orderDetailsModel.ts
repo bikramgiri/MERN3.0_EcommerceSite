@@ -19,12 +19,7 @@ class OrderDetails extends Model{
     @AllowNull(false)
     @Column({
         type : DataType.INTEGER,
-        validate : {
-            len : {
-                args : [1, 10],
-                msg : "Quantity must be between 1 and 10 characters."
-            }
-        }
+        validate: { min: { args: [1], msg: "..." }, max: { args: [10], msg: "..." } }
     })
     declare quantity:number
 
