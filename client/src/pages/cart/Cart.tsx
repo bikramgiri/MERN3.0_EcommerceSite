@@ -9,6 +9,12 @@ import { Loader2, Minus, Plus, Trash2 } from "lucide-react";
 import Breadcrumb from "../../global/components/Breadcrumb";
 import { getAverageRatingNumber } from "../../utils/helpers";
 import { toast } from "react-toastify";
+import axios from "axios";
+
+interface ApiErrorPayload {
+  field?: string;
+  message?: string;
+}
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -16,6 +22,15 @@ const Cart = () => {
   const { cart } = useAppSelector((state) => state.cart);
 
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  const [, setErrors] = useState({
+    userId: "",
+    cartId: "",
+    quantity: "",
+    product: "",
+    general: "",
+  });
 
   const handleDeleteItem = async (cartId: string) => {
     setRemovingId(cartId);
@@ -27,12 +42,55 @@ const Cart = () => {
     }
   };
 
-  const handleQuantityChange = async (productId: string, newQuantity: number) => {
+  const handleQuantityChange = async (
+    cartId: string,
+    productId: string,
+    newQuantity: number,
+  ) => {
     const quantity = Math.max(1, newQuantity);
     const item = cart?.find((i) => i.productId === productId);
     if (!item) return;
     if (quantity > item.product.productStock) return;
-    await dispatch(updateCartItems({ ...item, quantity }));
+    if (updatingId === cartId || removingId === cartId) return; // block re-entry mid-request
+
+    setUpdatingId(cartId);
+    try {
+      await dispatch(updateCartItems({ ...item, quantity }));
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const errData = error.response?.data as ApiErrorPayload | undefined;
+        const httpStatus = error.response?.status;
+
+        if (
+          errData &&
+          httpStatus !== undefined &&
+          httpStatus >= 400 &&
+          httpStatus < 500
+        ) {
+          const field = errData.field;
+          const msg = errData.message || "Validation error";
+
+          if (
+            field &&
+            ["userId", "cartId", "quantity", "product", "general"].includes(
+              field,
+            )
+          ) {
+            setErrors((prev) => ({ ...prev, [field]: msg }));
+            toast.error(msg);
+          } else {
+            setErrors((prev) => ({ ...prev, general: msg }));
+            toast.error(msg);
+          }
+        }
+      }
+      setErrors((prev) => ({
+        ...prev,
+        general: "Something went wrong. Please try again.",
+      }));
+    } finally {
+      setUpdatingId(null);
+    }
   };
 
   const totalItems = cart?.reduce((sum, item) => sum + item.quantity, 0);
@@ -67,7 +125,7 @@ const Cart = () => {
         <section className="py-6 sm:py-8 md:py-12 bg-[#FDF8ED] pb-16 mt-10 md:pt-18 font-['Inter',sans-serif] text-[#1A1613] antialiased">
           <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
             <div className="mt-1 mb-4">
-            <Breadcrumb items={[{ label: "Cart" }]} />
+              <Breadcrumb items={[{ label: "Cart" }]} />
               <h1 className=" text-xl sm:text-2xl md:text-3xl font-['Fraunces',serif] font-bold text-[#1A1613]">
                 Cart Products
               </h1>
@@ -81,6 +139,7 @@ const Cart = () => {
                   );
                   const reviewCount = item.product.reviews?.length || 0;
                   const isRemoving = removingId === item.id;
+                  const isUpdating = updatingId === item.id;
 
                   return (
                     <div
@@ -96,7 +155,7 @@ const Cart = () => {
 
               transition-all duration-500
 
-              ${isRemoving ? "opacity-50 pointer-events-none" : ""}
+              ${isRemoving || isUpdating ? "opacity-50 pointer-events-none" : ""}
               `}
                     >
                       <Link
@@ -120,45 +179,45 @@ const Cart = () => {
 
                         <div className="flex items-center gap-1 mt-1">
                           {reviewCount > 0 ? (
-                              <>
-                                {[...Array(5)].map((_, i) => (
-                                  <svg
-                                    key={i}
-                                    className={`w-4 h-4 sm:w-5 sm:h-5 ${
-                                      i < Math.round(Number(averageRating))
-                                        ? "text-[#E6540B]"
-                                        : "text-[#1A1613]/15"
-                                    }`}
-                                    fill="currentColor"
-                                    viewBox="0 0 20 20"
-                                  >
-                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                  </svg>
-                                ))}
-                                <span className="ml-1 text-sm font-medium text-[#1A1613]/80">
-                                  {averageRating}
-                                </span>
-                                <span className="text-sm text-[#1A1613]/50">
-                                  ({reviewCount})
-                                </span>
-                              </>
-                            ) : (
-                              <>
+                            <>
+                              {[...Array(5)].map((_, i) => (
                                 <svg
-                                    className="w-4 h-4 sm:w-5 sm:h-5 text-[#1A1613]/15"
-                                    fill="currentColor"
-                                    viewBox="0 0 20 20"
-                                  >
-                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                  </svg>
-                                <span className="ml-1 text-sm font-medium text-[#1A1613]/80">
-                                  0.0
-                                </span>
-                                <span className="text-sm text-[#1A1613]/50">
-                                  (0)
-                                </span>
-                              </>
-                            )}
+                                  key={i}
+                                  className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                                    i < Math.round(Number(averageRating))
+                                      ? "text-[#E6540B]"
+                                      : "text-[#1A1613]/15"
+                                  }`}
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                </svg>
+                              ))}
+                              <span className="ml-1 text-sm font-medium text-[#1A1613]/80">
+                                {averageRating}
+                              </span>
+                              <span className="text-sm text-[#1A1613]/50">
+                                ({reviewCount})
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <svg
+                                className="w-4 h-4 sm:w-5 sm:h-5 text-[#1A1613]/15"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                              </svg>
+                              <span className="ml-1 text-sm font-medium text-[#1A1613]/80">
+                                0.0
+                              </span>
+                              <span className="text-sm text-[#1A1613]/50">
+                                (0)
+                              </span>
+                            </>
+                          )}
                         </div>
 
                         <p className="text-base sm:text-lg font-['IBM_Plex_Mono',monospace] font-bold text-[#8A3B12] mt-1">
@@ -171,11 +230,14 @@ const Cart = () => {
                           <button
                             onClick={() =>
                               handleQuantityChange(
+                                item.id,
                                 item.productId,
                                 item.quantity - 1,
                               )
                             }
-                            disabled={item.quantity === 1 || isRemoving}
+                            disabled={
+                              item.quantity === 1 || isRemoving || isUpdating
+                            }
                             className="cursor-pointer w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#FDF8ED] border border-[#1A1613]/10 flex items-center justify-center hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition"
                           >
                             <Minus className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#1A1613]" />
@@ -188,13 +250,15 @@ const Cart = () => {
                           <button
                             onClick={() =>
                               handleQuantityChange(
+                                item.id,
                                 item.productId,
                                 item.quantity + 1,
                               )
                             }
                             disabled={
                               item.quantity >= item.product.productStock ||
-                              isRemoving
+                              isRemoving ||
+                              isUpdating
                             }
                             className="cursor-pointer w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#FDF8ED] border border-[#1A1613]/10 flex items-center justify-center hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition"
                           >

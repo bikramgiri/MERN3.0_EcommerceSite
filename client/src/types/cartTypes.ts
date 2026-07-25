@@ -17,7 +17,7 @@ export interface CartProduct {
   productStock: number;
   productImage: string;
   category: Category
-  reviews: Review[]
+  reviews?: Review[]
 }
 
 export interface CartItem{

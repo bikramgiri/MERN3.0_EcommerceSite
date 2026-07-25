@@ -51,7 +51,6 @@ const Header = () => {
   const cartCount = cart?.length;
 
   const markAllAsRead = () => {
-    // Implement marking notifications as read
     alert("All notifications marked as read!");
   };
 
@@ -356,16 +355,6 @@ const Header = () => {
                     </span>
                   )}
                 </div>
-
-                {/* <div
-                  onClick={() => navigate("/cart")}
-                  className="cursor-pointer relative text-[#1A1613]/80 hover:text-[#E6540B] p-1.5 rounded-full transition-colors"
-                >
-                  <ShoppingCart className="h-6 w-6" />
-                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                    {cartCount}
-                  </span>
-                </div> */}
               </>
             )}
 
@@ -421,7 +410,7 @@ const Header = () => {
                           Profile
                         </Link>
                         <Link
-                          to="/myorders"
+                          to="/my-orders"
                           className="flex gap-3 font-normal items-center px-5 py-2 text-gray-900 hover:bg-[#E6540B]/10 hover:text-[#E6540B] transition-colors"
                           onClick={() => setIsDropdownOpen(false)}
                         >

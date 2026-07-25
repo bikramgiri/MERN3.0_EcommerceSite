@@ -19,6 +19,9 @@ import CheckOut from "./pages/checkout/CheckOut.js"
 import KhaltiPaymentCallback from "./pages/checkout/KhaltiPaymentCallback.js"
 import EsewaPaymentCallback from "./pages/checkout/EsewaPaymentCallback.js"
 import EsewaPaymentFailure from "./pages/checkout/EsewaPaymentFailure.js"
+import MyOrders from "./pages/orders/MyOrders.js"
+import MyOrdersDetails from "./pages/orders/MyOrdersDetails.js"
+import EditMyOrders from "./pages/orders/EditMyOrders.js"
 
 function App() {
 
@@ -45,6 +48,9 @@ function App() {
       <Route path="/payment/khalti-callback" element={<KhaltiPaymentCallback />} />
       <Route path="/payment/esewa-callback" element={<EsewaPaymentCallback />} />
       <Route path="/payment/esewa-failure" element={<EsewaPaymentFailure />} />
+      <Route path="/my-orders" element={<MyOrders />} />
+      <Route path="/my-orders/orderdetails/:id" element={<MyOrdersDetails />} />
+      <Route path="/my-orders/orderdetails/editorders/:id" element={<EditMyOrders />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />

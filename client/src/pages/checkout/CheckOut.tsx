@@ -1,10 +1,17 @@
 import { useEffect, useState, type ChangeEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../hooks/hooks";
-import { removeFromCart, updateCartItems } from "../../store/customer/cartSlice";
+import {
+  removeFromCart,
+  updateCartItems,
+} from "../../store/customer/cartSlice";
 import { Loader2, Minus, Plus, Trash2 } from "lucide-react";
 import { createOrder } from "../../store/customer/checkoutSlice";
-import { ItemsDetails, OrderData, PaymentMethod } from "../../types/checkoutTypes";
+import {
+  ItemsDetails,
+  OrderData,
+  PaymentMethod,
+} from "../../types/checkoutTypes";
 import { Status } from "../../global/statuses";
 import Breadcrumb from "../../global/components/Breadcrumb";
 import { getAverageRatingNumber } from "../../utils/helpers";
@@ -44,8 +51,12 @@ const CheckOut = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { cart } = useAppSelector((state) => state.cart);
-  const { khaltiUrl, esewaUrl, esewaPaymentData, status } = useAppSelector((state) => state.checkout);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.COD);
+  const { khaltiUrl, esewaUrl, esewaPaymentData, status } = useAppSelector(
+    (state) => state.checkout,
+  );
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
+    PaymentMethod.COD,
+  );
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -68,9 +79,12 @@ const CheckOut = () => {
 
   const [errors, setErrors] = useState<CheckoutFormErrors>(emptyErrors);
 
-  const handleDataChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleDataChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
     const { name, value, type } = e.target;
-    const checked = type === "checkbox" ? (e.target as HTMLInputElement).checked : undefined;
+    const checked =
+      type === "checkbox" ? (e.target as HTMLInputElement).checked : undefined;
     setData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
@@ -87,7 +101,7 @@ const CheckOut = () => {
   };
 
   const validatePhoneNumber = (phoneNumber: string) => {
-    const phoneRegex = /^\d{10}$/; 
+    const phoneRegex = /^\d{10}$/;
     return phoneRegex.test(phoneNumber);
   };
 
@@ -112,7 +126,7 @@ const CheckOut = () => {
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cart.reduce(
     (sum, item) => sum + item.product.productPrice * item.quantity,
-    0
+    0,
   );
   const shipping = 50;
   const total = subtotal + shipping;
@@ -123,9 +137,18 @@ const CheckOut = () => {
       name: "COD",
       value: PaymentMethod.COD,
       icon: (
-        <svg className="w-7 h-7 text-[#1A1613]/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-            d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+        <svg
+          className="w-7 h-7 text-[#1A1613]/60"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+          />
         </svg>
       ),
     },
@@ -134,7 +157,11 @@ const CheckOut = () => {
       name: "Khalti",
       value: PaymentMethod.Khalti,
       icon: (
-        <svg className="w-7 h-7 text-[#5C2D91]" fill="currentColor" viewBox="0 0 24 24">
+        <svg
+          className="w-7 h-7 text-[#5C2D91]"
+          fill="currentColor"
+          viewBox="0 0 24 24"
+        >
           <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
         </svg>
       ),
@@ -144,7 +171,11 @@ const CheckOut = () => {
       name: "eSewa",
       value: PaymentMethod.Esewa,
       icon: (
-        <svg className="w-7 h-7 text-[#3A7D44]" fill="currentColor" viewBox="0 0 24 24">
+        <svg
+          className="w-7 h-7 text-[#3A7D44]"
+          fill="currentColor"
+          viewBox="0 0 24 24"
+        >
           <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
         </svg>
       ),
@@ -169,7 +200,7 @@ const CheckOut = () => {
 
     let hasError = false;
     const newError: CheckoutFormErrors = { ...emptyErrors };
-    
+
     const username = data.username ?? "";
     const email = data.email ?? "";
     const phoneNumber = data.phoneNumber ?? "";
@@ -238,25 +269,32 @@ const CheckOut = () => {
     setIsSubmitting(true);
 
     try {
-     const response = await dispatch(createOrder(orderData));
-    if (paymentMethod === PaymentMethod.COD) {
-      toast.success("Order placed successfully! You will pay on delivery.");
-      navigate("/my-orders");
-    } else if (paymentMethod === PaymentMethod.Khalti) {
-      if (response?.data?.id) localStorage.setItem("orderId", response.data.id);
-      if (response?.pidx) localStorage.setItem("khaltiPidx", response.pidx);
-      toast.info("Redirecting to Khalti...");
-    } else {
-      if (response?.data?.id) localStorage.setItem("orderId", response.data.id);
-      toast.info("Redirecting to eSewa...");
-    }
+      const response = await dispatch(createOrder(orderData));
+      if (paymentMethod === PaymentMethod.COD) {
+        toast.success("Order placed successfully! You will pay on delivery.");
+        navigate("/my-orders");
+      } else if (paymentMethod === PaymentMethod.Khalti) {
+        if (response?.data?.id)
+          localStorage.setItem("orderId", response.data.id);
+        if (response?.pidx) localStorage.setItem("khaltiPidx", response.pidx);
+        toast.info("Redirecting to Khalti...");
+      } else {
+        if (response?.data?.id)
+          localStorage.setItem("orderId", response.data.id);
+        toast.info("Redirecting to eSewa...");
+      }
     } catch (error) {
       setIsSubmitting(false);
       if (axios.isAxiosError(error)) {
         const errData = error.response?.data as ApiErrorPayload | undefined;
         const httpStatus = error.response?.status;
 
-        if (errData && httpStatus !== undefined && httpStatus >= 400 && httpStatus < 500) {
+        if (
+          errData &&
+          httpStatus !== undefined &&
+          httpStatus >= 400 &&
+          httpStatus < 500
+        ) {
           const field = errData.field as keyof CheckoutFormErrors | undefined;
           const msg = errData.message || "Validation error";
 
@@ -293,27 +331,27 @@ const CheckOut = () => {
     }
   }, [khaltiUrl, paymentMethod]);
 
-useEffect(() => {
-  if (paymentMethod === PaymentMethod.Esewa && esewaUrl && esewaPaymentData) {
-    const timer = setTimeout(() => {
-      const form = document.createElement("form");
-      form.method = "POST";
-      form.action = esewaUrl;
+  useEffect(() => {
+    if (paymentMethod === PaymentMethod.Esewa && esewaUrl && esewaPaymentData) {
+      const timer = setTimeout(() => {
+        const form = document.createElement("form");
+        form.method = "POST";
+        form.action = esewaUrl;
 
-      Object.entries(esewaPaymentData).forEach(([key, value]) => {
-        const input = document.createElement("input");
-        input.type = "hidden";
-        input.name = key;
-        input.value = String(value);
-        form.appendChild(input);
-      });
+        Object.entries(esewaPaymentData).forEach(([key, value]) => {
+          const input = document.createElement("input");
+          input.type = "hidden";
+          input.name = key;
+          input.value = String(value);
+          form.appendChild(input);
+        });
 
-      document.body.appendChild(form);
-      form.submit();
-    }, 1000);
-    return () => clearTimeout(timer);
-  }
-}, [esewaUrl, esewaPaymentData, paymentMethod]);
+        document.body.appendChild(form);
+        form.submit();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [esewaUrl, esewaPaymentData, paymentMethod]);
 
   const inputClass = (hasError: boolean) =>
     `w-full px-4 py-3 border rounded-xl bg-[#FDF8ED] text-[#1A1613] placeholder:text-[#1A1613]/40 focus:outline-none focus:ring-1 transition ${
@@ -335,7 +373,9 @@ useEffect(() => {
     return (
       <section className="py-16 sm:py-20 bg-[#FDF8ED] font-['Inter',sans-serif]">
         <div className="max-w-[1500px] mx-auto px-4 text-center">
-          <Breadcrumb items={[{ label: "Cart", href: "/cart" }, { label: "Checkout" }]} />
+          <Breadcrumb
+            items={[{ label: "Cart", href: "/cart" }, { label: "Checkout" }]}
+          />
           <h1 className="text-3xl sm:text-4xl font-['Fraunces',serif] font-bold text-[#1A1613] mb-4 sm:mb-6">
             Your Cart is Empty
           </h1>
@@ -357,7 +397,9 @@ useEffect(() => {
     <section className="py-6 sm:py-8 md:py-12 bg-[#FDF8ED] pb-16 mt-10 md:pt-18 font-['Inter',sans-serif] text-[#1A1613] antialiased">
       <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mt-1 mb-4">
-          <Breadcrumb items={[{ label: "Cart", href: "/cart" }, { label: "Checkout" }]} />
+          <Breadcrumb
+            items={[{ label: "Cart", href: "/cart" }, { label: "Checkout" }]}
+          />
           <h1 className="text-xl sm:text-2xl md:text-3xl font-['Fraunces',serif] font-bold text-[#1A1613]">
             Checkout
           </h1>
@@ -371,7 +413,6 @@ useEffect(() => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
           <div className="space-y-6">
-
             <div className={cardClass}>
               <h2 className="text-xl sm:text-2xl font-['Fraunces',serif] font-bold text-[#1A1613] mb-4 sm:mb-6">
                 Billing Details
@@ -379,54 +420,111 @@ useEffect(() => {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-[#1A1613] mb-1">Name</label>
-                    <input type="text" name="username" value={data.username} onChange={handleDataChange}
-                      placeholder="Enter your name" className={inputClass(!!errors.username)} />
+                    <label className="block text-sm font-medium text-[#1A1613] mb-1">
+                      Name
+                    </label>
+                    <input
+                      type="text"
+                      name="username"
+                      value={data.username}
+                      onChange={handleDataChange}
+                      placeholder="Enter your name"
+                      className={inputClass(!!errors.username)}
+                    />
                     {errorText(errors.username)}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-[#1A1613] mb-1">Email Address</label>
-                    <input type="email" name="email" value={data.email} onChange={handleDataChange}
-                      placeholder="Enter your email" className={inputClass(!!errors.email)} />
+                    <label className="block text-sm font-medium text-[#1A1613] mb-1">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={data.email}
+                      onChange={handleDataChange}
+                      placeholder="Enter your email"
+                      className={inputClass(!!errors.email)}
+                    />
                     {errorText(errors.email)}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-[#1A1613] mb-1">Phone Number</label>
-                    <input type="text" name="phoneNumber" required value={data.phoneNumber}
-                    maxLength={10}
-                    onChange={handleDataChange} placeholder="Enter your phone number" className={inputClass(!!errors.phoneNumber)} />
+                    <label className="block text-sm font-medium text-[#1A1613] mb-1">
+                      Phone Number
+                    </label>
+                    <input
+                      type="text"
+                      name="phoneNumber"
+                      required
+                      value={data.phoneNumber}
+                      maxLength={10}
+                      onChange={handleDataChange}
+                      placeholder="Enter your phone number"
+                      className={inputClass(!!errors.phoneNumber)}
+                    />
                     {errorText(errors.phoneNumber)}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-[#1A1613] mb-1">Shipping Address</label>
-                    <input type="text" name="shippingAddress" required value={data.shippingAddress}
-                      onChange={handleDataChange} placeholder="Enter your shipping address" className={inputClass(!!errors.shippingAddress)} />
+                    <label className="block text-sm font-medium text-[#1A1613] mb-1">
+                      Shipping Address
+                    </label>
+                    <input
+                      type="text"
+                      name="shippingAddress"
+                      required
+                      value={data.shippingAddress}
+                      onChange={handleDataChange}
+                      placeholder="Enter your shipping address"
+                      className={inputClass(!!errors.shippingAddress)}
+                    />
                     {errorText(errors.shippingAddress)}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-[#1A1613] mb-1">City</label>
-                    <input type="text" name="city" value={data.city} onChange={handleDataChange}
-                      placeholder="Enter your city" className={inputClass(!!errors.city)} />
+                    <label className="block text-sm font-medium text-[#1A1613] mb-1">
+                      City
+                    </label>
+                    <input
+                      type="text"
+                      name="city"
+                      value={data.city}
+                      onChange={handleDataChange}
+                      placeholder="Enter your city"
+                      className={inputClass(!!errors.city)}
+                    />
                     {errorText(errors.city)}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-[#1A1613] mb-1">State/Province</label>
-                    <input type="text" name="state" value={data.state} onChange={handleDataChange}
-                      placeholder="Enter your state/province" className={inputClass(!!errors.state)} />
+                    <label className="block text-sm font-medium text-[#1A1613] mb-1">
+                      State/Province
+                    </label>
+                    <input
+                      type="text"
+                      name="state"
+                      value={data.state}
+                      onChange={handleDataChange}
+                      placeholder="Enter your state/province"
+                      className={inputClass(!!errors.state)}
+                    />
                     {errorText(errors.state)}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-[#1A1613] mb-1">Country</label>
-                    <select name="country" value={data.country} onChange={handleDataChange} className={inputClass(!!errors.country)}>
+                    <label className="block text-sm font-medium text-[#1A1613] mb-1">
+                      Country
+                    </label>
+                    <select
+                      name="country"
+                      value={data.country}
+                      onChange={handleDataChange}
+                      className={inputClass(!!errors.country)}
+                    >
                       <option value="">Select your country</option>
                       <option value="Nepal">Nepal</option>
                       <option value="India">India</option>
@@ -437,17 +535,32 @@ useEffect(() => {
                     {errorText(errors.country)}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-[#1A1613] mb-1">Postal Code</label>
-                    <input type="text" name="postalCode" value={data.postalCode} onChange={handleDataChange}
-                      placeholder="Enter your postal code" className={inputClass(!!errors.postalCode)} />
+                    <label className="block text-sm font-medium text-[#1A1613] mb-1">
+                      Postal Code
+                    </label>
+                    <input
+                      type="text"
+                      name="postalCode"
+                      value={data.postalCode}
+                      onChange={handleDataChange}
+                      placeholder="Enter your postal code"
+                      className={inputClass(!!errors.postalCode)}
+                    />
                     {errorText(errors.postalCode)}
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <input type="checkbox" name="saveData" checked={data.saveData} onChange={handleDataChange}
-                    className="cursor-pointer w-4 h-4 rounded accent-[#E6540B]" />
-                  <label className="text-sm text-[#1A1613]/70">Save this information for next time</label>
+                  <input
+                    type="checkbox"
+                    name="saveData"
+                    checked={data.saveData}
+                    onChange={handleDataChange}
+                    className="cursor-pointer w-4 h-4 rounded accent-[#E6540B]"
+                  />
+                  <label className="text-sm text-[#1A1613]/70">
+                    Save this information for next time
+                  </label>
                 </div>
               </div>
             </div>
@@ -461,9 +574,10 @@ useEffect(() => {
                   <label
                     key={method.id}
                     className={`flex items-center p-3 sm:p-4 border rounded-2xl cursor-pointer transition-all duration-200
-                      ${paymentMethod === method.value
-                        ? "border-[#E6540B]/60 bg-[#E6540B]/5"
-                        : "border-[#1A1613]/10 hover:border-[#1A1613]/20 hover:bg-[#F4EEDF]"
+                      ${
+                        paymentMethod === method.value
+                          ? "border-[#E6540B]/60 bg-[#E6540B]/5"
+                          : "border-[#1A1613]/10 hover:border-[#1A1613]/20 hover:bg-[#F4EEDF]"
                       }
                       ${isSubmitting ? "opacity-60 pointer-events-none" : ""}`}
                   >
@@ -484,7 +598,9 @@ useEffect(() => {
                         </span>
                       </div>
                       {paymentMethod === method.value && (
-                        <span className="text-sm font-semibold text-[#E6540B]">Selected</span>
+                        <span className="text-sm font-semibold text-[#E6540B]">
+                          Selected
+                        </span>
                       )}
                     </div>
                   </label>
@@ -494,10 +610,11 @@ useEffect(() => {
           </div>
 
           <div className="space-y-4 sm:space-y-6">
-
             <div className="space-y-3 sm:space-y-4">
               {cart.map((item) => {
-                const averageRating = getAverageRatingNumber(item.product.reviews);
+                const averageRating = getAverageRatingNumber(
+                  item.product.reviews,
+                );
                 const reviewCount = item.product.reviews?.length || 0;
                 const isRemoving = removingId === item.id;
 
@@ -535,22 +652,37 @@ useEffect(() => {
                         {reviewCount > 0 ? (
                           <>
                             {[...Array(5)].map((_, i) => (
-                              <svg key={i}
+                              <svg
+                                key={i}
                                 className={`w-4 h-4 ${i < Math.round(Number(averageRating)) ? "text-[#E6540B]" : "text-[#1A1613]/15"}`}
-                                fill="currentColor" viewBox="0 0 20 20">
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                               </svg>
                             ))}
-                            <span className="ml-1 text-sm font-medium text-[#1A1613]/80">{averageRating}</span>
-                            <span className="text-sm text-[#1A1613]/50">({reviewCount})</span>
+                            <span className="ml-1 text-sm font-medium text-[#1A1613]/80">
+                              {averageRating}
+                            </span>
+                            <span className="text-sm text-[#1A1613]/50">
+                              ({reviewCount})
+                            </span>
                           </>
                         ) : (
                           <>
-                            <svg className="w-4 h-4 text-[#1A1613]/15" fill="currentColor" viewBox="0 0 20 20">
+                            <svg
+                              className="w-4 h-4 text-[#1A1613]/15"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
                               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                             </svg>
-                            <span className="ml-1 text-sm font-medium text-[#1A1613]/80">0.0</span>
-                            <span className="text-sm text-[#1A1613]/50">(0)</span>
+                            <span className="ml-1 text-sm font-medium text-[#1A1613]/80">
+                              0.0
+                            </span>
+                            <span className="text-sm text-[#1A1613]/50">
+                              (0)
+                            </span>
                           </>
                         )}
                       </div>
@@ -563,7 +695,12 @@ useEffect(() => {
                     <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
                       <div className="flex items-center gap-1 sm:gap-2 bg-[#F4EEDF] rounded-full p-1">
                         <button
-                          onClick={() => handleQuantityChange(item.productId, item.quantity - 1)}
+                          onClick={() =>
+                            handleQuantityChange(
+                              item.productId,
+                              item.quantity - 1,
+                            )
+                          }
                           disabled={item.quantity === 1 || isRemoving}
                           className="cursor-pointer w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#FDF8ED] border border-[#1A1613]/10 flex items-center justify-center hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition"
                         >
@@ -573,8 +710,16 @@ useEffect(() => {
                           {item.quantity}
                         </span>
                         <button
-                          onClick={() => handleQuantityChange(item.productId, item.quantity + 1)}
-                          disabled={item.quantity >= item.product.productStock || isRemoving}
+                          onClick={() =>
+                            handleQuantityChange(
+                              item.productId,
+                              item.quantity + 1,
+                            )
+                          }
+                          disabled={
+                            item.quantity >= item.product.productStock ||
+                            isRemoving
+                          }
                           className="cursor-pointer w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#FDF8ED] border border-[#1A1613]/10 flex items-center justify-center hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition"
                         >
                           <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#1A1613]" />
@@ -587,10 +732,11 @@ useEffect(() => {
                         aria-label="Remove item"
                         className="cursor-pointer w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#9B3A2E]/10 text-[#9B3A2E] hover:bg-[#9B3A2E]/20 flex items-center justify-center transition disabled:opacity-70 disabled:cursor-not-allowed"
                       >
-                        {isRemoving
-                          ? <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-                          : <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
-                        }
+                        {isRemoving ? (
+                          <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -606,19 +752,27 @@ useEffect(() => {
               <div className="space-y-3 sm:space-y-4 text-[#1A1613] text-sm sm:text-base">
                 <div className="flex justify-between">
                   <span>Total Items</span>
-                  <span className="font-['IBM_Plex_Mono',monospace] font-semibold">{totalItems}</span>
+                  <span className="font-['IBM_Plex_Mono',monospace] font-semibold">
+                    {totalItems}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span className="font-['IBM_Plex_Mono',monospace] font-semibold">Rs. {subtotal.toFixed(2)}</span>
+                  <span className="font-['IBM_Plex_Mono',monospace] font-semibold">
+                    Rs. {subtotal.toFixed(2)}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Shipping</span>
-                  <span className="font-['IBM_Plex_Mono',monospace] font-semibold text-green-700">Rs. {shipping}</span>
+                  <span className="font-['IBM_Plex_Mono',monospace] font-semibold text-green-700">
+                    Rs. {shipping}
+                  </span>
                 </div>
                 <div className="border-t border-[#1A1613]/10 pt-4 flex justify-between text-lg sm:text-xl font-bold">
                   <span className="font-['Fraunces',serif]">Total</span>
-                  <span className="font-['IBM_Plex_Mono',monospace] text-[#8A3B12]">Rs. {total.toFixed(2)}</span>
+                  <span className="font-['IBM_Plex_Mono',monospace] text-[#8A3B12]">
+                    Rs. {total.toFixed(2)}
+                  </span>
                 </div>
               </div>
 
@@ -639,20 +793,32 @@ useEffect(() => {
               </div>
 
               {paymentMethod === PaymentMethod.COD ? (
-                <button type="button" onClick={handlePlaceOrder} disabled={isSubmitting}
-                  className="cursor-pointer w-full mt-6 sm:mt-8 py-3.5 sm:py-4 bg-[#E6540B] text-[#FDF8ED] text-base sm:text-lg font-semibold rounded-xl hover:bg-[#c94806] transition shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={handlePlaceOrder}
+                  disabled={isSubmitting}
+                  className="cursor-pointer w-full mt-6 sm:mt-8 py-3.5 sm:py-4 bg-[#E6540B] text-[#FDF8ED] text-base sm:text-lg font-semibold rounded-xl hover:bg-[#c94806] transition shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
                   {isSubmitting && <Loader2 className="w-5 h-5 animate-spin" />}
                   {isSubmitting ? "Placing order...." : "Place Order"}
                 </button>
               ) : paymentMethod === PaymentMethod.Khalti ? (
-                <button type="button" onClick={handlePlaceOrder} disabled={isSubmitting}
-                  className="cursor-pointer w-full mt-6 sm:mt-8 py-3.5 sm:py-4 bg-[#5C2D91] text-[#FDF8ED] text-base sm:text-lg font-semibold rounded-xl hover:bg-[#4a2475] transition shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={handlePlaceOrder}
+                  disabled={isSubmitting}
+                  className="cursor-pointer w-full mt-6 sm:mt-8 py-3.5 sm:py-4 bg-[#5C2D91] text-[#FDF8ED] text-base sm:text-lg font-semibold rounded-xl hover:bg-[#4a2475] transition shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
                   {isSubmitting && <Loader2 className="w-5 h-5 animate-spin" />}
                   {isSubmitting ? "Paying with Khalti...." : "Pay with Khalti"}
                 </button>
               ) : (
-                <button type="button" onClick={handlePlaceOrder} disabled={isSubmitting}
-                  className="cursor-pointer w-full mt-6 sm:mt-8 py-3.5 sm:py-4 bg-[#3A7D44] text-[#FDF8ED] text-base sm:text-lg font-semibold rounded-xl hover:bg-[#2e6336] transition shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={handlePlaceOrder}
+                  disabled={isSubmitting}
+                  className="cursor-pointer w-full mt-6 sm:mt-8 py-3.5 sm:py-4 bg-[#3A7D44] text-[#FDF8ED] text-base sm:text-lg font-semibold rounded-xl hover:bg-[#2e6336] transition shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
                   {isSubmitting && <Loader2 className="w-5 h-5 animate-spin" />}
                   {isSubmitting ? "Paying with eSewa...." : "Pay with eSewa"}
                 </button>

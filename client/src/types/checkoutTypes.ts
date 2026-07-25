@@ -1,3 +1,5 @@
+import { Review } from "./productTypes";
+
 export enum PaymentMethod {
   COD = "COD",
   Khalti = "Khalti",
@@ -18,12 +20,18 @@ export enum OrderStatus {
   InTransit = "In Transit",
 }
 
+interface Category {
+  categoryName: string;
+}
+
 export interface ProductDetails {
   productName: string;
   productPrice: number;
   productDescription: string;
   productImage: string;
   productStock: number;
+  reviews: Review[];
+  category : Category;
 }
 
 export interface ItemsDetails {

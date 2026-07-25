@@ -1,6 +1,14 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import { emptyCart } from "./cartSlice";
-import { CheckoutState, DecodedData, EsewaPaymentData, FetchOrder, OrderData, OrderStatus, PaymentStatus } from "../../types/checkoutTypes";
+import {
+  CheckoutState,
+  DecodedData,
+  EsewaPaymentData,
+  FetchOrder,
+  OrderData,
+  OrderStatus,
+  PaymentStatus,
+} from "../../types/checkoutTypes";
 import { Status } from "../../global/statuses";
 import { AppDispatch } from "../store";
 import { APIAuthenticated } from "../../http";
@@ -12,7 +20,7 @@ const initialState: CheckoutState = {
   esewaUrl: null,
   esewaPaymentData: null,
   myOrder: [],
-  singleOrder: null
+  singleOrder: null,
 };
 
 const checkoutSlice = createSlice({
@@ -25,7 +33,10 @@ const checkoutSlice = createSlice({
     setMyOrders(state: CheckoutState, action: PayloadAction<FetchOrder[]>) {
       state.myOrder = action.payload;
     },
-    setSingleOrder(state: CheckoutState, action: PayloadAction<FetchOrder | null>) {
+    setSingleOrder(
+      state: CheckoutState,
+      action: PayloadAction<FetchOrder | null>,
+    ) {
       state.singleOrder = action.payload;
     },
     setStatus(state: CheckoutState, action: PayloadAction<Status>) {
@@ -43,13 +54,29 @@ const checkoutSlice = createSlice({
     ) {
       state.esewaUrl = action.payload;
     },
-     setEsewaPaymentData(state: CheckoutState, action: PayloadAction<EsewaPaymentData | null>) {
+    setEsewaPaymentData(
+      state: CheckoutState,
+      action: PayloadAction<EsewaPaymentData | null>,
+    ) {
       state.esewaPaymentData = action.payload;
     },
     deleteOrder(state: CheckoutState, action: PayloadAction<string>) {
       state.myOrder = state.myOrder.filter(
         (order) => order.id !== action.payload,
       );
+    },
+    cancelOrder(state, action: PayloadAction<string>) {
+      state.myOrder = state.myOrder.map((order) =>
+        order.id === action.payload
+          ? { ...order, orderStatus: OrderStatus.Cancelled }
+          : order,
+      );
+      if (state.singleOrder?.id === action.payload) {
+        state.singleOrder = {
+          ...state.singleOrder,
+          orderStatus: OrderStatus.Cancelled,
+        };
+      }
     },
     updateMyOrderStatus(
       state: CheckoutState,
@@ -64,7 +91,6 @@ const checkoutSlice = createSlice({
       if (state.singleOrder && state.singleOrder.id === orderId) {
         state.singleOrder = { ...state.singleOrder, orderStatus: status };
       }
-
     },
     updateSingleOrderStatus: (
       state: CheckoutState,
@@ -83,14 +109,15 @@ const checkoutSlice = createSlice({
     ) {
       const { orderId, status } = action.payload;
       state.myOrder = state.myOrder.map((order) =>
-        order.id === orderId ? { 
-          ...order,
-          Payment: {
-              ...order.Payment,
-              paymentStatus: status,
-            }, 
-        }
-        : order
+        order.id === orderId
+          ? {
+              ...order,
+              Payment: {
+                ...order.Payment,
+                paymentStatus: status,
+              },
+            }
+          : order,
       );
     },
     updateSingleOrderPaymentStatus: (
@@ -98,7 +125,7 @@ const checkoutSlice = createSlice({
       action: PayloadAction<{ orderId: string; status: PaymentStatus }>,
     ) => {
       const { orderId, status } = action.payload;
-       if (state.singleOrder && state.singleOrder.id === orderId) {
+      if (state.singleOrder && state.singleOrder.id === orderId) {
         state.singleOrder = {
           ...state.singleOrder,
           Payment: { ...state.singleOrder.Payment, paymentStatus: status },
@@ -117,6 +144,7 @@ export const {
   setEsewaUrl,
   setEsewaPaymentData,
   deleteOrder,
+  cancelOrder,
   updateMyOrderStatus,
   updateSingleOrderStatus,
   updatePaymentStatus,
@@ -130,13 +158,16 @@ export function createOrder(data: OrderData) {
     try {
       const response = await APIAuthenticated.post("/customer/order", data);
       if (response.status === 201) {
-         if (response.data.paymentUrl) dispatch(setKhaltiUrl(response.data.paymentUrl));
-        if (response.data.esewaPaymentUrl) dispatch(setEsewaUrl(response.data.esewaPaymentUrl));
-        if (response.data.esewaPaymentData) dispatch(setEsewaPaymentData(response.data.esewaPaymentData));
+        if (response.data.paymentUrl)
+          dispatch(setKhaltiUrl(response.data.paymentUrl));
+        if (response.data.esewaPaymentUrl)
+          dispatch(setEsewaUrl(response.data.esewaPaymentUrl));
+        if (response.data.esewaPaymentData)
+          dispatch(setEsewaPaymentData(response.data.esewaPaymentData));
         dispatch(setStatus(Status.SUCCESS));
         dispatch(fetchMyOrder());
         dispatch(emptyCart());
-        return response.data; 
+        return response.data;
       }
     } catch (error) {
       dispatch(setStatus(Status.ERROR));
@@ -151,7 +182,7 @@ export function fetchMyOrder() {
     try {
       const response = await APIAuthenticated.get("/customer/order");
       if (response.status === 200) {
-        dispatch(setMyOrders(response.data.data)); 
+        dispatch(setMyOrders(response.data.data));
         dispatch(setStatus(Status.SUCCESS));
       }
     } catch (error) {
@@ -180,40 +211,44 @@ export function fetchMyOrder() {
 // *Or
 
 // *Fetch Single order without API call
-export function fetchMySingleOrder(id: string){
-  return async function fetchMySingleOrderThunk(dispatch: AppDispatch, getState: () => {checkout: CheckoutState}) {
-      const store = getState();
-      const orders = store.checkout.myOrder;
-      const existOrder = orders.find(
-        (order: FetchOrder) => order.id === id,
-      );
-      if (existOrder) {
-        dispatch(setSingleOrder((existOrder)));
-        dispatch(setStatus(Status.SUCCESS));
-      } else {
-        dispatch(setStatus(Status.LOADING));
-        try {
-          const response = await APIAuthenticated.get(`/customer/order/${id}`);
-          if(response.status === 200){
-                dispatch(setSingleOrder(response.data.data))
-                dispatch(setStatus(Status.SUCCESS));
-          }
-        } catch (error) {
-          dispatch(setStatus(Status.ERROR));
-          throw error;
+export function fetchMySingleOrder(id: string) {
+  return async function fetchMySingleOrderThunk(
+    dispatch: AppDispatch,
+    getState: () => { checkout: CheckoutState },
+  ) {
+    const store = getState();
+    const orders = store.checkout.myOrder;
+    const existOrder = orders.find((order: FetchOrder) => order.id === id);
+    if (existOrder) {
+      dispatch(setSingleOrder(existOrder));
+      dispatch(setStatus(Status.SUCCESS));
+    } else {
+      dispatch(setStatus(Status.LOADING));
+      try {
+        const response = await APIAuthenticated.get(`/customer/order/${id}`);
+        if (response.status === 200) {
+          dispatch(setSingleOrder(response.data.data));
+          dispatch(setStatus(Status.SUCCESS));
         }
+      } catch (error) {
+        dispatch(setStatus(Status.ERROR));
+        throw error;
       }
-  }
+    }
+  };
 }
 
 // *Verify Khalti Payment
-export function verifyKhaltiPayment(pidx : string) {
+export function verifyKhaltiPayment(pidx: string) {
   return async function verifyPaymentThunk(dispatch: AppDispatch) {
     dispatch(setStatus(Status.LOADING));
     try {
-      const response = await APIAuthenticated.post("/customer/verify-khalti-payment", {
-        pidx,
-      });
+      const response = await APIAuthenticated.post(
+        "/customer/verify-khalti-payment",
+        {
+          pidx,
+        },
+      );
       if (response.status === 200) {
         dispatch(setStatus(Status.SUCCESS));
         dispatch(fetchMyOrder());
@@ -227,14 +262,14 @@ export function verifyKhaltiPayment(pidx : string) {
   };
 }
 
-// *Verify eSewa Payment 
+// *Verify eSewa Payment
 export function verifyEsewaPayment(decodedData: DecodedData) {
   return async function verifyEsewaThunk(dispatch: AppDispatch) {
     dispatch(setStatus(Status.LOADING));
     try {
       const response = await APIAuthenticated.post(
         "/customer/verify-esewa-payment",
-        decodedData
+        decodedData,
       );
       if (response.status === 200) {
         dispatch(setStatus(Status.SUCCESS));
@@ -253,11 +288,32 @@ export function editMyOrders(id: string, data: OrderData) {
   return async function editMyOrdersThunk(dispatch: AppDispatch) {
     dispatch(setStatus(Status.LOADING));
     try {
-      const response = await APIAuthenticated.patch(`/customer/order/${id}`, data);
+      const response = await APIAuthenticated.patch(
+        `/customer/order/${id}`,
+        data,
+      );
       if (response.status === 200) {
         dispatch(setSingleOrder(response.data.data));
         dispatch(setStatus(Status.SUCCESS));
         dispatch(fetchMyOrder());
+      }
+    } catch (error) {
+      dispatch(setStatus(Status.ERROR));
+      throw error;
+    }
+  };
+}
+
+export function cancelMyOrders(id: string) {
+  return async function cancelMyOrdersThunk(dispatch: AppDispatch) {
+    dispatch(setStatus(Status.LOADING));
+    try {
+      const response = await APIAuthenticated.patch(
+        `/customer/order/cancel/${id}`,
+      );
+      if (response.status === 200) {
+        dispatch(cancelOrder(id));
+        dispatch(setStatus(Status.SUCCESS));
       }
     } catch (error) {
       dispatch(setStatus(Status.ERROR));

@@ -22,8 +22,8 @@ const cartSlice = createSlice({
           deleteItem(state: CartState, action: PayloadAction<string>) {
                state.cart = state.cart.filter(item => item.id !== action.payload);
           },
-           updateItems(state: CartState, action: PayloadAction<CartItem[]>) {
-            const updatedItem = action.payload[0];
+           updateItems(state: CartState, action: PayloadAction<CartItem>) {
+            const updatedItem = action.payload;
             const index = state.cart.findIndex(item => item.productId === updatedItem.productId);
             if (index !== -1) {
               state.cart[index] = updatedItem;
@@ -93,7 +93,7 @@ export function updateCartItems(data: CartItem){
             try{
                   const response = await APIAuthenticated.patch(`customer/cart/${data.id}`, { quantity: data.quantity });
                   if(response.status === 200){
-                        dispatch(updateItems([data]));
+                        dispatch(updateItems(data));
                         dispatch(fetchCartItems() );
                         dispatch(setStatus(Status.SUCCESS));
                   }

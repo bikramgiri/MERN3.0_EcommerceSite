@@ -6,20 +6,20 @@ interface HasRating {
 }
 
 export const getAverageRatingNumber = <T extends HasRating>(
-  reviews: T[] | undefined | null,
+  reviews?: T[] | undefined | null,
 ): number => {
-  if (!reviews || reviews.length === 0) return 0;
+  if (!reviews || reviews?.length === 0) return 0;
 
-  const total = reviews.reduce((acc, r) => acc + Number(r.rating || 0), 0);
-  return Number((total / reviews.length).toFixed(1));
+  const total = reviews?.reduce((acc, r) => acc + Number(r.rating || 0), 0);
+  return Number((total / reviews?.length).toFixed(1));
 };
 
 /** Get review count for a product */
 export function getProductReviewCount(
   productId: string,
-  reviews: Review[]
+  reviews?: Review[]
 ): number {
-  return reviews.filter((r) => r.productId === productId).length;
+  return reviews?.filter((r) => r.productId === productId).length || 0;
 }
 
 /**

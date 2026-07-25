@@ -104,7 +104,7 @@ export default function Products() {
   const [isSortOpen, setIsSortOpen] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
   const [addingIds, setAddingIds] = useState<Set<string>>(new Set());
-   
+
   useEffect(() => {
     dispatch(fetchProducts());
     dispatch(fetchAllReviews());
