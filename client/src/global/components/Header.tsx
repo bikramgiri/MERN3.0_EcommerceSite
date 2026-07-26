@@ -21,7 +21,7 @@ const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false); // notifications dropdown
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false); 
   const notificationsRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const moreRef = useRef<HTMLDivElement>(null);
@@ -418,12 +418,12 @@ const Header = () => {
                           My Orders
                         </Link>
                         <Link
-                          to="/settings"
+                          to="/setting"
                           className="flex gap-3 font-normal items-center px-5 py-2 text-gray-900 hover:bg-[#E6540B]/10 hover:text-[#E6540B] transition-colors"
                           onClick={() => setIsDropdownOpen(false)}
                         >
                           <Settings className="h-6 w-6" />
-                          Settings
+                          Setting
                         </Link>
                       </div>
 
@@ -459,6 +459,30 @@ const Header = () => {
               variant="mobile"
               onNavigate={() => setIsOpen(false)}
             />
+
+            <div className="px-2 flex flex-col gap-4">
+              <Link
+                to="/"
+                className=" text-[#1A1613]/80 hover:text-[#E6540B] font-medium transition-colors"
+                onClick={() => setIsOpen(false)}
+              >
+                Home
+              </Link>
+              <Link
+                to="/products"
+                className="text-[#1A1613]/80 hover:text-[#E6540B] font-medium transition-colors"
+                onClick={() => setIsOpen(false)}
+              >
+                Explore Products
+              </Link>
+              <Link
+                to="/about"
+                className="text-[#1A1613]/80 hover:text-[#E6540B] font-medium transition-colors"
+                onClick={() => setIsOpen(false)}
+              >
+                About Us
+              </Link>
+            </div>
 
             {!isLoggedIn ? (
               <div className="pt-4 border-t border-gray-100 flex flex-col gap-3">
@@ -511,12 +535,12 @@ const Header = () => {
                   </Link>
 
                   <Link
-                    to="/settings"
+                    to="/setting"
                     className="block py-2.5 px-2 text-gray-800 hover:text-[#E6540B] hover:bg-[#E6540B]/10 rounded-lg transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
                     <Settings className="h-5 w-5 inline-block mr-2" />
-                    Settings
+                    Setting
                   </Link>
                 </div>
                 <button

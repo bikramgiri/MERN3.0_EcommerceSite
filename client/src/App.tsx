@@ -22,6 +22,8 @@ import EsewaPaymentFailure from "./pages/checkout/EsewaPaymentFailure.js"
 import MyOrders from "./pages/orders/MyOrders.js"
 import MyOrdersDetails from "./pages/orders/MyOrdersDetails.js"
 import EditMyOrders from "./pages/orders/EditMyOrders.js"
+import Profile from "./pages/profile/Profile.js"
+import Setting from "./pages/setting/Setting.js"
 
 function App() {
 
@@ -51,6 +53,9 @@ function App() {
       <Route path="/my-orders" element={<MyOrders />} />
       <Route path="/my-orders/orderdetails/:id" element={<MyOrdersDetails />} />
       <Route path="/my-orders/orderdetails/editorders/:id" element={<EditMyOrders />} />
+
+      <Route path="/profile" element={<Profile />} />
+      <Route path="/setting" element={<Setting />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />

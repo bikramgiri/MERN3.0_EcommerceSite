@@ -494,43 +494,6 @@ export default function Products() {
                           </div>
                         </Link>
 
-                        {/* <div className="px-3 sm:px-4 pb-3 sm:pb-4 flex gap-2">
-                          <button
-                            disabled={product.productStock === 0 || isAdding}
-                            onClick={handleAddToCart}
-                            className="cursor-pointer flex-1 flex items-center justify-center gap-1.5 rounded-lg px-2 sm:px-3 py-2 text-xs sm:text-sm font-semibold text-[#FDF8ED] bg-[#E6540B] hover:bg-[#c94806] disabled:bg-[#1A1613]/20 disabled:cursor-not-allowed transition-colors"
-                          >
-                            {isAdding ? (
-                              <Loader2 className="animate-spin inline-block w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                            ) : (
-                              <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                            )}
-                            {isAdding ? (
-                              "Adding..."
-                              ) : (
-                                <>
-                              <span className="hidden md:inline">
-                              Add to Cart
-                            </span>
-                            <span className="md:hidden">Add</span>
-                            </>
-                            )}
-                          </button>
-                          <button
-                            onClick={() => handleWishlistToggle(product)}
-                            className={`cursor-pointer w-14 sm:w-20 flex-shrink-0 flex items-center justify-center rounded-lg border-2 transition-all ${
-                              isWishlisted
-                                ? "border-[#9B3A2E] bg-[#9B3A2E]/10 text-[#9B3A2E]"
-                                : "border-[#1A1613]/15 text-[#1A1613]/40 hover:border-[#9B3A2E] hover:text-[#9B3A2E] hover:bg-[#9B3A2E]/10"
-                            }`}
-                          >
-                            <Heart
-                              className="w-3.5 h-3.5 sm:w-4 sm:h-4"
-                              fill={isWishlisted ? "currentColor" : "none"}
-                            />
-                          </button>
-                        </div> */}
-
                         <div className="px-3 sm:px-4 pb-3 sm:pb-4 flex gap-2">
                           <button
                             disabled={product.productStock === 0 || isAdding}

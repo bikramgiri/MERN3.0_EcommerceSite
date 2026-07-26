@@ -166,7 +166,7 @@ const MyOrders = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#FDF8ED] to-[#FAF3E4]">
         <div className="text-center">
           <Loader2 className="w-16 h-16 animate-spin text-[#E6540B] mx-auto mb-4" />
-          <p className="text-xl text-[#1A1613]/70">Loading product.....</p>
+          <p className="text-xl text-[#1A1613]/70">Loading my orders.....</p>
         </div>
       </div>
     );

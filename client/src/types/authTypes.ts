@@ -1,20 +1,13 @@
 import type { Status } from "../global/statuses";
 
-export interface User {
-      id: string,
+export interface UserData {
+      id?: string,
       username: string,
       email: string,
-      // password: string,
-      role: string,
-      avatar: string,
-      // token: string,
-}
-
-export interface AuthState {
-      user: User,
-      status: Status,
-      token: string,
-      email: string,
+      role?: string,
+      avatar?: string,
+      createdAt?: string,
+      updatedAt?: string,
 }
 
 export interface registerData {
@@ -94,4 +87,11 @@ export interface changePasswordData {
       currentPassword: string,
       newPassword: string,
       confirmNewPassword: string
+}
+
+export interface AuthState {
+      user: UserData,
+      status: Status,
+      token: string,
+      email: string,
 }
