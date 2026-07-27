@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useAppDispatch, useAppSelector } from "../../hooks/hooks";
-import { fetchProducts } from "../../store/customer/productSlice";
+import { useAppDispatch, useAppSelector } from "../../../hooks/hooks";
+import { fetchProducts } from "../../../store/customer/productSlice";
 
 interface SearchProductsProps {
   variant?: "desktop" | "mobile";

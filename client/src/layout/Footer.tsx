@@ -1,4 +1,5 @@
-import { Mail, Send} from "lucide-react"; //  Facebook, Instagram, Twitter, Linkedin 
+import { Mail, Send} from "lucide-react";
+import { FaFacebook, FaInstagram, FaTwitter, FaLinkedin } from "react-icons/fa";
 import { Link } from "react-router-dom";
 
 const Footer = () => {
@@ -6,15 +7,13 @@ const Footer = () => {
     { name: "Home", path: "/" },
     { name: "Shop", path: "/products" },
     { name: "About Us", path: "/about" },
-    { name: "Contact", path: "/contact" },
+    { name: "Contact", path: "/#" },
   ];
 
   return (
     <footer className="bg-[#FDF8ED] border-t border-gray-200">
       <div className="max-w-[1500px] mx-auto px-5 sm:px-6 lg:px-8 py-8 lg:py-8">
-        {/* Main content - 3-column grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
-          {/* Column 1 - Brand & Description */}
           <div className="text-center md:text-left">
             <Link to="/" className="inline-block mb-2 font-['Fraunces',serif] text-2xl italic font-semibold">
               Truvora<span className="text-[#E6540B]">.</span>
@@ -25,23 +24,22 @@ const Footer = () => {
               Your one-stop shop for everything you need.
             </p>
 
-            {/* <div className="flex justify-center md:justify-start gap-5 mt-6">
-              <a href="#" className="text-indigo-600 hover:text-indigo-800 transition-colors" aria-label="Facebook">
-                <Facebook className="h-6 w-6" />
+            <div className="flex justify-center md:justify-start gap-5 mt-6">
+              <a href="#" className="text-[#E6540B] hover:text-[#D44A00] transition-colors" aria-label="Facebook">
+                <FaFacebook className="h-6 w-6" />
               </a>
-              <a href="#" className="text-indigo-600 hover:text-indigo-800 transition-colors" aria-label="Instagram">
-                <Instagram className="h-6 w-6" />
+              <a href="#" className="text-[#E6540B] hover:text-[#D44A00] transition-colors" aria-label="Instagram">
+                <FaInstagram className="h-6 w-6" />
               </a>
-              <a href="#" className="text-indigo-600 hover:text-indigo-800 transition-colors" aria-label="Twitter">
-                <Twitter className="h-6 w-6" />
+              <a href="#" className="text-[#E6540B] hover:text-[#D44A00] transition-colors" aria-label="Twitter">
+                <FaTwitter className="h-6 w-6" />
               </a>
-              <a href="#" className="text-indigo-600 hover:text-indigo-800 transition-colors" aria-label="LinkedIn">
-                <Linkedin className="h-6 w-6" />
+              <a href="#" className="text-[#E6540B] hover:text-[#D44A00] transition-colors" aria-label="LinkedIn">
+                <FaLinkedin className="h-6 w-6" />
               </a>
-            </div> */}
+            </div>
           </div>
 
-          {/* Column 2 - Quick Links */}
           <div className="text-center md:text-left">
             <h4 className="text-lg font-semibold text-[#1A1613] mb-4">
               Quick Links
@@ -60,17 +58,16 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Column 3 - Support Links */}
           <div className="text-center md:text-left">
             <h4 className="text-lg font-semibold text-[#1A1613] mb-4">
               Support
             </h4>
             <ul className="space-y-2">
               {[
-                { name: "FAQ", path: "/faq" },
-                { name: "Shipping Info", path: "/shipping" },
-                { name: "Returns & Refunds", path: "/returns" },
-                { name: "Privacy Policy", path: "/privacy" },
+                { name: "FAQ", path: "/#" },
+                { name: "Shipping Info", path: "/#" },
+                { name: "Returns & Refunds", path: "/#" },
+                { name: "Privacy Policy", path: "/#" },
               ].map((item) => (
                 <li key={item.name}>
                   <Link
@@ -84,7 +81,6 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Column 4 - Newsletter */}
           <div className="text-center md:text-left">
             <h4 className="text-lg font-semibold text-[#1A1613] mb-4">
               Newsletter
@@ -123,10 +119,10 @@ const Footer = () => {
             </p>
 
             <div className="flex gap-6">
-              <Link to="/privacy" className="hover:text-[#E6540B] transition-colors">
+              <Link to="/#" className="hover:text-[#E6540B] transition-colors">
                 Privacy Policy
               </Link>
-              <Link to="/terms" className="hover:text-[#E6540B] transition-colors">
+              <Link to="/#" className="hover:text-[#E6540B] transition-colors">
                 Terms of Service
               </Link>
             </div>

@@ -77,7 +77,6 @@ export default function Hero() {
               </a>
             </div>
 
-            {/* Trust row */}
             <div className="mt-8 flex items-center gap-3 text-sm text-[#1A1613]/55">
               <div className="flex text-[#E6540B]">
                 {"★★★★★".split("").map((s, i) => (

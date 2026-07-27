@@ -1,7 +1,6 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom"
 import { ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
-import Layout from "./global/components/Layout"
 import Home from "./pages/home/Home"
 import NotFound from "./global/components/NotFound.js"
 import Register from "./pages/auth/Register.js"
@@ -24,6 +23,7 @@ import MyOrdersDetails from "./pages/orders/MyOrdersDetails.js"
 import EditMyOrders from "./pages/orders/EditMyOrders.js"
 import Profile from "./pages/profile/Profile.js"
 import Setting from "./pages/setting/Setting.js"
+import Layout from "./layout/Layout.js"
 
 function App() {
 
