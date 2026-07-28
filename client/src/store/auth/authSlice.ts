@@ -175,6 +175,59 @@ export function loginUser(data: loginData) {
   };
 }
 
+// Google login 
+export function handleGoogleLogin() {
+  return async function (dispatch: AppDispatch) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('loginSuccess');
+
+    if (success === 'true') {
+      try {
+        // Read token & user directly from cookies 
+        const tokenCookie = document.cookie
+          .split('; ')
+          .find(row => row.startsWith('token='));
+        const userCookie = document.cookie
+          .split('; ')
+          .find(row => row.startsWith('user='));
+
+        let tokenValue = null;
+        let userData = null;
+
+        if (tokenCookie) {
+          tokenValue = tokenCookie.split('=')[1];
+        }
+
+        if (userCookie) {
+          const userStr = userCookie.split('=')[1];
+          userData = JSON.parse(decodeURIComponent(userStr)); 
+        }
+
+        // Save to localStorage + Redux
+        if (tokenValue) {
+          localStorage.setItem('token', tokenValue);
+          dispatch(setToken(tokenValue));
+        }
+
+        if (userData) {
+          dispatch(setUser(userData));
+          localStorage.setItem('user', JSON.stringify(userData));
+        }
+        dispatch(fetchProfile());
+
+        dispatch(setStatus(Status.SUCCESS));
+
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } catch (error) {
+        console.error('Google login processing failed:', error);
+        dispatch(setStatus(Status.ERROR));
+        throw error;
+      }
+    }
+  };
+}
+
 // Hits the backend so the httpOnly session cookie actually gets cleared —
 // document.cookie writes in the `logout` reducer can't touch httpOnly cookies.
 export function logoutUser() {

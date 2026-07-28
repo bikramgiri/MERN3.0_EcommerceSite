@@ -405,12 +405,6 @@ const CheckOut = () => {
           </h1>
         </div>
 
-        {errors.general && (
-          <div className="mb-4 p-3 rounded-xl bg-[#9B3A2E]/10 text-[#9B3A2E] text-sm">
-            {errors.general}
-          </div>
-        )}
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
           <div className="space-y-6">
             <div className={cardClass}>
