@@ -15,6 +15,22 @@ app.use(cors({
   credentials: true,
 }))
 
+// Google Login
+import session from 'express-session';
+import { envConfig } from './config/config';
+app.use(session({
+  secret: envConfig.sessionSecret as string,
+  resave: false,
+  saveUninitialized: true,
+  cookie: {
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 3 * 24 * 60 * 60 * 1000 // 3 days
+  }
+}));
+import googleAuth from './services/googleAuth';
+app.use(googleAuth.passport.initialize());
+app.use(googleAuth.passport.session());
+
 // If i deploy behind something like Nginx, Render, Railway, 
 // app.set("trust proxy", 1);
 

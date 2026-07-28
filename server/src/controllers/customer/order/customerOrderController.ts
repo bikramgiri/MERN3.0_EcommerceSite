@@ -183,17 +183,22 @@ class CustomerOrderController {
 
           const orderDetailResponse = [];
           for (const item of products) {
-            // Guarded decrement: only succeeds if enough stock remains at this instant
-            const [, affectedRows] = await Product.decrement("productStock", {
-              by: item.quantity,
-              where: {
-                id: item.productId,
-                productStock: { [Op.gte]: item.quantity },
+            const [affectedCount] = await Product.update(
+              {
+                productStock: sequelize.literal(
+                  `"productStock" - ${item.quantity}`,
+                ) as unknown as number,
               },
-              transaction: t,
-            });
+              {
+                where: {
+                  id: item.productId,
+                  productStock: { [Op.gte]: item.quantity },
+                },
+                transaction: t,
+              },
+            );
 
-            if (!affectedRows) {
+            if (!affectedCount) {
               throw new Error("INSUFFICIENT_STOCK");
             }
 
@@ -999,16 +1004,22 @@ class CustomerOrderController {
 
         // Apply new line items and decrement stock for them
         for (const item of products) {
-          const [, affectedRows] = await Product.decrement("productStock", {
-            by: item.quantity,
-            where: {
-              id: item.productId,
-              productStock: { [Op.gte]: item.quantity },
+          const [affectedCount] = await Product.update(
+            {
+              productStock: sequelize.literal(
+                `"productStock" - ${item.quantity}`,
+              ) as unknown as number,
             },
-            transaction: t,
-          });
+            {
+              where: {
+                id: item.productId,
+                productStock: { [Op.gte]: item.quantity },
+              },
+              transaction: t,
+            },
+          );
 
-          if (!affectedRows) {
+          if (!affectedCount) {
             throw new Error("INSUFFICIENT_STOCK");
           }
 

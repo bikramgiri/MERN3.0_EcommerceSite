@@ -1,14 +1,14 @@
-import { Sequelize } from 'sequelize-typescript';
-import { envConfig } from '../config/config';
-import User from './models/userModel';
-import Product from './models/productModel';
-import Category from './models/categoryModel';
-import Order from './models/orderModel';
-import OrderDetails from './models/orderDetailsModel';
-import Payment from './models/paymentModel';
-import Cart from './models/cartModel';
-import Review from './models/reviewModel';
-import Wishlist from './models/wishlistModel';
+import { Sequelize } from "sequelize-typescript";
+import { envConfig } from "../config/config";
+import User from "./models/userModel";
+import Product from "./models/productModel";
+import Category from "./models/categoryModel";
+import Order from "./models/orderModel";
+import OrderDetails from "./models/orderDetailsModel";
+import Payment from "./models/paymentModel";
+import Cart from "./models/cartModel";
+import Review from "./models/reviewModel";
+import Wishlist from "./models/wishlistModel";
 
 // const sequelize = new Sequelize(envConfig.dbConnectionString as string, {
 //   models: [__dirname + '/models'] // Path to your models
@@ -21,9 +21,10 @@ const sequelize = new Sequelize(envConfig.dbConnectionString as string, {
   dialectOptions: {
     ssl: {
       require: true,
-      rejectUnauthorized: false    }
+      rejectUnauthorized: false,
+    },
   },
-  models: [__dirname + '/models'] // Path to your models
+  models: [__dirname + "/models"], // Path to your models
 });
 
 // *Relationships
@@ -42,7 +43,7 @@ User.hasMany(Order, { foreignKey: "userId" });
 
 // Relationship between Order and Payment
 Order.belongsTo(Payment, { foreignKey: "paymentId" });
-Payment.hasOne(Order, { foreignKey: "paymentId" }); 
+Payment.hasOne(Order, { foreignKey: "paymentId" });
 
 // Relationship between OrderDetails and Order
 OrderDetails.belongsTo(Order, { foreignKey: "orderId" });
@@ -54,11 +55,11 @@ Product.hasMany(OrderDetails, { foreignKey: "productId" });
 
 // // Relationship between Cart and User
 // Cart.belongsTo(User, { foreignKey: "userId" });
-// User.hasMany(Cart, { foreignKey: "userId" }); 
+// User.hasMany(Cart, { foreignKey: "userId" });
 
 // // Relationship between Cart and Product
 // Cart.belongsTo(Product, { foreignKey: "productId" });
-// Product.hasMany(Cart, { foreignKey: "productId" }); 
+// Product.hasMany(Cart, { foreignKey: "productId" });
 
 // // Relationship between Review and User
 // Review.belongsTo(User, { foreignKey: "userId" });
@@ -79,39 +80,38 @@ Product.hasMany(OrderDetails, { foreignKey: "productId" });
 // Relationship between User and Product (Favorite Products)
 User.belongsToMany(Product, {
   through: Wishlist,
-  foreignKey: 'userId',
-  otherKey: 'productId',
-  as: 'WishlistProducts'
+  foreignKey: "userId",
+  otherKey: "productId",
+  as: "WishlistProducts",
 });
 
 Product.belongsToMany(User, {
   through: Wishlist,
-  foreignKey: 'productId',
-  otherKey: 'userId',
-  as: 'UsersWhoWishlisted'   
+  foreignKey: "productId",
+  otherKey: "userId",
+  as: "UsersWhoWishlisted",
 });
 
 const connectDB = async () => {
   try {
     await sequelize.authenticate();
-    console.log('Database connection has been established successfully.');
+    console.log("Database connection has been established successfully.");
 
-    await sequelize.sync({force : false, alter: false}); // Set force to true to drop and recreate tables, alter to true to update tables
+    await sequelize.sync({ force: false, alter: false }); // Set force to true to drop and recreate tables, alter to true to update tables
     console.log("Database Synced!");
   } catch (error) {
-    console.error('Unable to connect to the database:', error);
-    process.exit(1); 
+    console.error("Unable to connect to the database:", error);
+    process.exit(1);
   }
 };
 
 // *OR
 
 // try {
-//   sequelize.authenticate();  
+//   sequelize.authenticate();
 //   console.log('Connection has been established successfully.');
 // } catch (error) {
 //   console.error('Unable to connect to the database:', error);
 // }
-
 
 export { sequelize, connectDB };

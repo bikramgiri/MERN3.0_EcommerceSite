@@ -24,4 +24,7 @@ export const envConfig = {
   cloudinaryApiKey: process.env.CLOUDINARY_API_KEY,
   cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET,
   cloudinaryBaseUrl: process.env.CLOUDINARY_BASE_URL,
+  sessionSecret: process.env.SESSION_SECRET,
+  googleClientId: process.env.GOOGLE_CLIENT_ID,
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
 };

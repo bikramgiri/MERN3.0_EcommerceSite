@@ -38,7 +38,7 @@ class User extends Model {
 
   @Column({
     type: DataType.STRING,
-    allowNull: false
+    allowNull: false,
   })
   declare password: string;
 
@@ -53,6 +53,12 @@ class User extends Model {
     defaultValue: UserRole.Customer,
   })
   declare role: UserRole;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
+  declare googleId: string;
 
   @Column({
     type: DataType.BOOLEAN,
@@ -90,7 +96,7 @@ class User extends Model {
   })
   declare resetPasswordToken: string | null;
 
-  declare static associations: { 
+  declare static associations: {
     WishlistProducts: Association<User, Product>;
   };
 }

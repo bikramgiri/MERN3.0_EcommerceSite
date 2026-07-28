@@ -3,6 +3,7 @@ import AuthController from '../../controllers/auth/authController';
 import authMiddleware from '../../middleware/authMiddleware';
 import catchAsyncError from '../../services/catchAsyncError';
 import { loginRateLimiter, otpRateLimiter, registerRateLimiter, resetPasswordRateLimiter } from '../../middleware/rateLimiter';
+import googleAuth from '../../services/googleAuth';
 
 const router:Router = express.Router()
 
@@ -16,4 +17,10 @@ router.route("/verify-otp").post(otpRateLimiter, catchAsyncError(AuthController.
 router.route("/reset-password").post(resetPasswordRateLimiter, catchAsyncError(AuthController.resetPassword))
 router.route("/change-password").post(authMiddleware.isAuthenticated, catchAsyncError(AuthController.changePassword))
 
+// Google routes
+router.get("/google",googleAuth.passport.authenticate("google", { scope: ["profile", "email"] }));
+router.get("/google/callback",googleAuth.passport.authenticate("google", 
+    { failureRedirect: "http://localhost:5173/login?error=google_login_failed" }),
+  googleAuth.googleAuthCallback // ← use the named export
+);
 export default router;
