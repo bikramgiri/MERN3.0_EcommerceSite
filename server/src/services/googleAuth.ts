@@ -23,8 +23,9 @@ passport.deserializeUser(async function(id: string, cb: any) {
 passport.use(new GoogleStrategy({
     clientID: envConfig.googleClientId,
     clientSecret: envConfig.googleClientSecret,
-    callbackURL: "/auth/google/callback"
+    callbackURL: "/api/auth/google/callback"
   },
+  
   async function(accessToken: string, refreshToken: string, profile: any, done: any) {
     try {
       const userGoogleEmail = profile.emails[0].value;
