@@ -367,10 +367,7 @@ const AuthForm = ({
 
               <div className="mt-4 grid grid-cols-2 gap-3">
                 <button 
-                  // onClick={() => window.location.href = google}
-                   onClick={() => {
-                window.open(google, "_self")
-              }}
+                   onClick={() => {window.open(google, "_self")}}
                   className="cursor-pointer flex items-center justify-center gap-2 bg-[#FFFDF8] border border-[#1A1613]/15 rounded-lg py-2.5 px-4 hover:bg-[#1A1613]/5 transition-colors text-sm font-medium text-[#1A1613]/80">
                   <FcGoogle className="h-5 w-5 flex-shrink-0" />
                   Google
