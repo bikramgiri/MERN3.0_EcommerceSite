@@ -6,6 +6,8 @@ import { useDispatch } from "react-redux";
 import type { AppDispatch } from "../../store/store";
 import { toast } from "react-toastify";
 import axios from "axios";
+import { Status } from "../../global/statuses";
+import { useAppSelector } from "../../hooks/hooks";
 
 interface ApiErrorPayload {
   field?: string;
@@ -15,7 +17,7 @@ interface ApiErrorPayload {
 const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
-  // const {status, token} = useAppSelector((state) => state.auth);
+  const {status, token, user} = useAppSelector((state) => state.auth);
 
   const [isLoggingIn, setIsLoggingIn] = useState(false); 
 
@@ -76,12 +78,12 @@ const Login = () => {
 
  try {
       await dispatch(loginUser(userData));
-       toast.success("Login successful!");
-      dispatch(resetAuthStatus());
+      //  toast.success("Login successful!");
+      // dispatch(resetAuthStatus());
 
-      setTimeout(() => {
-        navigate("/");
-      }, 1500);
+      // setTimeout(() => {
+      //   navigate("/");
+      // }, 1500);
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const errData = error.response?.data as ApiErrorPayload | undefined;
@@ -112,27 +114,34 @@ const Login = () => {
     }
   };
 
-  useEffect(() => {
-    // if (status === Status.SUCCESS && token) {
-    //     toast.success("Login successful!");
-    //     dispatch(resetAuthStatus());
-    //   setTimeout(() => {
-    //     navigate("/");
-    //   }, 1500);
-    // } 
-    // if (status === Status.ERROR) {
-    //   dispatch(resetAuthStatus());
-    // }
+useEffect(() => {
+  if (status === Status.SUCCESS && token && user) {
+    toast.success("Login successful!");
+    dispatch(resetAuthStatus());
+    setTimeout(() => {
+      if (user.role === 'customer') {
+        navigate("/");
+      } else if (user.role === 'admin') {
+        navigate("/admin-dashboard");
+      } else {
+        navigate("/"); // fallback
+      }
+    }, 1500);
+  }
+  if (status === Status.ERROR) {
+    dispatch(resetAuthStatus());
+  }
+}, [status, token, user, navigate, dispatch]);
 
-    const queryParams = new URLSearchParams(window.location.search);
-    if (queryParams.get("logout") === "true") {
-        toast.success("Logout successful", { toastId: "logout-success" });
-        setTimeout(() => {
-          navigate("/login", { replace: true });
-        }, 1000);
-    }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+useEffect(() => {
+  const queryParams = new URLSearchParams(window.location.search);
+  if (queryParams.get("logout") === "true") {
+    toast.success("Logout successful", { toastId: "logout-success" });
+    setTimeout(() => {
+      navigate("/login", { replace: true });
+    }, 1000);
+  }
+}, [navigate]);
 
   return (
     <>

@@ -3,10 +3,10 @@ import { Status } from "../../global/statuses";
 import type {
   AddToWishlistData,
   WishlistState,
-} from "../../types/wishlistTypes";
+} from "../../types/customer/wishlistTypes";
 import type { AppDispatch } from "../store";
 import { APIAuthenticated } from "../../http";
-import type { Product } from "../../types/productTypes";
+import type { Product } from "../../types/customer/productTypes";
 
 const initialState: WishlistState = {
   wishlist: [],

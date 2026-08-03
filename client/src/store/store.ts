@@ -1,5 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit";
 import authSlice from "./auth/authSlice";
+import datasSlice from "./admin/datasSlice";
 import categorySlice from "./customer/categorySlice";
 import productSlice from "./customer/productSlice";
 import wishlistSlice from "./customer/wishlistSlice";
@@ -10,6 +11,8 @@ import checkoutSlice from "./customer/checkoutSlice";
 const store = configureStore({
       reducer: {
             auth: authSlice,
+            datas: datasSlice,
+
             category: categorySlice,
             product: productSlice,
             wishlist: wishlistSlice,

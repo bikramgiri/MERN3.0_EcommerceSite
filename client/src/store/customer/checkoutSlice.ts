@@ -8,7 +8,7 @@ import {
   OrderData,
   OrderStatus,
   PaymentStatus,
-} from "../../types/checkoutTypes";
+} from "../../types/customer/checkoutTypes";
 import { Status } from "../../global/statuses";
 import { AppDispatch } from "../store";
 import { APIAuthenticated } from "../../http";

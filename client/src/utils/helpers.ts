@@ -1,5 +1,5 @@
-import { FilterOptions, Product } from "../types/productTypes";
-import { Review } from "../types/reviewTypes";
+import { FilterOptions, Product } from "../types/customer/productTypes";
+import { Review } from "../types/customer/reviewTypes";
 
 interface HasRating {
   rating?: number | string | null;
@@ -17,7 +17,7 @@ export const getAverageRatingNumber = <T extends HasRating>(
 /** Get review count for a product */
 export function getProductReviewCount(
   productId: string,
-  reviews?: Review[]
+  reviews?: Review[],
 ): number {
   return reviews?.filter((r) => r.productId === productId).length || 0;
 }
@@ -30,7 +30,7 @@ export function filterProducts(
   products: Product[],
   filters: FilterOptions,
   reviews: Review[],
-  categoryFilter?: string
+  categoryFilter?: string,
 ): Product[] {
   return products.filter((product) => {
     // Category
@@ -68,7 +68,7 @@ export function filterProducts(
 export function sortProducts(
   products: Product[],
   sortBy: string,
-  reviews: Review[]
+  reviews: Review[],
 ): Product[] {
   const sorted = [...products];
 
@@ -82,21 +82,19 @@ export function sortProducts(
     case "rating_high":
       return sorted.sort(
         (a, b) =>
-          getAverageRatingNumber(b.reviews) -
-          getAverageRatingNumber(a.reviews)
+          getAverageRatingNumber(b.reviews) - getAverageRatingNumber(a.reviews),
       );
 
     case "rating_low":
       return sorted.sort(
         (a, b) =>
-          getAverageRatingNumber(a.reviews) -
-          getAverageRatingNumber(b.reviews)
+          getAverageRatingNumber(a.reviews) - getAverageRatingNumber(b.reviews),
       );
 
     case "newest":
       return sorted.sort(
         (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       );
 
     default: // relevance

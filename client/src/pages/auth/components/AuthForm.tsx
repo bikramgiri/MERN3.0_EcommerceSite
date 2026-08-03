@@ -13,15 +13,23 @@ import {
   Heart,
   Sparkles,
 } from "lucide-react";
-import type { AuthFormProps } from "../../../types/authTypes";
+import type { AuthFormProps } from "../../../types/customer/authTypes";
 
-const DefaultValidationCheck = ({ passed, label }: { passed: boolean; label: string }) => (
+const DefaultValidationCheck = ({
+  passed,
+  label,
+}: {
+  passed: boolean;
+  label: string;
+}) => (
   <div
     className={`flex items-center gap-2 text-sm transition-all ${
       passed ? "text-[#E6540B]" : "text-[#1A1613]/35"
     }`}
   >
-    <span className={`h-1.5 w-1.5 rounded-full ${passed ? "bg-[#E6540B]" : "bg-[#1A1613]/25"}`} />
+    <span
+      className={`h-1.5 w-1.5 rounded-full ${passed ? "bg-[#E6540B]" : "bg-[#1A1613]/25"}`}
+    />
     <span className={passed ? "font-medium" : ""}>{label}</span>
   </div>
 );
@@ -59,7 +67,7 @@ const STRENGTH_COLORS: Record<string, string> = {
   Strong: "text-[#4F6B4A]",
 };
 
-const google = import.meta.env.VITE_GOOGLE
+const google = import.meta.env.VITE_GOOGLE;
 
 const AuthForm = ({
   type = "login",
@@ -81,7 +89,6 @@ const AuthForm = ({
     <div className="min-h-screen bg-[#FDF8ED] flex items-center justify-center py-5 md:py-3 px-4">
       <div className="w-full max-w-5xl mx-auto">
         <div className="grid lg:grid-cols-2 gap-0 bg-[#FFFDF8] rounded-3xl shadow-2xl shadow-[#1A1613]/10 overflow-hidden">
-
           {/* Left Panel — same warm ivory family as the Hero, just a shade deeper to separate it from the form panel */}
           <div className="hidden lg:flex flex-col justify-center p-6 bg-[#F5E9D8] text-[#1A1613] relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-[#E6540B]/10 rounded-full -mr-32 -mt-32"></div>
@@ -99,7 +106,8 @@ const AuthForm = ({
                   <>
                     Fewer things.
                     <br />
-                    Held onto <span className="italic text-[#E6540B]">longer.</span>
+                    Held onto{" "}
+                    <span className="italic text-[#E6540B]">longer.</span>
                   </>
                 )}
               </h1>
@@ -116,9 +124,15 @@ const AuthForm = ({
                     className="flex items-center gap-3 bg-[#FFFDF8] border border-[#1A1613]/10 rounded-xl p-3"
                   >
                     <div className="w-10 h-10 shrink-0 bg-[#E6540B]/15 rounded-lg flex items-center justify-center">
-                      <Icon size={18} className="text-[#E6540B]" strokeWidth={1.8} />
+                      <Icon
+                        size={18}
+                        className="text-[#E6540B]"
+                        strokeWidth={1.8}
+                      />
                     </div>
-                    <span className="font-medium text-sm text-[#1A1613]">{label}</span>
+                    <span className="font-medium text-sm text-[#1A1613]">
+                      {label}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -127,7 +141,6 @@ const AuthForm = ({
 
           {/* Right — Form Section */}
           <div className="p-6 sm:p-8 lg:p-6 flex flex-col justify-center overflow-y-auto">
-
             {/* Mobile Logo */}
             <div className="lg:hidden mb-6">
               <TruvoraLogo />
@@ -135,7 +148,9 @@ const AuthForm = ({
 
             <div className="mb-5 text-center">
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-['Fraunces',serif] font-semibold text-[#1A1613] mb-2">
-                {type === "login" ? "Sign in to Truvora" : "Create your account"}
+                {type === "login"
+                  ? "Sign in to Truvora"
+                  : "Create your account"}
               </h2>
               <p className="text-[#1A1613]/60 text-sm sm:text-base">
                 {type === "login"
@@ -163,7 +178,9 @@ const AuthForm = ({
                     />
                   </div>
                   {errors.username && (
-                    <p className="mt-1 text-xs text-[#A63D2F]">{errors.username}</p>
+                    <p className="mt-1 text-xs text-[#A63D2F]">
+                      {errors.username}
+                    </p>
                   )}
                 </div>
               )}
@@ -215,11 +232,17 @@ const AuthForm = ({
                     onClick={() => setShowPassword(!showPassword)}
                     className="cursor-pointer absolute right-4 top-1/2 -translate-y-1/2 text-[#1A1613]/40 hover:text-[#1A1613]/70 focus:outline-none"
                   >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="mt-1 text-xs text-[#A63D2F]">{errors.password}</p>
+                  <p className="mt-1 text-xs text-[#A63D2F]">
+                    {errors.password}
+                  </p>
                 )}
 
                 {type !== "login" && (
@@ -227,10 +250,13 @@ const AuthForm = ({
                     {values.password && (
                       <div className="mt-1">
                         <div className="flex justify-between items-center mb-1">
-                          <span className="text-xs text-[#1A1613]/50">Password Strength</span>
+                          <span className="text-xs text-[#1A1613]/50">
+                            Password Strength
+                          </span>
                           <span
                             className={`text-xs font-semibold ${
-                              STRENGTH_COLORS[passwordStrength.label] ?? "text-[#1A1613]/50"
+                              STRENGTH_COLORS[passwordStrength.label] ??
+                              "text-[#1A1613]/50"
                             }`}
                           >
                             {passwordStrength.label}
@@ -256,14 +282,20 @@ const AuthForm = ({
                             label="At least 8 characters"
                           />
                           <ValidationCheck
-                            passed={passwordChecks.hasUppercase && passwordChecks.hasLowercase}
+                            passed={
+                              passwordChecks.hasUppercase &&
+                              passwordChecks.hasLowercase
+                            }
                             label="One uppercase and lowercase letter"
                           />
                           <ValidationCheck
                             passed={passwordChecks.hasSpecialCharacter}
                             label="One special character"
                           />
-                          <ValidationCheck passed={passwordChecks.hasNumber} label="One number" />
+                          <ValidationCheck
+                            passed={passwordChecks.hasNumber}
+                            label="One number"
+                          />
                         </div>
                       </div>
                     )}
@@ -284,7 +316,10 @@ const AuthForm = ({
                     id="rememberandterms"
                     className="mt-1.5 h-4 w-4 text-[#E6540B] focus:ring-[#E6540B] border-[#1A1613]/30 rounded cursor-pointer"
                   />
-                  <label htmlFor="rememberandterms" className="ml-2 block text-sm text-[#1A1613]/60">
+                  <label
+                    htmlFor="rememberandterms"
+                    className="ml-2 block text-sm text-[#1A1613]/60"
+                  >
                     {type === "login" ? (
                       <>Remember me</>
                     ) : (
@@ -319,14 +354,18 @@ const AuthForm = ({
               </div>
 
               {errors.general && (
-                <p className="text-sm text-[#A63D2F] text-center">{errors.general}</p>
+                <p className="text-sm text-[#A63D2F] text-center">
+                  {errors.general}
+                </p>
               )}
 
               <button
                 type="submit"
                 disabled={isDisabled}
                 className={`cursor-pointer w-full py-3 text-[#FDF8ED] rounded-lg font-semibold transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed ${
-                  isDisabled ? "bg-[#E6540B]/50" : "bg-[#E6540B] hover:bg-[#c94806] active:scale-[0.98]"
+                  isDisabled
+                    ? "bg-[#E6540B]/50"
+                    : "bg-[#E6540B] hover:bg-[#c94806] active:scale-[0.98]"
                 }`}
               >
                 {isSubmitting ? (
@@ -336,7 +375,11 @@ const AuthForm = ({
                   </>
                 ) : (
                   <>
-                    {type === "login" ? <LogIn className="h-5 w-5" /> : <UserPlus className="h-5 w-5" />}
+                    {type === "login" ? (
+                      <LogIn className="h-5 w-5" />
+                    ) : (
+                      <UserPlus className="h-5 w-5" />
+                    )}
                     {type === "login" ? "Sign In" : "Create Account"}
                   </>
                 )}
@@ -344,7 +387,9 @@ const AuthForm = ({
             </form>
 
             <p className="mt-3 text-center text-sm text-[#1A1613]/60">
-              {type === "login" ? "Don't have an account? " : "Already have an account? "}
+              {type === "login"
+                ? "Don't have an account? "
+                : "Already have an account? "}
               <Link
                 to={type === "login" ? "/register" : "/login"}
                 className="text-[#E6540B] font-medium hover:underline"
@@ -366,9 +411,12 @@ const AuthForm = ({
               </div>
 
               <div className="mt-4 grid grid-cols-2 gap-3">
-                <button 
-                   onClick={() => {window.open(google, "_self")}}
-                  className="cursor-pointer flex items-center justify-center gap-2 bg-[#FFFDF8] border border-[#1A1613]/15 rounded-lg py-2.5 px-4 hover:bg-[#1A1613]/5 transition-colors text-sm font-medium text-[#1A1613]/80">
+                <button
+                  onClick={() => {
+                    window.open(google, "_self");
+                  }}
+                  className="cursor-pointer flex items-center justify-center gap-2 bg-[#FFFDF8] border border-[#1A1613]/15 rounded-lg py-2.5 px-4 hover:bg-[#1A1613]/5 transition-colors text-sm font-medium text-[#1A1613]/80"
+                >
                   <FcGoogle className="h-5 w-5 flex-shrink-0" />
                   Google
                 </button>
@@ -379,7 +427,6 @@ const AuthForm = ({
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </div>
