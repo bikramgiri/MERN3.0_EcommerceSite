@@ -10,6 +10,7 @@ import isOtpExpired from "../../services/checkOtpExpiration";
 import { envConfig } from "../../config/config";
 import jwt, { Secret } from "jsonwebtoken";
 import { AuthRequest } from "../../middleware/authMiddleware";
+import getFullImageUrl from "../../services/imageHandler";
 const SENSITIVE_FIELDS = [
   "password",
   "emailVerificationToken",
@@ -286,19 +287,25 @@ class AuthController {
         maxAge: 24 * 60 * 60 * 1000, // 1 day
       });
 
-      try {
-      await sendMail({
-        to: email,
-        subject: "Login Alert",
-        text: `Hi ${user.username},\n\nWe noticed a login to your Truvora account. 
-        If this was you, you can safely ignore this email. 
-        If you did not log in, please secure your account immediately by changing your password and enabling two-factor authentication.\n\nBest regards,\nThe Truvora Team`,
-      });
-    } catch (mailError) {
-  console.error("Login alert email failed to send:", mailError);
-}
+//       try {
+//       await sendMail({
+//         to: email,
+//         subject: "Login Alert",
+//         text: `Hi ${user.username},\n\nWe noticed a login to your Truvora account. 
+//         If this was you, you can safely ignore this email. 
+//         If you did not log in, please secure your account immediately by changing your password and enabling two-factor authentication.\n\nBest regards,\nThe Truvora Team`,
+//       });
+//     } catch (mailError) {
+//   console.error("Login alert email failed to send:", mailError);
+// }
 
     const userWithoutSensitiveData = sanitizeUser(user);
+
+    // attach full avatarUrl
+    const avatarUrl = user.avatar ? getFullImageUrl(user.avatar) : user.avatar;
+    if (avatarUrl) {
+      userWithoutSensitiveData.avatar = avatarUrl;
+    }
 
       res.status(200).json({
         message: "User logged in successfully",

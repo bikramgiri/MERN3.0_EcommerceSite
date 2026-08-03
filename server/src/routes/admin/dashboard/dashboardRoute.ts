@@ -7,6 +7,6 @@ import catchAsyncError from "../../../services/catchAsyncError";
 const router:Router = express.Router()
 
 router.route("/dashboard")
-.get(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Admin), (DashboardController.fetchAllData))
+.get(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Admin), catchAsyncError(DashboardController.fetchAllData))
 
 export default router
