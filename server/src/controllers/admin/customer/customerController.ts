@@ -1,30 +1,12 @@
 import { Request, Response } from "express";
 import User from "../../../database/models/userModel";
+import Order from "../../../database/models/orderModel";
+import getFullImageUrl from "../../../services/imageHandler";
 import { AuthRequest } from "../../../middleware/authMiddleware";
 import { cloudinary } from "../../../cloudinary";
 import { getPublicIdFromAvatar } from "../../../services/cloudinaryHelper";
 
 class CustomerController {
-  // Fetch all customers
-  // public static async fetchAllCustomers(req: Request, res: Response): Promise<void> {
-  //       const users = await User.findAll({where: {role: 'customer'}, attributes:{exclude: ['password', 'otp', 'otpGeneratedTime', 'resetPasswordToken', 'createdAt', 'updatedAt']}});
-  //       if (users.length === 0) {
-  //             res.status(404).json({
-  //                   message: "No customers found",
-  //                   field: "users"
-  //              }
-  //             );
-  //             return;
-  //       }
-
-  //       res.status(200).json({
-  //             message: "Customers fetched successfully",
-  //             totalCustomers: users.length,
-  //             data: users
-  //        });
-  //        return;
-  // }
-
   public static async fetchAllCustomers(
     req: Request,
     res: Response,
@@ -32,16 +14,21 @@ class CustomerController {
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.max(1, parseInt(req.query.limit as string) || 20);
     const offset = (page - 1) * limit;
+    const role = req.query.role as string;
+
+    const whereClause: any = {};
+    if (role && role !== "ALL") {
+      whereClause.role = role;
+    }
 
     const { count, rows: users } = await User.findAndCountAll({
-      where: { role: "customer" },
+      where: whereClause,
       attributes: {
         exclude: [
           "password",
           "otp",
           "otpGeneratedTime",
           "resetPasswordToken",
-          "createdAt",
           "updatedAt",
         ],
       },
@@ -51,16 +38,39 @@ class CustomerController {
     });
 
     if (count === 0) {
-      res.status(404).json({ message: "No customers found", field: "users" });
+      res.status(404).json({ message: "No users found", field: "users" });
       return;
     }
 
+    // Compute total order count for each user in the result
+    const userIds = users.map((u) => u.id);
+    const orders = await Order.findAll({
+      where: { userId: userIds },
+      attributes: ["userId"],
+    });
+
+    const orderCountMap: Record<string, number> = {};
+    for (const ord of orders) {
+      if (ord.userId) {
+        orderCountMap[ord.userId] = (orderCountMap[ord.userId] || 0) + 1;
+      }
+    }
+
+    const formattedUsers = users.map((u) => {
+      const plain = (u as any).toJSON ? (u as any).toJSON() : u;
+      return {
+        ...plain,
+        avatar: plain.avatar ? getFullImageUrl(plain.avatar) : plain.avatar,
+        orderCount: orderCountMap[plain.id] || 0,
+      };
+    });
+
     res.status(200).json({
-      message: "Customers fetched successfully",
+      message: "Users fetched successfully",
       totalCustomers: count,
       totalPages: Math.ceil(count / limit),
       currentPage: page,
-      data: users,
+      data: formattedUsers,
     });
   }
 

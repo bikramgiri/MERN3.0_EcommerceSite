@@ -328,6 +328,18 @@ class CategoryController {
       return;
     }
 
+    const linkedProductsCount = await Product.count({
+      where: { categoryId: categoryId as string },
+    });
+
+    if (linkedProductsCount > 0) {
+      res.status(400).json({
+        message: `Cannot delete category: it still contains ${linkedProductsCount} associated product(s). Please delete or reassign them first.`,
+        field: "general",
+      });
+      return;
+    }
+
     if (category.categoryImage) {
       const publicId = getPublicIdFromAvatar(category.categoryImage);
       if (publicId) {

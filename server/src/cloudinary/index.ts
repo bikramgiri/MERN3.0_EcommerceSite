@@ -18,7 +18,7 @@ const cloudinaryUpload = async (
   next: NextFunction,
 ) => {
   try {
-    if (!req.file) {
+    if (!(req as any).file) {
       return next(); // If no file is provided, proceed to the next middleware
     }
 
@@ -40,7 +40,7 @@ const cloudinaryUpload = async (
     );
 
     // Use streamifier to convert the buffer to a readable stream and pipe it to Cloudinary
-    streamifier.createReadStream(req.file.buffer).pipe(uploadStream);
+    streamifier.createReadStream((req as any).file.buffer).pipe(uploadStream);
   } catch (error) {
     console.error("Error in Cloudinary Upload Middleware:", error);
     res.status(500).json({ message: "Internal Server Error", error });

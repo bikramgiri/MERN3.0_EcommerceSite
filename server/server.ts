@@ -14,18 +14,14 @@ async function startServer() {
     console.log(`Server is running on port ${port}`);
   });
 
-  //  server.on("listening", () => {
-  //   console.log("🟢 SERVER 'listening' EVENT FIRED — server.listening:", server.listening);
-  // });
-
-  // server.on("close", () => {
-  //   console.log("🔴 SERVER 'close' EVENT FIRED");
-  //   console.trace("close trace");
-  // });
-
-  // server.on("error", (err) => {
-  //   console.error("🔴 SERVER ERROR EVENT:", err);
-  // });
+  server.on("error", (err: any) => {
+    if (err.code === "EADDRINUSE") {
+      console.error(`🔴 Port ${port} is already in use by another process. Please close it or kill the process.`);
+      process.exit(1);
+    } else {
+      console.error("🔴 Server error:", err);
+    }
+  });
 
   await adminSeeder();
   await CategoryController.seedCategory();
