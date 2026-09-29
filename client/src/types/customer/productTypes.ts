@@ -4,6 +4,7 @@ export interface UserData{
       username: string,
       email: string
       avatar?: string
+      orderCount?: number
       createdAt?: string,
       updatedAt?: string
 }
@@ -19,10 +20,16 @@ export interface Review{
       id: string,
       rating: number,
       message: string,
-      reviewImage: string
+      comment?: string,
+      reviewImage?: string,
       createdAt: string,
-      updatedAt: string,
-      User: UserData
+      updatedAt?: string,
+      User?: UserData,
+      Product?: {
+        id?: string,
+        productName?: string,
+        productImage?: string
+      }
 }
 
 export interface Product{

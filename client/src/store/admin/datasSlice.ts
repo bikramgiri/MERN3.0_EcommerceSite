@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { DatasState, OrderData } from "../../types/admin/datasTypes";
+import { DatasState, OrderData, TopSellingProduct, OrderDistributionData } from "../../types/admin/datasTypes";
 import { Status } from "../../global/statuses";
 import { UserData, Review } from "../../types/customer/productTypes";
 import { AppDispatch } from "../store";
@@ -15,6 +15,8 @@ const initialState: DatasState = {
   recentUsers: [],
   recentOrders: [],
   recentReviews: [],
+  topSellingProducts: [],
+  orderDistribution: undefined,
   status: Status.IDLE,
 };
 
@@ -28,6 +30,8 @@ interface DatasPayload {
   recentUsers: UserData[];
   recentOrders: OrderData[];
   recentReviews: Review[];
+  topSellingProducts?: TopSellingProduct[];
+  orderDistribution?: OrderDistributionData;
 }
 
 const datasSlice = createSlice({
@@ -47,6 +51,8 @@ const datasSlice = createSlice({
       state.recentUsers = action.payload.recentUsers;
       state.recentOrders = action.payload.recentOrders;
       state.recentReviews = action.payload.recentReviews;
+      state.topSellingProducts = action.payload.topSellingProducts || [];
+      state.orderDistribution = action.payload.orderDistribution;
     },
   },
 });
@@ -73,6 +79,8 @@ export function fetchDatas() {
             recentUsers: backendData.recentUsers || [],
             recentOrders: backendData.recentOrders || [],
             recentReviews: backendData.recentReviews || [],
+            topSellingProducts: backendData.topSellingProducts || [],
+            orderDistribution: backendData.orderDistribution,
           })
         );
         dispatch(setStatus(Status.SUCCESS));

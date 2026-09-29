@@ -60,10 +60,10 @@ export default function Hero() {
 
             <div className="mt-9 flex flex-wrap items-center gap-4">
               <a
-                href="#bestsellers"
+                href="#popular-products"
                 className="group inline-flex items-center gap-2 bg-[#E6540B] px-6 py-3 text-sm font-medium text-[#FDF8ED] transition hover:bg-[#c94806] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E6540B]"
               >
-                Shop bestsellers
+                Shop popular products
                 <ArrowRight
                   size={16}
                   className="transition group-hover:translate-x-1"

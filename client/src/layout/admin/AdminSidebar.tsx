@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router";
 
-import {
-  GridIcon,
-  ChatIcon,
-  UserCircleIcon,
-} from "../../icons";
 import { Link } from "react-router-dom";
-import {Analytics, Products, Setting, Users, Categories}  from "../../icons/icons";
+import {
+  Products,
+  Setting,
+  Users,
+  Categories,
+  DashboardIcon,
+  UserProfileIcon,
+  ChatIconComponent,
+} from "../../icons/icons";
 import { ShoppingCart, Sparkles, X } from "lucide-react";
 import SidebarWidget from "./SidebarWidget";
 import { useSidebar } from "../../context/SidebarContext";
@@ -21,54 +24,54 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   {
-    icon:   <img src={GridIcon} alt="" className="h-6 w-6" />,
+    icon: DashboardIcon,
     name: 'Dashboard',
     path: '/admin-dashboard',
   },
-  {
-    icon: Analytics,
-    name: 'Analytics',
-    path: 'admin-dashboard/analytics',
-  },
+  // {
+  //   icon: Analytics,
+  //   name: 'Analytics',
+  //   path: '/admin-dashboard/analytics',
+  // },
   {
     icon: Users,
     name: 'User Management',
-    path: 'admin-dashboard/users',
+    path: '/admin-dashboard/users',
   },
     {
     icon: Categories,
     name: 'Categories',
-    path: 'admin-dashboard/categories',
+    path: '/admin-dashboard/categories',
   },
   {
     icon: Products,
     name: 'Products',
-    path: 'admin-dashboard/products',
+    path: '/admin-dashboard/products',
   },
   {
-    icon: <ShoppingCart />,
+    icon: <ShoppingCart className="w-5 h-5 flex-shrink-0" />,
     name: 'Orders',
-    path: 'admin-dashboard/orders',
+    path: '/admin-dashboard/orders',
   },
-    {
-    icon: <Sparkles />,
+  {
+    icon: <Sparkles className="w-5 h-5 flex-shrink-0" />,
     name: 'Reviews',
-    path: 'admin-dashboard/reviews',
+    path: '/admin-dashboard/reviews',
   },
   {
-    icon: <img src={UserCircleIcon} alt="" className="h-6 w-6" />,
+    icon: UserProfileIcon,
     name: 'User Profile',
-    path: 'admin-dashboard/profile',
+    path: '/admin-dashboard/profile',
   },
   {
-    icon: <img src={ChatIcon} alt="" className="h-6 w-6" />,
+    icon: ChatIconComponent,
     name: 'Chat',
-    path: 'admin-dashboard/chat',
+    path: '/admin-dashboard/chat',
   },
   {
     icon: Setting,
     name: 'Settings',
-    path: 'admin-dashboard/settings',
+    path: '/admin-dashboard/settings',
   }
 ];
 
@@ -157,7 +160,6 @@ const AdminSidebar: React.FC = () => {
   const activeClasses = `
     bg-[#E6540B]/10 border border-[#E6540B]/25 text-[#E6540B]
     rounded-lg
-    font-semibold
   `;
 
   const inactiveClasses = `
@@ -170,7 +172,7 @@ const AdminSidebar: React.FC = () => {
     <ul className="flex flex-col px-1.5 gap-4 font-medium">
       {items.map((nav, index) => (
         <li key={nav.name} 
-        className={`rounded-lg transition-all duration-200 ${
+        className={`rounded-lg ${
             nav.path && isActive(nav.path) ? activeClasses : inactiveClasses
           }`}
         >

@@ -72,15 +72,16 @@ export default function Bestsellers() {
       `}</style>
 
       <section
-        id="bestsellers"
+        id="popular-products"
         className="border-y border-[#1A1613]/10 bg-[#F4EEDF] py-20"
       >
+        <span id="bestsellers" className="sr-only" />
         <div className="mx-auto max-w-[1500px] px-6 lg:px-10">
           <div className="flex items-end justify-between gap-6">
             <div>
-              <SectionLabel>This Week's Picks</SectionLabel>
+              <SectionLabel>Trending & Customer Favorites</SectionLabel>
               <h2 className="mt-3 font-['Fraunces',serif] text-3xl sm:text-4xl">
-                Best Sellers products
+                Popular Products
               </h2>
             </div>
             <Link

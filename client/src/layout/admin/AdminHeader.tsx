@@ -130,7 +130,7 @@ const AdminHeader: React.FC = () => {
               <input
                 ref={inputRef}
                 type="text"
-                placeholder="Search ..."
+                placeholder="Search products, categories..."
                 className="h-10 w-[360px] pl-10 pr-4 rounded-lg border border-gray-300 text-sm 
                            focus:border-gray-300 focus:ring-1 focus:ring-gray-300 outline-none"
               />

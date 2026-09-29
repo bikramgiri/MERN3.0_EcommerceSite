@@ -29,7 +29,7 @@ export function getProductReviewCount(
 export function filterProducts(
   products: Product[],
   filters: FilterOptions,
-  reviews: Review[],
+  _reviews?: Review[],
   categoryFilter?: string,
 ): Product[] {
   return products.filter((product) => {
@@ -73,6 +73,15 @@ export function sortProducts(
   const sorted = [...products];
 
   switch (sortBy) {
+    case "popular":
+      return sorted.sort((a, b) => {
+        const countDiff = (b.reviews?.length || 0) - (a.reviews?.length || 0);
+        if (countDiff !== 0) return countDiff;
+        return (
+          getAverageRatingNumber(b.reviews) - getAverageRatingNumber(a.reviews)
+        );
+      });
+
     case "price_asc":
       return sorted.sort((a, b) => a.productPrice - b.productPrice);
 

@@ -28,6 +28,7 @@ import { addToCart } from "../../../store/customer/cartSlice";
 
 const SORT_OPTIONS = [
   { value: "relevance", label: "Relevance" },
+  { value: "popular", label: "Popular Products" },
   { value: "newest", label: "Newest First" },
   { value: "price_asc", label: "Price: Low to High" },
   { value: "price_desc", label: "Price: High to Low" },

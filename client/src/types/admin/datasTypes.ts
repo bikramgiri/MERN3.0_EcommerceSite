@@ -5,6 +5,50 @@ export interface OrderData extends FetchOrder {
   User: UserData;
 }
 
+export interface TopSellingProduct {
+  product: {
+    id: string;
+    productName: string;
+    productPrice: number;
+    productImage?: string;
+    productStock: number;
+    productDiscount?: number;
+    categoryName?: string;
+  };
+  totalSold: number;
+  totalRevenue: number;
+}
+
+export interface OrderDistributionData {
+  totalOrders: number;
+  paidOrdersCount: number;
+  verifiedPaymentPercent: number;
+  statusBreakdown: {
+    preparation: number;
+    delivered: number;
+    pending: number;
+    inTransit: number;
+    cancelled: number;
+  };
+  paymentBreakdown: {
+    khalti: {
+      count: number;
+      paidAmount: number;
+      totalAmount: number;
+    };
+    esewa: {
+      count: number;
+      paidAmount: number;
+      totalAmount: number;
+    };
+    cod: {
+      count: number;
+      paidAmount: number;
+      totalAmount: number;
+    };
+  };
+}
+
 export interface DatasState {
   totalUsers: number;
   totalProducts: number;
@@ -15,5 +59,7 @@ export interface DatasState {
   recentUsers: UserData[];
   recentOrders: OrderData[];
   recentReviews: Review[];
+  topSellingProducts: TopSellingProduct[];
+  orderDistribution?: OrderDistributionData;
   status: string;
 }

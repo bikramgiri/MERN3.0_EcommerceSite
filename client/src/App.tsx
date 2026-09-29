@@ -29,6 +29,8 @@ import { useAppDispatch } from "./hooks/hooks.js";
 import { useEffect } from "react";
 import { handleGoogleLogin } from "./store/auth/authSlice.js";
 import AdminDashboard from "./pages/admin/adminDashboard.js";
+import UserManagement from "./pages/admin/UserManagement.js";
+import CategoryManagement from "./pages/admin/CategoryManagement";
 import ProtectedRoute from "./global/ProjectedRoute.js";
 import { UserRole } from "./types/customer/authTypes.js";
 import AdminLayout from "./layout/admin/AdminLayout.js";
@@ -146,6 +148,22 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={[UserRole.Admin]}>
                 <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="users"
+            element={
+              <ProtectedRoute allowedRoles={[UserRole.Admin]}>
+                <UserManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="categories"
+            element={
+              <ProtectedRoute allowedRoles={[UserRole.Admin]}>
+                <CategoryManagement />
               </ProtectedRoute>
             }
           />
