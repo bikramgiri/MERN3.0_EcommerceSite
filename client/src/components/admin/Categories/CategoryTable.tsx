@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Eye, Edit, Trash2, Package, ImageIcon, Copy, Check } from "lucide-react";
 import { AdminCategory } from "../../../types/admin/categoryTypes";
 
@@ -23,11 +24,18 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
   copiedId,
   formatDate,
 }) => {
+  const navigate = useNavigate();
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-left border-collapse">
-        <thead>
-          <tr className="border-b border-[#1A1613]/10 bg-[#F4EEDF]/40 text-[11px] font-bold uppercase tracking-wider text-[#1A1613]/60">
+    <div>
+      {/* Mobile scroll hint */}
+      <div className="sm:hidden px-4 py-2 bg-[#FDF8ED] border-b border-[#1A1613]/10 text-[11px] text-[#1A1613]/60 flex items-center justify-between">
+        <span>↔ Scroll horizontally to view details &amp; actions</span>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[720px] text-left border-collapse">
+          <thead>
+            <tr className="border-b border-[#1A1613]/10 bg-[#F4EEDF]/40 text-[11px] font-bold uppercase tracking-wider text-[#1A1613]/60">
             <th className="py-3.5 px-4">Category</th>
             <th className="py-3.5 px-4">Description</th>
             <th className="py-3.5 px-4 text-center">Products</th>
@@ -116,7 +124,7 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
                         <button
                           onClick={(e) => onCopyId(category.id, e)}
                           title="Copy Category ID"
-                          className="text-[#1A1613]/40 hover:text-[#E6540B] transition-colors"
+                          className="text-[#1A1613]/40 hover:text-[#E6540B] transition-colors cursor-pointer"
                         >
                           {copiedId === category.id ? (
                             <Check className="w-3 h-3 text-emerald-600" />
@@ -139,16 +147,31 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
 
               {/* Products Count */}
               <td className="py-3.5 px-4 text-center">
-                <span
-                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigate(
+                      `/admin-dashboard/products?category=${encodeURIComponent(
+                        category.id
+                      )}`,
+                      {
+                        state: {
+                          categoryId: category.id,
+                          categoryName: category.categoryName,
+                        },
+                      }
+                    );
+                  }}
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold cursor-pointer transition-all hover:scale-105 active:scale-95 ${
                     (category.totalProducts || 0) > 0
-                      ? "bg-amber-500/10 text-amber-700"
-                      : "bg-[#1A1613]/5 text-[#1A1613]/40"
+                      ? "bg-amber-500/10 text-amber-700 hover:bg-amber-500/20"
+                      : "bg-[#1A1613]/5 text-[#1A1613]/40 hover:bg-[#1A1613]/10"
                   }`}
+                  title={`View ${category.totalProducts || 0} products in ${category.categoryName}`}
                 >
                   <Package className="w-3.5 h-3.5" />
                   <span>{category.totalProducts || 0}</span>
-                </span>
+                </button>
               </td>
 
               {/* Created Date */}
@@ -161,21 +184,21 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
                 <div className="flex items-center justify-end gap-1">
                   <button
                     onClick={() => onView(category)}
-                    className="p-1.5 rounded-lg text-[#1A1613]/60 hover:text-[#1A1613] hover:bg-[#F4EEDF] transition-all"
+                    className="p-1.5 rounded-lg text-[#1A1613]/60 hover:text-[#1A1613] hover:bg-[#F4EEDF] transition-all cursor-pointer"
                     title="View Details"
                   >
                     <Eye className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => onEdit(category)}
-                    className="p-1.5 rounded-lg text-[#1A1613]/60 hover:text-[#E6540B] hover:bg-[#F4EEDF] transition-all"
+                    className="p-1.5 rounded-lg text-[#1A1613]/60 hover:text-[#E6540B] hover:bg-[#F4EEDF] transition-all cursor-pointer"
                     title="Edit Category"
                   >
                     <Edit className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => onDelete(category)}
-                    className="p-1.5 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-50 transition-all"
+                    className="p-1.5 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-50 transition-all cursor-pointer"
                     title="Delete Category"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -188,6 +211,7 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
         </tbody>
       </table>
     </div>
+  </div>
   );
 };
 

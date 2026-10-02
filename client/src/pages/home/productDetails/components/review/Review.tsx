@@ -7,6 +7,7 @@ import {
   X,
   AlertTriangle,
   Loader2,
+  ShieldCheck,
 } from "lucide-react";
 import AddReview from "./AddReview";
 import EditReview from "./EditReview";
@@ -422,6 +423,24 @@ const Review = ({ productId }: SingleProductProps) => {
                               alt=""
                               className="mt-4 rounded-lg max-h-40 object-cover"
                             />
+                          )}
+
+                          {/* Official Store Response Banner if admin replied */}
+                          {review.adminReply && (
+                            <div className="mt-3.5 p-3.5 rounded-xl bg-[#FFFDF8] border border-[#E6540B]/25 shadow-2xs">
+                              <div className="flex items-center gap-1.5 text-xs font-bold text-[#E6540B]">
+                                <ShieldCheck className="w-3.5 h-3.5" />
+                                <span>Official Response from Truvora</span>
+                                {review.repliedAt && (
+                                  <span className="text-[10px] text-[#1A1613]/50 font-normal ml-auto">
+                                    {formatDate(review.repliedAt)}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="mt-1 text-xs text-[#1A1613]/85 leading-relaxed">
+                                {review.adminReply}
+                              </p>
+                            </div>
                           )}
                         </div>
                       </div>

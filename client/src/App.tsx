@@ -31,6 +31,9 @@ import { handleGoogleLogin } from "./store/auth/authSlice.js";
 import AdminDashboard from "./pages/admin/adminDashboard.js";
 import UserManagement from "./pages/admin/UserManagement.js";
 import CategoryManagement from "./pages/admin/CategoryManagement";
+import ProductManagement from "./pages/admin/ProductManagement";
+import OrderManagement from "./pages/admin/OrderManagement";
+import ReviewManagement from "./pages/admin/ReviewManagement";
 import ProtectedRoute from "./global/ProjectedRoute.js";
 import { UserRole } from "./types/customer/authTypes.js";
 import AdminLayout from "./layout/admin/AdminLayout.js";
@@ -164,6 +167,30 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={[UserRole.Admin]}>
                 <CategoryManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="products"
+            element={
+              <ProtectedRoute allowedRoles={[UserRole.Admin]}>
+                <ProductManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="orders"
+            element={
+              <ProtectedRoute allowedRoles={[UserRole.Admin]}>
+                <OrderManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="reviews"
+            element={
+              <ProtectedRoute allowedRoles={[UserRole.Admin]}>
+                <ReviewManagement />
               </ProtectedRoute>
             }
           />

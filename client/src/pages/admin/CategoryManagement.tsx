@@ -10,6 +10,9 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowUpDown,
+  CheckCircle2,
+  AlertCircle,
+  Package,
 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "../../hooks/hooks";
 import {
@@ -19,6 +22,7 @@ import {
   deleteAdminCategory,
 } from "../../store/admin/categorySlice";
 import { fetchCategories as syncCustomerCategories } from "../../store/customer/categorySlice";
+import { fetchDatas as syncDashboardStats } from "../../store/admin/datasSlice";
 import { AdminCategory } from "../../types/admin/categoryTypes";
 import { Status } from "../../global/statuses";
 import CategoryTable from "../../components/admin/Categories/CategoryTable";
@@ -44,10 +48,23 @@ const CategoryManagement: React.FC = () => {
 
   // Search, filter & view state
   const [searchTerm, setSearchTerm] = useState("");
+  const [productFilter, setProductFilter] = useState<"ALL" | "ACTIVE" | "EMPTY">("ALL");
   const [sortBy, setSortBy] = useState<
     "newest" | "oldest" | "name_asc" | "name_desc" | "products_desc"
   >("newest");
   const [viewMode, setViewMode] = useState<"table" | "grid">("table");
+
+  const isFiltered =
+    searchTerm.trim() !== "" ||
+    productFilter !== "ALL" ||
+    sortBy !== "newest";
+
+  const handleResetFilters = () => {
+    setSearchTerm("");
+    setProductFilter("ALL");
+    setSortBy("newest");
+    setCurrentPage(1);
+  };
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -97,6 +114,7 @@ const CategoryManagement: React.FC = () => {
 
     if (result && result.success) {
       dispatch(syncCustomerCategories());
+      dispatch(syncDashboardStats());
       return true;
     }
     return false;
@@ -108,6 +126,7 @@ const CategoryManagement: React.FC = () => {
     if (result && result.success) {
       setDeletingCategory(null);
       dispatch(syncCustomerCategories());
+      dispatch(syncDashboardStats());
     }
   };
 
@@ -122,13 +141,25 @@ const CategoryManagement: React.FC = () => {
   const filteredCategories = useMemo(() => {
     return categories
       .filter((cat) => {
-        if (!searchTerm.trim()) return true;
-        const q = searchTerm.toLowerCase();
-        return (
-          cat.categoryName?.toLowerCase().includes(q) ||
-          cat.categoryDescription?.toLowerCase().includes(q) ||
-          cat.id?.toLowerCase().includes(q)
-        );
+        // Search filter
+        if (searchTerm.trim()) {
+          const q = searchTerm.toLowerCase();
+          const matchName = cat.categoryName?.toLowerCase().includes(q);
+          const matchDesc = cat.categoryDescription?.toLowerCase().includes(q);
+          const matchId = cat.id?.toLowerCase().includes(q);
+          if (!matchName && !matchDesc && !matchId) {
+            return false;
+          }
+        }
+
+        // Product count filter
+        if (productFilter === "ACTIVE") {
+          if ((cat.totalProducts || 0) <= 0) return false;
+        } else if (productFilter === "EMPTY") {
+          if ((cat.totalProducts || 0) > 0) return false;
+        }
+
+        return true;
       })
       .sort((a, b) => {
         if (sortBy === "newest") {
@@ -154,7 +185,7 @@ const CategoryManagement: React.FC = () => {
         }
         return 0;
       });
-  }, [categories, searchTerm, sortBy]);
+  }, [categories, searchTerm, productFilter, sortBy]);
 
   // Paginated records
   const totalPages = Math.max(
@@ -167,6 +198,19 @@ const CategoryManagement: React.FC = () => {
   }, [filteredCategories, currentPage, pageSize]);
 
   const isLoading = status === Status.LOADING;
+
+  // KPI Metrics
+  const totalCategoriesCount = categories.length;
+  const activeCategoriesCount = categories.filter(
+    (c) => (c.totalProducts || 0) > 0
+  ).length;
+  const emptyCategoriesCount = categories.filter(
+    (c) => (c.totalProducts || 0) === 0
+  ).length;
+  const totalAssignedProducts = categories.reduce(
+    (sum, c) => sum + (c.totalProducts || 0),
+    0
+  );
 
   return (
     <div className="space-y-6">
@@ -214,7 +258,136 @@ const CategoryManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Search, Sort, View Controls & Content Block */}
+      {/* 2. KPI Metrics Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {/* Total Categories */}
+        <div
+          onClick={handleResetFilters}
+          className={`p-4 rounded-2xl border transition-all cursor-pointer select-none active:scale-[0.98] ${
+            !isFiltered
+              ? "border-[#E6540B]/40 bg-[#FFFDF8] shadow-xs"
+              : "border-[#1A1613]/10 bg-[#FFFDF8] shadow-xs hover:border-[#E6540B]/40"
+          }`}
+          title="Click to reset filters and view all categories"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-[#1A1613]/60">
+              Total Categories
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-[#E6540B]/10 text-[#E6540B] flex items-center justify-center">
+              <Layers className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-[#1A1613]">
+              {isLoading ? "..." : totalCategoriesCount}
+            </span>
+            <span className="text-[11px] text-[#1A1613]/40">in catalog</span>
+          </div>
+        </div>
+
+        {/* Active Collections */}
+        <div
+          onClick={() => {
+            if (productFilter === "ACTIVE") {
+              setProductFilter("ALL");
+            } else {
+              setProductFilter("ACTIVE");
+              setCurrentPage(1);
+            }
+          }}
+          className={`p-4 rounded-2xl border transition-all cursor-pointer select-none active:scale-[0.98] ${
+            productFilter === "ACTIVE"
+              ? "border-emerald-500 bg-emerald-50/50 shadow-sm ring-2 ring-emerald-500/20"
+              : "border-[#1A1613]/10 bg-[#FFFDF8] shadow-xs hover:border-emerald-400 hover:shadow-xs"
+          }`}
+          title="Click to filter categories with products (>0)"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-[#1A1613]/60">
+              Active Collections
+            </span>
+            <div className="flex items-center gap-1.5">
+              {productFilter === "ACTIVE" && (
+                <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-100/90 px-1.5 py-0.5 rounded-md">
+                  Filtered
+                </span>
+              )}
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-emerald-700">
+              {isLoading ? "..." : activeCategoriesCount}
+            </span>
+            <span className="text-[11px] text-[#1A1613]/40">with products</span>
+          </div>
+        </div>
+
+        {/* Empty Collections */}
+        <div
+          onClick={() => {
+            if (productFilter === "EMPTY") {
+              setProductFilter("ALL");
+            } else {
+              setProductFilter("EMPTY");
+              setCurrentPage(1);
+            }
+          }}
+          className={`p-4 rounded-2xl border transition-all cursor-pointer select-none active:scale-[0.98] ${
+            productFilter === "EMPTY"
+              ? "border-amber-500 bg-amber-50/50 shadow-sm ring-2 ring-amber-500/20"
+              : "border-[#1A1613]/10 bg-[#FFFDF8] shadow-xs hover:border-amber-400 hover:shadow-xs"
+          }`}
+          title="Click to filter empty categories needing products (0)"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-[#1A1613]/60">
+              Empty Collections
+            </span>
+            <div className="flex items-center gap-1.5">
+              {productFilter === "EMPTY" && (
+                <span className="text-[10px] font-semibold text-amber-700 bg-amber-100/90 px-1.5 py-0.5 rounded-md">
+                  Filtered
+                </span>
+              )}
+              <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+                <AlertCircle className="w-4 h-4" />
+              </div>
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-amber-700">
+              {isLoading ? "..." : emptyCategoriesCount}
+            </span>
+            <span className="text-[11px] text-[#1A1613]/40">
+              {emptyCategoriesCount > 0 ? "needs products" : "all populated"}
+            </span>
+          </div>
+        </div>
+
+        {/* Total Assigned Products */}
+        <div className="p-4 rounded-2xl border border-[#1A1613]/10 bg-[#FFFDF8] shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-[#1A1613]/60">
+              Assigned Products
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+              <Package className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-blue-800">
+              {isLoading ? "..." : totalAssignedProducts}
+            </span>
+            <span className="text-[11px] text-[#1A1613]/40">classified items</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Search, Sort, View Controls & Content Block */}
       <div className="rounded-xl border border-[#1A1613]/10 bg-[#FFFDF8] shadow-xs overflow-hidden">
         <div className="p-4 sm:p-5 border-b border-[#1A1613]/10">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -223,7 +396,7 @@ const CategoryManagement: React.FC = () => {
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#1A1613]/40 w-4 h-4" />
               <input
                 type="text"
-                placeholder="Search categories by name or description..."
+                placeholder="Search categories by name, description, or ID..."
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
@@ -234,17 +407,31 @@ const CategoryManagement: React.FC = () => {
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1A1613]/40 hover:text-[#1A1613]"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1A1613]/40 hover:text-[#1A1613] cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
 
-            {/* Right Controls: Sort & View Toggle */}
+            {/* Right Controls: Filter, Sort & View Toggle */}
             <div className="flex flex-wrap items-center gap-2.5">
+              {/* Product Count / Status Filter Dropdown */}
+              <select
+                value={productFilter}
+                onChange={(e) => {
+                  setProductFilter(e.target.value as any);
+                  setCurrentPage(1);
+                }}
+                className="h-9 rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] px-3 text-xs font-medium text-[#1A1613] focus:outline-none focus:border-[#E6540B] cursor-pointer"
+              >
+                <option value="ALL">All Categories</option>
+                <option value="ACTIVE">With Products (&gt;0)</option>
+                <option value="EMPTY">Empty Collections (0)</option>
+              </select>
+
               {/* Sort Dropdown */}
-              <div className="flex items-center gap-1.5 rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] px-3 py-1.5 text-xs text-[#1A1613]">
+              <div className="flex items-center gap-1.5 rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] px-3 h-9 text-xs text-[#1A1613]">
                 <ArrowUpDown className="w-3.5 h-3.5 text-[#1A1613]/50" />
                 <span className="text-[#1A1613]/50 text-[11px]">Sort:</span>
                 <select
@@ -260,25 +447,39 @@ const CategoryManagement: React.FC = () => {
                 </select>
               </div>
 
-              {/* View Mode Toggle */}
-              <div className="flex items-center rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] p-1">
+              {/* Reset Filter Button */}
+              {isFiltered && (
                 <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="h-9 px-3 rounded-lg border border-dashed border-[#1A1613]/25 text-xs font-semibold text-[#1A1613]/70 hover:text-[#E6540B] hover:border-[#E6540B] transition-colors cursor-pointer"
+                  title="Reset all search & filters"
+                >
+                  Reset
+                </button>
+              )}
+
+              {/* View Mode Toggle */}
+              <div className="flex items-center rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] p-0.5">
+                <button
+                  type="button"
                   onClick={() => setViewMode("table")}
-                  className={`p-1.5 rounded-md transition-all ${
+                  className={`p-1.5 rounded-md transition-all cursor-pointer ${
                     viewMode === "table"
-                      ? "bg-[#FFFDF8] text-[#E6540B] shadow-xs"
-                      : "text-[#1A1613]/50 hover:text-[#1A1613]"
+                      ? "bg-[#E6540B] text-white shadow-xs"
+                      : "text-[#1A1613]/60 hover:text-[#1A1613]"
                   }`}
                   title="Table View"
                 >
                   <List className="w-4 h-4" />
                 </button>
                 <button
+                  type="button"
                   onClick={() => setViewMode("grid")}
-                  className={`p-1.5 rounded-md transition-all ${
+                  className={`p-1.5 rounded-md transition-all cursor-pointer ${
                     viewMode === "grid"
-                      ? "bg-[#FFFDF8] text-[#E6540B] shadow-xs"
-                      : "text-[#1A1613]/50 hover:text-[#1A1613]"
+                      ? "bg-[#E6540B] text-white shadow-xs"
+                      : "text-[#1A1613]/60 hover:text-[#1A1613]"
                   }`}
                   title="Grid Cards View"
                 >
