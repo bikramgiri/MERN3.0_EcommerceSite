@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { Op } from "sequelize";
 import { AuthRequest } from "../../../middleware/authMiddleware";
 import Review from "../../../database/models/reviewModel";
 import Product from "../../../database/models/productModel";
@@ -154,6 +155,10 @@ class ReviewController {
       const reviews = await Review.findAll({
         where: {
           productId,
+          [Op.or]: [
+            { status: "APPROVED" },
+            { status: null },
+          ],
         },
         include: [
           {

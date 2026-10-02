@@ -166,6 +166,15 @@ class ProductController {
     const productWithProductImageUrl = {
       ...product.toJSON(),
       productImage: productImage, // Use the full URL for the response
+      Category: {
+        id: categoryDoc.id,
+        categoryName: categoryDoc.categoryName,
+      },
+      category: {
+        id: categoryDoc.id,
+        categoryName: categoryDoc.categoryName,
+      },
+      reviews: [],
     };
 
     res.status(201).json({
@@ -205,9 +214,10 @@ class ProductController {
       ],
     });
     if (products.length === 0) {
-      res.status(404).json({
+      res.status(200).json({
         message: "No products found",
-        field: "general",
+        totalProducts: 0,
+        data: [],
       });
       return;
     }
@@ -478,7 +488,8 @@ class ProductController {
     }
 
     const userId = req.user?.id;
-    if (product.userId !== userId) {
+    const userRole = (req.user as any)?.role;
+    if (product.userId !== userId && userRole !== "admin") {
       res.status(403).json({
         message: "Forbidden! You don't have permission to update this product",
         field: "general",
@@ -611,9 +622,40 @@ class ProductController {
       productImage: fileName, // Store only the filename in the database
     });
 
+    const refreshedProduct = await Product.findByPk(product.id, {
+      include: [
+        {
+          model: Category,
+          attributes: ["id", "categoryName"],
+        },
+        {
+          model: User,
+          as: "owner",
+          attributes: ["id", "username"],
+        },
+        {
+          model: Review,
+          as: "reviews",
+          attributes: ["id", "rating", "message", "reviewImage", "createdAt"],
+          include: [
+            {
+              model: User,
+              as: "User",
+              attributes: ["id", "username", "avatar"],
+            },
+          ],
+        },
+      ],
+    });
+
+    const productData = refreshedProduct ? refreshedProduct.toJSON() : updatedProduct.toJSON();
     const updatedProductDataWithImageUrl = {
-      ...updatedProduct.toJSON(),
+      ...productData,
       productImage: productImage, // Use the full URL for the response
+      reviews: (productData.reviews || []).map((review: any) => ({
+        ...review,
+        reviewImage: review.reviewImage ? getFullImageUrl(review.reviewImage) : null,
+      })),
     };
 
     res.status(200).json({
@@ -646,9 +688,22 @@ class ProductController {
     }
 
     const userId = req.user?.id;
-    if (product.userId !== userId) {
+    const userRole = (req.user as any)?.role;
+    if (product.userId !== userId && userRole !== "admin") {
       res.status(403).json({
         message: "Forbidden! You don't have permission to delete this product",
+        field: "general",
+      });
+      return;
+    }
+
+    // Check if product is part of any orders to prevent FK constraint crashes
+    const orderDetailsCount = await OrderDetails.count({
+      where: { productId },
+    });
+    if (orderDetailsCount > 0) {
+      res.status(400).json({
+        message: `Cannot delete product because it is associated with ${orderDetailsCount} existing customer order(s). You can set its stock to 0 instead.`,
         field: "general",
       });
       return;
@@ -657,13 +712,13 @@ class ProductController {
     // Delete image from Cloudinary
     const fileName = product.productImage ? getPublicIdFromAvatar(product.productImage) : "";
     if (fileName) {
-    cloudinary.uploader.destroy(fileName, (error: any, result: any) => {
-      if (error) {
-        console.error("Error deleting image from Cloudinary:", error);
-      } else {
-        console.log("Image deleted from Cloudinary successfully:", result);
-      }
-    });
+      cloudinary.uploader.destroy(fileName, (error: any, result: any) => {
+        if (error) {
+          console.error("Error deleting image from Cloudinary:", error);
+        } else {
+          console.log("Image deleted from Cloudinary successfully:", result);
+        }
+      });
     }
 
     await product.destroy();
@@ -675,60 +730,98 @@ class ProductController {
 
   // *Update Product Stock
   public static async updateProductStock(
-      req: AuthRequest,
-      res: Response
-    ): Promise<void> {
-      const productId = req.params.id;
-      if (!productId) {
-        res.status(400).json({
-          message: "Product ID is required",
-          field: "general",
-        });
-        return;
-      }
-
-      const product = await Product.findByPk(productId as string);
-      if (!product) {
-        res.status(404).json({
-          message: "Product not found",
-          field: "general",
-        });
-        return;
-      }
-
-      const userId = req.user?.id;
-      if (product.userId !== userId) {
-        res.status(403).json({
-          message: "Forbidden! You don't have permission to update this product",
-          field: "general",
-        });
-        return;
-      }
-
-      const { productStock } = req.body;
-      if (productStock === undefined || productStock === "") {
-        res.status(400).json({
-          message: "Product stock is required",
-          field: "productStock",
-        });
-        return;
-      }
-
-      if (isNaN(productStock) || productStock < 0) {
-        res.status(400).json({
-          message: "Product stock must be a non-negative number",
-          field: "productStock",
-        });
-        return;
-      }
-
-      await product.update({ productStock });
-
-      res.status(200).json({
-        message: "Product stock updated successfully",
-        data: product,
+    req: AuthRequest,
+    res: Response
+  ): Promise<void> {
+    const productId = req.params.id;
+    if (!productId) {
+      res.status(400).json({
+        message: "Product ID is required",
+        field: "general",
       });
+      return;
     }
+
+    const product = await Product.findByPk(productId as string);
+    if (!product) {
+      res.status(404).json({
+        message: "Product not found",
+        field: "general",
+      });
+      return;
+    }
+
+    const userId = req.user?.id;
+    const userRole = (req.user as any)?.role;
+    if (product.userId !== userId && userRole !== "admin") {
+      res.status(403).json({
+        message: "Forbidden! You don't have permission to update this product",
+        field: "general",
+      });
+      return;
+    }
+
+    const { productStock } = req.body;
+    if (productStock === undefined || productStock === "") {
+      res.status(400).json({
+        message: "Product stock is required",
+        field: "productStock",
+      });
+      return;
+    }
+
+    const parsedStock = Number(productStock);
+    if (isNaN(parsedStock) || parsedStock < 0) {
+      res.status(400).json({
+        message: "Product stock must be a non-negative number",
+        field: "productStock",
+      });
+      return;
+    }
+
+    await product.update({ productStock: parsedStock });
+
+    const refreshedProduct = await Product.findByPk(productId as string, {
+      include: [
+        {
+          model: Category,
+          attributes: ["id", "categoryName"],
+        },
+        {
+          model: User,
+          as: "owner",
+          attributes: ["id", "username"],
+        },
+        {
+          model: Review,
+          as: "reviews",
+          attributes: ["id", "rating", "message", "reviewImage", "createdAt"],
+          include: [
+            {
+              model: User,
+              as: "User",
+              attributes: ["id", "username", "avatar"],
+            },
+          ],
+        },
+      ],
+    });
+
+    const productData = refreshedProduct ? refreshedProduct.toJSON() : product.toJSON();
+    const productWithFullImage = {
+      ...productData,
+      productImage: getFullImageUrl(productData.productImage),
+      reviews: (productData.reviews || []).map((review: any) => ({
+        ...review,
+        reviewImage: review.reviewImage ? getFullImageUrl(review.reviewImage) : null,
+      })),
+    };
+
+    res.status(200).json({
+      message: "Product stock updated successfully",
+      data: productWithFullImage,
+    });
+  }
 
     // *Fetch Orders of a Product
     public static async fetchProductOrders(
@@ -780,17 +873,11 @@ class ProductController {
         ]
       });
 
-      if (!productOrders || productOrders.length === 0) {
-        res.status(404).json({
-          message: "No orders found for this product",
-          field: "general",
-        });
-        return;
-      }
+      const orderDetails = (productOrders[0] as any)?.OrderDetails || [];
 
       res.status(200).json({
         message: "Product orders fetched successfully",
-        totalOrders: productOrders.length,
+        totalOrders: orderDetails.length,
         data: productOrders,
       });
     }

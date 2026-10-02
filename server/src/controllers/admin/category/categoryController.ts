@@ -123,9 +123,10 @@ class CategoryController {
       ],
     });
     if (categories.length === 0) {
-      res.status(404).json({
+      res.status(200).json({
         message: "No categories found",
-        field: "general",
+        totalCategories: 0,
+        data: [],
       });
       return;
     }

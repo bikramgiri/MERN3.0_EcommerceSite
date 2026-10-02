@@ -12,15 +12,40 @@
 
 
 
-// services/imageHandler.ts
 import { cloudinary } from "../cloudinary";
+import { envConfig } from "../config/config";
+import fs from "fs";
+import path from "path";
 
-function getFullImageUrl(publicId: string | undefined): string {
-  if (!publicId) {
+function getFullImageUrl(imagePath: string | undefined): string {
+  if (!imagePath || typeof imagePath !== "string" || imagePath.trim() === "") {
     return "/placeholder.jpg";
   }
 
-  return cloudinary.url(publicId, {
+  const cleanPath = imagePath.trim();
+
+  // If already an absolute HTTP or HTTPS URL (e.g. Google avatar or external link)
+  if (cleanPath.startsWith("http://") || cleanPath.startsWith("https://")) {
+    return cleanPath;
+  }
+
+  // Check if it exists in local storage directory
+  const backendBase = envConfig.backendUrl || "http://localhost:4000";
+  const srcStorageFile = path.join(process.cwd(), "src", "storage", cleanPath);
+  const dirStorageFile = path.join(__dirname, "storage", cleanPath);
+  const parentStorageFile = path.join(__dirname, "..", "storage", cleanPath);
+
+  if (
+    fs.existsSync(srcStorageFile) ||
+    fs.existsSync(dirStorageFile) ||
+    fs.existsSync(parentStorageFile) ||
+    (/\.(jpg|jpeg|png|webp|gif|svg)$/i.test(cleanPath) && !cleanPath.includes("/"))
+  ) {
+    return `${backendBase}/src/storage/${cleanPath}`;
+  }
+
+  // Otherwise, treat as Cloudinary public ID (e.g. Mern3_Ecommerce_Images/...)
+  return cloudinary.url(cleanPath, {
     secure: true,
   });
 }

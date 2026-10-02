@@ -97,6 +97,34 @@ const connectDB = async () => {
     await sequelize.authenticate();
     console.log("Database connection has been established successfully.");
 
+    // Safe column migration for reviews table
+    try {
+      await sequelize.query(`
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'enum_reviews_status') THEN
+            CREATE TYPE "enum_reviews_status" AS ENUM ('APPROVED', 'PENDING', 'FLAGGED');
+          END IF;
+
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'reviews' AND column_name = 'status') THEN
+            ALTER TABLE "reviews" ADD COLUMN "status" "enum_reviews_status" DEFAULT 'APPROVED';
+          END IF;
+
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'reviews' AND column_name = 'adminReply') THEN
+            ALTER TABLE "reviews" ADD COLUMN "adminReply" TEXT DEFAULT NULL;
+          END IF;
+
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'reviews' AND column_name = 'repliedAt') THEN
+            ALTER TABLE "reviews" ADD COLUMN "repliedAt" TIMESTAMP WITH TIME ZONE DEFAULT NULL;
+          END IF;
+        END $$;
+      `);
+      // Update any null status rows to 'APPROVED'
+      await sequelize.query(`UPDATE "reviews" SET "status" = 'APPROVED' WHERE "status" IS NULL;`);
+    } catch (migError) {
+      console.warn("Reviews column migration notice:", migError);
+    }
+
     await sequelize.sync({ force: false, alter: false }); // Set force to true to drop and recreate tables, alter to true to update tables
     console.log("Database Synced!");
   } catch (error) {

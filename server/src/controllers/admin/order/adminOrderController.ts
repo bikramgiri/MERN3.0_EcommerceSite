@@ -22,6 +22,7 @@ class AdminOrderController {
   ): Promise<void> {
     try {
       const orders = await Order.findAll({
+        order: [["createdAt", "DESC"]],
         include: [
           {
           model: OrderDetails,
@@ -43,9 +44,10 @@ class AdminOrderController {
       });
 
       if (!orders || orders.length === 0) {
-        res.status(404).json({
+        res.status(200).json({
           message: "No orders found",
-          field: "orders",
+          totalOrders: 0,
+          data: [],
         });
         return;
       }
@@ -186,9 +188,41 @@ class AdminOrderController {
       order.orderStatus = orderStatus;
       await order.save();
 
+      const refreshedOrder = await Order.findOne({
+        where: { id: orderId },
+        include: [
+          {
+            model: OrderDetails,
+            attributes: ["id", "quantity"],
+            include: [{
+              model: Product,
+              attributes: ["productName", "productPrice", "productImage", "productDescription", "productStock", "categoryId"],
+            }]
+          },
+          {
+            model: Payment,
+            attributes: ["paymentMethod", "paymentStatus"],
+          },
+          {
+            model: User,
+            attributes: ["username", "email"],
+          }
+        ]
+      });
+
+      const plainOrder = refreshedOrder ? refreshedOrder.toJSON() : order.toJSON();
+      if (plainOrder.OrderDetails && Array.isArray(plainOrder.OrderDetails)) {
+        plainOrder.OrderDetails = plainOrder.OrderDetails.map((detail: any) => {
+          if (detail.Product && detail.Product.productImage) {
+            detail.Product.productImage = getFullImageUrl(detail.Product.productImage);
+          }
+          return detail;
+        });
+      }
+
       res.status(200).json({
         message: "Order status updated successfully",
-        data: order,
+        data: plainOrder,
       });
     } catch (error) {
       console.error("Error updating order status:", error);
@@ -197,19 +231,11 @@ class AdminOrderController {
   }
 
   // *Delete order
-   public static async deleteOrder(
+  public static async deleteOrder(
     req: AuthRequest,
-    res: Response  ): Promise<void> {
+    res: Response
+  ): Promise<void> {
     try {
-      const userId = req.user?.id;
-      if (!userId) {
-        res.status(401).json({
-          message: "User not authenticated",
-          field: "user",
-        });
-        return;
-      }
-
       const orderId = req.params.id;
       if (!orderId) {
         res.status(400).json({
@@ -219,7 +245,7 @@ class AdminOrderController {
         return;
       }
 
-      const order = await Order.findOne({ where: { id: orderId as string, userId } });
+      const order = await Order.findByPk(orderId as string);
       if (!order) {
         res.status(404).json({
           message: "Order not found",

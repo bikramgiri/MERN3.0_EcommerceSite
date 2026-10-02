@@ -77,6 +77,27 @@ class Review extends Model {
     defaultValue: null,
   })
   declare reviewImage: string | null;
+
+  @Column({
+    type: DataType.ENUM("APPROVED", "PENDING", "FLAGGED"),
+    allowNull: false,
+    defaultValue: "APPROVED",
+  })
+  declare status: "APPROVED" | "PENDING" | "FLAGGED";
+
+  @Column({
+    type: DataType.TEXT,
+    allowNull: true,
+    defaultValue: null,
+  })
+  declare adminReply: string | null;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: true,
+    defaultValue: null,
+  })
+  declare repliedAt: Date | null;
 }
 
 export default Review;

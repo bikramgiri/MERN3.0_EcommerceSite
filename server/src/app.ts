@@ -1,4 +1,5 @@
 import express from 'express';
+import path from 'path';
 import { connectDB } from './database/connection';
 import apiRoutes from './routes/api';
 import cors from 'cors';
@@ -38,10 +39,9 @@ app.use(googleAuth.passport.session());
 app.use("/api", apiRoutes)
 
 // *Give access to storage folder images
-app.use("/src/storage", express.static("storage")); 
-// *Or
-// *Give access to images in storage folder
-// app.use(express.static('storage'))
+app.use("/src/storage", express.static(path.join(process.cwd(), "src", "storage")));
+app.use("/src/storage", express.static(path.join(__dirname, "storage")));
+app.use("/storage", express.static(path.join(process.cwd(), "src", "storage")));
 
 // *Database connection
 // connectDB();
