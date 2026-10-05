@@ -52,11 +52,26 @@ class authMiddleware {
       // *verify token
       let decoded: any
       try {
-        decoded = jwt.verify(token, secret)
+        decoded = jwt.verify(token, secret);
       } catch (err: any) {
-        console.error("JWT verification failed:", { name: err.name, message: err.message })
-        res.status(401).json({ message: "Unauthorized! Invalid token" })
-        return
+        console.error("JWT verification failed:", {
+          name: err.name,
+          message: err.message,
+        });
+        if (err.name === "TokenExpiredError") {
+          res.status(401).json({
+            message: "jwt expired",
+            errorType: "TokenExpiredError",
+            isExpired: true,
+          });
+          return;
+        }
+        res.status(401).json({
+          message: "Unauthorized! Invalid token",
+          errorType: err.name || "JsonWebTokenError",
+          isExpired: false,
+        });
+        return;
       }
 
         const userId = decoded?.id

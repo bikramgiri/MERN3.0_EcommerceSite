@@ -23,6 +23,7 @@ import Cart from "../../../database/models/cartModel";
 import { sequelize } from "../../../database/connection";
 import Review from "../../../database/models/reviewModel";
 import { Op } from "sequelize";
+import { emitToAdmin } from "../../../services/socketService";
 
 class CustomerOrderController {
   // *Create order and integrate payment gateway
@@ -216,6 +217,40 @@ class CustomerOrderController {
           return { paymentData, order, orderDetailResponse };
         });
 
+      // Stock Safety Alerts: check stock levels and emit low-stock or out-of-stock alerts
+      for (const item of products) {
+        const product = await Product.findByPk(item.productId);
+        if (product) {
+          const stock = Number(product.productStock) || 0;
+          if (stock === 0) {
+            emitToAdmin("admin:out-of-stock", {
+              productId: product.id,
+              productName: product.productName,
+              productImage: product.productImage,
+              remainingStock: 0,
+            });
+          } else if (stock < 5) {
+            emitToAdmin("admin:low-stock", {
+              productId: product.id,
+              productName: product.productName,
+              productImage: product.productImage,
+              remainingStock: stock,
+            });
+          }
+        }
+      }
+
+      // High-Value Order Flag (>= Rs. 15,000)
+      const isHighValue = Number(order.totalAmount) >= 15000;
+      if (isHighValue) {
+        emitToAdmin("admin:high-value-order", {
+          orderId: order.id,
+          totalAmount: order.totalAmount,
+          customerName: req.user?.username || "Customer",
+          phoneNumber: order.phoneNumber,
+        });
+      }
+
       // Payment gateway integration
       if (paymentDetails.paymentMethod === PaymentMethod.Khalti) {
         try {
@@ -242,6 +277,22 @@ class CustomerOrderController {
 
           await Cart.destroy({ where: { userId } });
 
+          // Real-time notification for admin
+          emitToAdmin("admin:order-created", {
+            orderId: order.id,
+            totalAmount: order.totalAmount,
+            paymentMethod: PaymentMethod.Khalti,
+            orderStatus: order.orderStatus,
+            phoneNumber: order.phoneNumber,
+            shippingAddress: order.shippingAddress,
+            isHighValue,
+            createdAt: order.createdAt,
+          });
+          emitToAdmin("admin:dashboard-refresh", {
+            type: "order-created",
+            orderId: order.id,
+          });
+
           res.status(201).json({
             message: "Order placed successfully, proceed to Khalti payment",
             data: order,
@@ -267,6 +318,13 @@ class CustomerOrderController {
               });
               await order.destroy({ transaction: t });
               await paymentData.destroy({ transaction: t });
+            });
+
+            emitToAdmin("admin:payment-failed", {
+              orderId: order.id,
+              gateway: "Khalti",
+              amount: calculatedTotalCost,
+              reason: "Failed to initiate Khalti payment gateway session",
             });
 
             res.status(400).json({
@@ -320,6 +378,22 @@ class CustomerOrderController {
 
           await Cart.destroy({ where: { userId } });
 
+          // Real-time notification for admin
+          emitToAdmin("admin:order-created", {
+            orderId: order.id,
+            totalAmount: order.totalAmount,
+            paymentMethod: PaymentMethod.Esewa,
+            orderStatus: order.orderStatus,
+            phoneNumber: order.phoneNumber,
+            shippingAddress: order.shippingAddress,
+            isHighValue,
+            createdAt: order.createdAt,
+          });
+          emitToAdmin("admin:dashboard-refresh", {
+            type: "order-created",
+            orderId: order.id,
+          });
+
           res.status(201).json({
             message: "Order created. Proceed to eSewa payment.",
             data: order,
@@ -346,6 +420,13 @@ class CustomerOrderController {
               await paymentData.destroy({ transaction: t });
             });
 
+            emitToAdmin("admin:payment-failed", {
+              orderId: order.id,
+              gateway: "eSewa",
+              amount: calculatedTotalCost,
+              reason: "Failed to initiate eSewa payment gateway session",
+            });
+
             res.status(400).json({
               message: "Failed to initiate eSewa payment. Please try again.",
               field: "payment",
@@ -368,6 +449,22 @@ class CustomerOrderController {
 
       // Clear user's cart after order placement
       await Cart.destroy({ where: { userId } });
+
+      // Real-time notification for admin
+      emitToAdmin("admin:order-created", {
+        orderId: order.id,
+        totalAmount: order.totalAmount,
+        paymentMethod: paymentDetails.paymentMethod,
+        orderStatus: order.orderStatus,
+        phoneNumber: order.phoneNumber,
+        shippingAddress: order.shippingAddress,
+        isHighValue,
+        createdAt: order.createdAt,
+      });
+      emitToAdmin("admin:dashboard-refresh", {
+        type: "order-created",
+        orderId: order.id,
+      });
 
       res.status(201).json({
         message: "Order created successfully",
@@ -444,6 +541,27 @@ class CustomerOrderController {
           await order.save({ transaction: t });
         });
 
+        // Real-time notification for admin
+        emitToAdmin("admin:order-created", {
+          orderId: order.id,
+          totalAmount: order.totalAmount,
+          paymentMethod: PaymentMethod.Khalti,
+          orderStatus: order.orderStatus,
+          phoneNumber: order.phoneNumber,
+          shippingAddress: order.shippingAddress,
+          createdAt: order.createdAt,
+        });
+        emitToAdmin("admin:dashboard-refresh", {
+          type: "payment-completed",
+          orderId: order.id,
+        });
+        emitToAdmin("admin:payment-verified", {
+          orderId: order.id,
+          amount: order.totalAmount,
+          paymentMethod: PaymentMethod.Khalti,
+          transactionCode: pidx,
+        });
+
         res.status(200).json({
           message: "Khalti payment verified and order confirmed successfully",
           data: order
@@ -473,6 +591,13 @@ class CustomerOrderController {
           if (order && order.userId === userId) {
             payment.paymentStatus = PaymentStatus.Failed;
             await payment.save();
+
+            emitToAdmin("admin:payment-failed", {
+              orderId: order.id,
+              gateway: "Khalti",
+              amount: order.totalAmount,
+              reason: "Khalti payment cancelled or verification failed",
+            });
           }
         }
 
@@ -540,6 +665,13 @@ class CustomerOrderController {
       const verifyData = verifyRes.data;
 
       if (verifyData.status !== "COMPLETE") {
+        emitToAdmin("admin:payment-failed", {
+          orderId: transaction_uuid,
+          gateway: "eSewa",
+          amount: total_amount,
+          reason: `eSewa reported status: ${verifyData.status}`,
+        });
+
         res.status(400).json({
           message: "eSewa payment verification failed",
           status: verifyData.status,
@@ -573,6 +705,29 @@ class CustomerOrderController {
 
         order.orderStatus = OrderStatus.Preparation;
         await order.save({ transaction: t });
+      });
+
+      // Real-time notification for admin
+      emitToAdmin("admin:order-created", {
+        orderId: order.id,
+        totalAmount: order.totalAmount,
+        paymentMethod: PaymentMethod.Esewa,
+        orderStatus: order.orderStatus,
+        phoneNumber: order.phoneNumber,
+        shippingAddress: order.shippingAddress,
+        createdAt: order.createdAt,
+      });
+      emitToAdmin("admin:dashboard-refresh", {
+        type: "payment-completed",
+        orderId: order.id,
+      });
+
+      // Real-time payment verification alert for admin
+      emitToAdmin("admin:payment-verified", {
+        orderId: order.id,
+        amount: order.totalAmount,
+        paymentMethod: PaymentMethod.Esewa,
+        transactionCode: transaction_code,
       });
 
       res.status(200).json({
@@ -1240,6 +1395,18 @@ class CustomerOrderController {
         }
         order.orderStatus = OrderStatus.Cancelled;
         await order.save({ transaction: t });
+      });
+
+      // Real-time notification for admin
+      emitToAdmin("admin:order-cancelled", {
+        orderId: order.id,
+        totalAmount: order.totalAmount,
+        customerName: req.user?.username || "Customer",
+        reason: "Cancelled by customer",
+      });
+      emitToAdmin("admin:dashboard-refresh", {
+        type: "order-cancelled",
+        orderId: order.id,
       });
 
       res.status(200).json({

@@ -12,7 +12,7 @@ import getFullImageUrl from "../../../services/imageHandler";
 
 class DashboardController {
   public static async fetchAllData(req: Request, res: Response): Promise<void> {
-    const RECENT_LIMIT = 5;
+    const RECENT_LIMIT = 10;
     const [
       totalUsers,
       totalProducts,
@@ -116,13 +116,14 @@ class DashboardController {
         ],
       }),
       Order.findAll({
-        attributes: ["userId", "orderStatus", "totalAmount"],
+        attributes: ["id", "userId", "orderStatus", "totalAmount", "createdAt"],
         include: [
           {
             model: Payment,
             attributes: ["paymentMethod", "paymentStatus"],
           },
         ],
+        order: [["createdAt", "ASC"]],
       }),
     ]);
 
@@ -322,6 +323,14 @@ class DashboardController {
       };
     });
 
+    const salesAnalytics = allOrdersForStats.map((ord: any) => ({
+      id: ord.id,
+      totalAmount: Number(ord.totalAmount) || 0,
+      orderStatus: ord.orderStatus,
+      paymentStatus: ord.Payment?.paymentStatus || "Unpaid",
+      createdAt: ord.createdAt,
+    }));
+
     res.status(200).json({
       message: "Data fetched successfully",
       data: {
@@ -336,6 +345,7 @@ class DashboardController {
         recentReviews,
         topSellingProducts,
         orderDistribution,
+        salesAnalytics,
       },
     });
   }

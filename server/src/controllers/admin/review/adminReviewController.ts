@@ -8,6 +8,7 @@ import { cloudinary } from "../../../cloudinary";
 import { getPublicIdFromAvatar } from "../../../services/cloudinaryHelper";
 import fs from "fs";
 import path from "path";
+import { emitToAdmin } from "../../../services/socketService";
 
 class AdminReviewController {
   // *Fetch all reviews
@@ -110,6 +111,11 @@ class AdminReviewController {
 
     await review.destroy();
 
+    emitToAdmin("admin:dashboard-refresh", {
+      type: "review-deleted",
+      reviewId,
+    });
+
     res.status(200).json({
       success: true,
       message: "Review deleted successfully",
@@ -173,6 +179,12 @@ class AdminReviewController {
     if (plainReview.User && plainReview.User.avatar) {
       plainReview.User.avatar = getFullImageUrl(plainReview.User.avatar);
     }
+
+    emitToAdmin("admin:dashboard-refresh", {
+      type: "review-status-updated",
+      reviewId,
+      status,
+    });
 
     res.status(200).json({
       success: true,
@@ -279,6 +291,12 @@ class AdminReviewController {
       },
     );
 
+    emitToAdmin("admin:dashboard-refresh", {
+      type: "review-bulk-updated",
+      reviewIds,
+      status,
+    });
+
     res.status(200).json({
       success: true,
       message: `${reviewIds.length} review(s) successfully marked as ${status}`,
@@ -330,6 +348,11 @@ class AdminReviewController {
       where: {
         id: reviewIds,
       },
+    });
+
+    emitToAdmin("admin:dashboard-refresh", {
+      type: "review-bulk-deleted",
+      reviewIds,
     });
 
     res.status(200).json({

@@ -9,6 +9,7 @@ import Product from "../../../database/models/productModel";
 import Payment from "../../../database/models/paymentModel";
 import User from "../../../database/models/userModel";
 import getFullImageUrl from '../../../services/imageHandler';
+import { emitToAdmin } from "../../../services/socketService";
 
 // *Note: Difference between findOne and findByPk is that findOne allows you to specify additional options such as where clause, include, etc. while findByPk is a shorthand method for finding a record by its primary key. 
 // In this case, since we want to include related models (OrderDetails, Product, Payment, User), we use findOne with the appropriate include options.
@@ -220,6 +221,12 @@ class AdminOrderController {
         });
       }
 
+      emitToAdmin("admin:dashboard-refresh", {
+        type: "order-status-updated",
+        orderId,
+        orderStatus,
+      });
+
       res.status(200).json({
         message: "Order status updated successfully",
         data: plainOrder,
@@ -259,6 +266,11 @@ class AdminOrderController {
         await Payment.destroy({ where: { id: order.paymentId } });
       }
       await order.destroy(); 
+
+      emitToAdmin("admin:dashboard-refresh", {
+        type: "order-deleted",
+        orderId,
+      });
 
       res.status(200).json({
         message: "Order deleted successfully",

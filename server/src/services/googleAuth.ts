@@ -3,6 +3,7 @@ import { AuthRequest } from "../middleware/authMiddleware";
 import generateToken from "./generateToken";
 import User from "../database/models/userModel";
 import { envConfig } from "../config/config";
+import { emitToAdmin } from "./socketService";
 const passport = require("passport");
 const GoogleStrategy = require('passport-google-oauth').OAuth2Strategy;
 const jwt = require("jsonwebtoken");
@@ -48,6 +49,18 @@ passport.use(new GoogleStrategy({
           avatar,
           // No password needed for Google auth users
         });
+
+        emitToAdmin("admin:user-registered", {
+          userId: user.id,
+          username: user.username,
+          email: user.email,
+          provider: "google",
+          createdAt: user.createdAt,
+        });
+        emitToAdmin("admin:dashboard-refresh", {
+          type: "user-registered",
+          userId: user.id,
+        });
       } else if (!user.googleId) {
         // Link existing account
         user.googleId = googleId;
@@ -71,25 +84,25 @@ const googleAuthCallback = async function (req: AuthRequest, res: Response) {
     }
 
     // Generate JWT token
-    const token = generateToken(user.id, "1d");
+    const token = generateToken(user.id, "1h");
 //     console.log("Generated token payload:", jwt.decode(token));
 
   // Clear any old/wrong cookies first
     res.clearCookie("token");
     res.clearCookie("user");
 
-    // Set httpOnly cookie
+    // Set cookie (1 hour)
     res.cookie("token", token, {
       httpOnly: false, 
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 3 * 24 * 60 * 60 * 1000,
+      maxAge: 1 * 60 * 60 * 1000, // 1 hour
     });
     res.cookie("user", JSON.stringify(user.toJSON()), {
       httpOnly: false,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 3 * 24 * 60 * 60 * 1000,
+      maxAge: 1 * 60 * 60 * 1000, // 1 hour
     });
 
     // Redirect to frontend with success flag (avoid sending token in query for security)

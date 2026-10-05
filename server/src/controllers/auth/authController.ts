@@ -11,6 +11,7 @@ import { envConfig } from "../../config/config";
 import jwt, { Secret } from "jsonwebtoken";
 import { AuthRequest } from "../../middleware/authMiddleware";
 import getFullImageUrl from "../../services/imageHandler";
+import { emitToAdmin } from "../../services/socketService";
 const SENSITIVE_FIELDS = [
   "password",
   "emailVerificationToken",
@@ -103,6 +104,18 @@ class AuthController {
 }
 
       const userWithoutSensitiveData = sanitizeUser(registerData);
+
+      // Real-time notification for admin
+      emitToAdmin("admin:user-registered", {
+        userId: registerData.id,
+        username: registerData.username,
+        email: registerData.email,
+        createdAt: registerData.createdAt,
+      });
+      emitToAdmin("admin:dashboard-refresh", {
+        type: "user-registered",
+        userId: registerData.id,
+      });
 
       res.status(201).json({
         message: "User registered successfully! Please check your email for verification.",
@@ -278,13 +291,13 @@ class AuthController {
         return;
       }
 
-      const token = generateToken(user.id, "1d");
+      const token = generateToken(user.id, "1h");
 
       res.cookie("token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "strict",
-        maxAge: 24 * 60 * 60 * 1000, // 1 day
+        maxAge: 1 * 60 * 60 * 1000, // 1 hour
       });
 
 //       try {

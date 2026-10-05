@@ -77,10 +77,15 @@ class ProfileController {
     }
 
     const updateProfile = await user.update({ username, email });
+    const plainUpdated = updateProfile.toJSON();
+    const updatedWithAvatar = {
+      ...plainUpdated,
+      avatar: plainUpdated.avatar ? getFullImageUrl(plainUpdated.avatar) : null,
+    };
 
     res.status(200).json({
       message: "Profile updated successfully",
-      data: updateProfile,
+      data: updatedWithAvatar,
     });
   }
 

@@ -7,6 +7,7 @@ import User from "../../../database/models/userModel";
 import getFullImageUrl from "../../../services/imageHandler";
 import { cloudinary } from "../../../cloudinary";
 import { getPublicIdFromAvatar } from "../../../services/cloudinaryHelper";
+import { emitToAdmin } from "../../../services/socketService";
 
 class ReviewController {
   // *Add Review
@@ -116,6 +117,20 @@ class ReviewController {
         ...review.toJSON(),
         reviewImage: reviewImage,
       };
+
+      // Real-time notification for admin
+      emitToAdmin("admin:review-created", {
+        reviewId: review.id,
+        rating: review.rating,
+        message: review.message,
+        productName: product.productName,
+        userName: user.username,
+        createdAt: review.createdAt,
+      });
+      emitToAdmin("admin:dashboard-refresh", {
+        type: "review-created",
+        reviewId: review.id,
+      });
 
       res.status(200).json({
         message: "Review added successfully.",

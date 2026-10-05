@@ -6,6 +6,7 @@ import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 import User from "./src/database/models/userModel";
 import Order from "./src/database/models/orderModel";
+import { setIO, emitToAdmin, addActiveCheckout, removeActiveCheckout, emitTrafficUpdate, registerConnectedSocket, unregisterConnectedSocket } from "./src/services/socketService";
 
 async function startServer() {
   const app = await initApp(); // waits for connectDB() -> authenticate() -> sync() to fully finish
@@ -94,28 +95,42 @@ async function startServer() {
     },
   });
 
+  // Register io instance for controllers and services
+  setIO(io);
+
   let onlineUsers: { socketId: string; userId: string; role: string }[] = [];
-  let addToOnlineUsers = (socketId: string, userId: string, role: string) => {
-    onlineUsers = onlineUsers.filter((user) => user.userId !== userId);
-    onlineUsers.push({ socketId, userId, role });
+  let addToOnlineUsers = (socketId: string, userId: string | null, role: string) => {
+    onlineUsers = onlineUsers.filter((user) => user.socketId !== socketId);
+    if (userId) {
+      onlineUsers = onlineUsers.filter((user) => user.userId !== userId);
+    }
+    onlineUsers.push({ socketId, userId: userId || "", role });
   };
 
-  // Auth middleware
+  // Auth middleware: authenticates users and permits guest storefront visitors
   io.use((socket, next) => {
-    const token = socket.handshake.headers.token as string;
+    const token =
+      (socket.handshake.auth?.token as string) ||
+      (socket.handshake.headers?.token as string);
     if (!token) {
-      return next(new Error("Unauthorized! No token provided"));
+      (socket as any).userId = null;
+      (socket as any).role = "guest";
+      return next();
     }
     jwt.verify(
       token,
       envConfig.jwtSecretKey as string,
       async (err: any, result: any) => {
         if (err) {
-          return next(new Error("Unauthorized! Invalid token"));
+          (socket as any).userId = null;
+          (socket as any).role = "guest";
+          return next();
         }
         const userData = await User.findByPk(result.id);
         if (!userData) {
-          return next(new Error("Unauthorized! User not found"));
+          (socket as any).userId = null;
+          (socket as any).role = "guest";
+          return next();
         }
         (socket as any).userId = result.id;
         (socket as any).role = userData.role;
@@ -125,20 +140,42 @@ async function startServer() {
   });
 
   io.on("connection", (socket) => {
-    console.log("A user connected");
     const userId = (socket as any).userId;
-    const role = (socket as any).role;
+    const role = (socket as any).role || "guest";
     addToOnlineUsers(socket.id, userId, role);
-    console.log("onlineUsers: ", onlineUsers);
+    registerConnectedSocket(socket.id, userId, role);
+    console.log(`Socket connected: ${socket.id} (user: ${userId || "guest"}, role: ${role})`);
+
+    // Join admin socket into admin-room
+    if (role === "admin") {
+      socket.join("admin-room");
+      console.log(`🛡️ Admin joined admin-room: socket ${socket.id} (userId: ${userId})`);
+      emitTrafficUpdate();
+    }
+
+    // Customer active checkout events
+    socket.on("customer:checkout-start", () => {
+      addActiveCheckout(socket.id);
+    });
+
+    socket.on("customer:checkout-end", () => {
+      removeActiveCheckout(socket.id);
+    });
+
+    socket.on("disconnect", () => {
+      onlineUsers = onlineUsers.filter((user) => user.socketId !== socket.id);
+      unregisterConnectedSocket(socket.id);
+      console.log(`Socket disconnected: ${socket.id}`);
+    });
 
     // *Update Order status
     socket.on("orderStatusUpdated", async (data) => {
       try {
-          console.log("Received orderStatusUpdated:", data); 
+        console.log("Received orderStatusUpdated:", data); 
         const { orderId, userId, status } = data;
         const findUser = onlineUsers.find((user) => user.userId === userId);
         if (!findUser) {
-            console.log("No online user found for userId:", userId);
+          console.log("No online user found for userId:", userId);
           socket.emit("appError", "Unauthorized! User not found"); 
           return;
         }
@@ -146,7 +183,7 @@ async function startServer() {
           { orderStatus: status },
           { where: { id: orderId } },
         );
-            console.log("rowsUpdated:", rowsUpdated);
+        console.log("rowsUpdated:", rowsUpdated);
         if (rowsUpdated === 0) {
           socket.emit("appError", "Order not found or not updated");
           return;
@@ -155,6 +192,13 @@ async function startServer() {
           "success",
           "Order status updated successfully",
         );
+
+        // Notify admins in admin-room of status change
+        emitToAdmin("admin:dashboard-refresh", {
+          type: "order-status-updated",
+          orderId,
+          status,
+        });
       } catch (err: any) {
         console.error("orderStatusUpdated error:", err);
         socket.emit("appError", "Something went wrong updating the order");
