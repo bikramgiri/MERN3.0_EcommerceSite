@@ -31,6 +31,8 @@ import ReviewTable from "../../components/admin/Reviews/ReviewTable";
 import ReviewViewModal from "../../components/admin/Reviews/ReviewViewModal";
 import ReviewDeleteModal from "../../components/admin/Reviews/ReviewDeleteModal";
 import ReviewBulkDeleteModal from "../../components/admin/Reviews/ReviewBulkDeleteModal";
+import { useSearchParams } from "react-router-dom";
+import { connectSocket } from "../../services/socket";
 
 function formatDate(dateStr?: string) {
   if (!dateStr) return "N/A";
@@ -46,9 +48,37 @@ const ReviewManagement: React.FC = () => {
   const { reviews, status, actionLoading } = useAppSelector(
     (state) => state.adminReview
   );
+  const [searchParams] = useSearchParams();
 
   // Search & Filters
   const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    const q = searchParams.get("search");
+    if (q) {
+      const lower = q.trim().toLowerCase();
+      if (lower === "5 star" || lower === "5 stars" || lower === "5★") {
+        setSelectedRating("5");
+      } else if (lower === "1 star" || lower === "critical") {
+        setSelectedRating("1");
+      } else {
+        setSearchTerm(q);
+      }
+      setCurrentPage(1);
+    }
+
+    const ratingParam = searchParams.get("rating");
+    if (ratingParam) {
+      setSelectedRating(ratingParam);
+      setCurrentPage(1);
+    }
+
+    const statusParam = searchParams.get("status");
+    if (statusParam) {
+      setSelectedStatus(statusParam.toUpperCase());
+      setCurrentPage(1);
+    }
+  }, [searchParams]);
   const [selectedRating, setSelectedRating] = useState<string>("ALL");
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
   const [selectedAttachment, setSelectedAttachment] = useState<string>("ALL");
@@ -68,9 +98,22 @@ const ReviewManagement: React.FC = () => {
   const [viewingReview, setViewingReview] = useState<AdminReview | null>(null);
   const [deletingReview, setDeletingReview] = useState<AdminReview | null>(null);
 
-  // Initial load
+  // Initial load & real-time updates
   useEffect(() => {
     dispatch(fetchAdminReviews());
+
+    const socket = connectSocket();
+    const handleReviewEvent = () => {
+      dispatch(fetchAdminReviews());
+    };
+
+    socket.on("admin:review-created", handleReviewEvent);
+    socket.on("admin:dashboard-refresh", handleReviewEvent);
+
+    return () => {
+      socket.off("admin:review-created", handleReviewEvent);
+      socket.off("admin:dashboard-refresh", handleReviewEvent);
+    };
   }, [dispatch]);
 
   const handleRefresh = async () => {

@@ -33,6 +33,8 @@ import ProductModal from "../../components/admin/Products/ProductModal";
 import ProductViewModal from "../../components/admin/Products/ProductViewModal";
 import ProductDeleteModal from "../../components/admin/Products/ProductDeleteModal";
 import ProductStockModal from "../../components/admin/Products/ProductStockModal";
+import { connectSocket } from "../../services/socket";
+import { useStoreSettings } from "../../services/storeSettingsService";
 
 function formatDate(dateStr?: string) {
   if (!dateStr) return "N/A";
@@ -49,6 +51,7 @@ const ProductManagement: React.FC = () => {
     (state) => state.adminProduct
   );
   const { categories } = useAppSelector((state) => state.adminCategory);
+  const { lowStockThreshold = 5 } = useStoreSettings();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
@@ -87,13 +90,30 @@ const ProductManagement: React.FC = () => {
   const [stockProduct, setStockProduct] = useState<AdminProduct | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Initial load
+  // Initial load & real-time socket updates
   useEffect(() => {
     dispatch(fetchAdminProducts());
     dispatch(fetchAdminCategories());
+
+    const socket = connectSocket();
+    const handleProductRefresh = () => {
+      dispatch(fetchAdminProducts());
+    };
+
+    socket.on("admin:low-stock", handleProductRefresh);
+    socket.on("admin:out-of-stock", handleProductRefresh);
+    socket.on("admin:order-created", handleProductRefresh);
+    socket.on("admin:dashboard-refresh", handleProductRefresh);
+
+    return () => {
+      socket.off("admin:low-stock", handleProductRefresh);
+      socket.off("admin:out-of-stock", handleProductRefresh);
+      socket.off("admin:order-created", handleProductRefresh);
+      socket.off("admin:dashboard-refresh", handleProductRefresh);
+    };
   }, [dispatch]);
 
-  // Sync selected category from URL query param (?category= or ?categoryId=) or location.state
+  // Sync selected category and search from URL query param (?category=, ?categoryId=, ?search=) or location.state
   useEffect(() => {
     const catParam =
       searchParams.get("category") ||
@@ -109,6 +129,34 @@ const ProductManagement: React.FC = () => {
       );
       const targetId = matched ? matched.id : catParam;
       setSelectedCategory(targetId);
+      setCurrentPage(1);
+    }
+
+    const searchQ = searchParams.get("search");
+    if (searchQ) {
+      const lower = searchQ.trim().toLowerCase();
+      if (lower === "low stock" || lower === "lowstock") {
+        setStockFilter("LOW_STOCK");
+        setSearchTerm("");
+      } else if (lower === "out of stock" || lower === "outofstock" || lower === "sold out") {
+        setStockFilter("OUT_OF_STOCK");
+        setSearchTerm("");
+      } else {
+        setSearchTerm(searchQ);
+      }
+      setCurrentPage(1);
+    }
+
+    const stockParam = searchParams.get("stock") || searchParams.get("stockFilter");
+    if (stockParam) {
+      const upper = stockParam.toUpperCase();
+      if (["IN_STOCK", "LOW_STOCK", "OUT_OF_STOCK", "ALERT", "ALL"].includes(upper)) {
+        setStockFilter(upper);
+      } else if (upper.includes("LOW")) {
+        setStockFilter("LOW_STOCK");
+      } else if (upper.includes("OUT")) {
+        setStockFilter("OUT_OF_STOCK");
+      }
       setCurrentPage(1);
     }
   }, [searchParams, location.state, categories]);
@@ -260,16 +308,16 @@ const ProductManagement: React.FC = () => {
 
         // Stock filter
         if (stockFilter === "IN_STOCK") {
-          if ((product.productStock || 0) < 10) return false;
+          if ((product.productStock || 0) < lowStockThreshold) return false;
         } else if (stockFilter === "LOW_STOCK") {
           const stock = product.productStock || 0;
-          if (stock <= 0 || stock >= 10) return false;
+          if (stock <= 0 || stock >= lowStockThreshold) return false;
         } else if (stockFilter === "OUT_OF_STOCK") {
           if ((product.productStock || 0) > 0) return false;
         } else if (stockFilter === "ALERT") {
-          // Low stock (<10) and Out of stock (0)
+          // Low stock (<threshold) and Out of stock (0)
           const stock = product.productStock || 0;
-          if (stock >= 10) return false;
+          if (stock >= lowStockThreshold) return false;
         }
 
         return true;
@@ -307,7 +355,7 @@ const ProductManagement: React.FC = () => {
         }
         return 0;
       });
-  }, [products, searchTerm, selectedCategory, stockFilter, sortBy]);
+  }, [products, searchTerm, selectedCategory, stockFilter, sortBy, lowStockThreshold]);
 
   // Pagination calculation
   const totalPages = Math.ceil(filteredProducts.length / pageSize) || 1;
@@ -321,10 +369,10 @@ const ProductManagement: React.FC = () => {
   // KPI Calculations
   const totalProductsCount = products.length;
   const inStockCount = products.filter(
-    (p) => (p.productStock || 0) >= 10
+    (p) => (p.productStock || 0) >= lowStockThreshold
   ).length;
   const lowStockCount = products.filter(
-    (p) => (p.productStock || 0) > 0 && (p.productStock || 0) < 10
+    (p) => (p.productStock || 0) > 0 && (p.productStock || 0) < lowStockThreshold
   ).length;
   const outOfStockCount = products.filter(
     (p) => (p.productStock || 0) === 0

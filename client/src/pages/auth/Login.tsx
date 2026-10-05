@@ -135,7 +135,13 @@ useEffect(() => {
 
 useEffect(() => {
   const queryParams = new URLSearchParams(window.location.search);
-  if (queryParams.get("logout") === "true") {
+  if (queryParams.get("expired") === "true") {
+    toast.warn("Your session has expired. Please log in again to continue.", {
+      toastId: "session-expired-notice",
+      autoClose: 5000,
+    });
+    window.history.replaceState({}, document.title, window.location.pathname);
+  } else if (queryParams.get("logout") === "true") {
     toast.success("Logout successful", { toastId: "logout-success" });
     setTimeout(() => {
       navigate("/login", { replace: true });

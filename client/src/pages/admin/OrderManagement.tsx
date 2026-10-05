@@ -24,6 +24,8 @@ import OrderTable from "../../components/admin/Orders/OrderTable";
 import OrderViewModal from "../../components/admin/Orders/OrderViewModal";
 import OrderStatusModal from "../../components/admin/Orders/OrderStatusModal";
 import OrderDeleteModal from "../../components/admin/Orders/OrderDeleteModal";
+import { useSearchParams } from "react-router-dom";
+import { connectSocket } from "../../services/socket";
 
 function formatDate(dateStr?: string) {
   if (!dateStr) return "N/A";
@@ -39,9 +41,55 @@ const OrderManagement: React.FC = () => {
   const { orders, status, actionLoading } = useAppSelector(
     (state) => state.adminOrder
   );
+  const [searchParams] = useSearchParams();
 
   // Search & Filter State
   const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    const q = searchParams.get("search");
+    if (q) {
+      const lower = q.trim().toLowerCase();
+      if (lower === "pending") {
+        setSelectedStatus("Pending");
+      } else if (lower === "intransit" || lower === "in transit" || lower === "in-transit") {
+        setSelectedStatus("InTransit");
+      } else if (lower === "delivered") {
+        setSelectedStatus("Delivered");
+      } else if (lower === "cancelled" || lower === "canceled") {
+        setSelectedStatus("Cancelled");
+      } else if (lower === "cod" || lower === "cash on delivery") {
+        setSelectedMethod("COD");
+      } else {
+        setSearchTerm(q);
+      }
+      setCurrentPage(1);
+    }
+
+    const statusParam = searchParams.get("status");
+    if (statusParam) {
+      setSelectedStatus(statusParam);
+      setCurrentPage(1);
+    }
+
+    const paymentParam = searchParams.get("payment");
+    if (paymentParam) {
+      setSelectedPayment(paymentParam);
+      setCurrentPage(1);
+    }
+
+    const methodParam = searchParams.get("method");
+    if (methodParam) {
+      setSelectedMethod(methodParam);
+      setCurrentPage(1);
+    }
+
+    const dateParam = searchParams.get("date");
+    if (dateParam === "TODAY") {
+      setDateFilter("TODAY");
+      setCurrentPage(1);
+    }
+  }, [searchParams]);
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
   const [selectedPayment, setSelectedPayment] = useState<string>("ALL");
   const [selectedMethod, setSelectedMethod] = useState<string>("ALL");
@@ -78,9 +126,22 @@ const OrderManagement: React.FC = () => {
   const [deletingOrder, setDeletingOrder] = useState<AdminOrder | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Initial load
+  // Initial load & real-time socket updates
   useEffect(() => {
     dispatch(fetchAdminOrders());
+
+    const socket = connectSocket();
+    const handleOrderEvent = () => {
+      dispatch(fetchAdminOrders());
+    };
+
+    socket.on("admin:order-created", handleOrderEvent);
+    socket.on("admin:dashboard-refresh", handleOrderEvent);
+
+    return () => {
+      socket.off("admin:order-created", handleOrderEvent);
+      socket.off("admin:dashboard-refresh", handleOrderEvent);
+    };
   }, [dispatch]);
 
   const handleRefresh = async () => {

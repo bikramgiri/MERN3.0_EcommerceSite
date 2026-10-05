@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { OrderData } from "../../../types/admin/datasTypes";
 import { OrderStatus, PaymentMethod } from "../../../types/customer/checkoutTypes";
+import { useStoreSettings } from "../../../services/storeSettingsService";
 
 interface InteractiveOrdersTableProps {
   recentOrders: OrderData[];
@@ -49,6 +50,7 @@ const InteractiveOrdersTable: React.FC<InteractiveOrdersTableProps> = ({
   recentOrders,
   status,
 }) => {
+  const { orderPrefix = "TRV-" } = useStoreSettings();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [paymentFilter, setPaymentFilter] = useState<string>("ALL");
@@ -232,9 +234,14 @@ const InteractiveOrdersTable: React.FC<InteractiveOrdersTableProps> = ({
           </div>
         </div>
 
+        {/* Mobile scroll hint */}
+        <div className="sm:hidden px-4 py-2 bg-[#FDF8ED] border-b border-[#1A1613]/10 text-[11px] text-[#1A1613]/60 flex items-center justify-between">
+          <span>↔ Scroll horizontally to view orders &amp; actions</span>
+        </div>
+
         {/* Table Content */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-[#1A1613]">
+          <table className="w-full min-w-[680px] text-left text-sm text-[#1A1613]">
             <thead className="bg-[#F4EEDF]/80 text-[11px] uppercase tracking-wider text-[#1A1613]/65 font-bold border-b border-[#1A1613]/10">
               <tr>
                 <th className="py-3 px-4 sm:px-6">Order ID</th>
@@ -276,7 +283,7 @@ const InteractiveOrdersTable: React.FC<InteractiveOrdersTableProps> = ({
                   <td className="py-3.5 px-4 sm:px-6">
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-xs font-bold text-[#1A1613]">
-                        #{order.id.slice(0, 8)}
+                        {orderPrefix || "#"}{order.id.slice(0, 8)}
                       </span>
                       <button
                         onClick={(e) => handleCopy(order.id, e)}
@@ -377,7 +384,7 @@ const InteractiveOrdersTable: React.FC<InteractiveOrdersTableProps> = ({
                   </span>
                 </div>
                 <p className="font-mono text-xs text-[#1A1613]/60 mt-0.5">
-                  ID: #{selectedOrder.id}
+                  ID: {orderPrefix || "#"}{selectedOrder.id}
                 </p>
               </div>
 

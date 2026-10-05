@@ -68,18 +68,17 @@ const DropdownNotifications: React.FC = () => {
     <ClickOutside onClick={() => setDropdownOpen(false)} className="relative">
       {/* Bell Button */}
       <button
-      type='button'
+        type='button'
         onClick={() => {
           setDropdownOpen(!dropdownOpen);
           if (notifying) setNotifying(false);
         }}
-        // outline-none focus:outline-none focus:ring-0
-        className="relative cursor-pointer outline-none focus:outline-none focus-visible:outline-none flex h-11 w-11 items-center justify-center p-2 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+        className="relative cursor-pointer outline-none focus:outline-none flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center p-2 rounded-full text-[#1A1613]/70 hover:bg-[#F4EEDF] hover:text-[#1A1613] transition-colors"
         aria-label="Open notifications"
       >
-        <Bell className="h-7 w-7" />
+        <Bell className="h-5 w-5 sm:h-6 sm:w-6" />
         {notifying && unreadCount > 0 && (
-          <span className="absolute top-0 right-0 -mt-1 -mr-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white text-xs font-semibold">
+          <span className="absolute top-0 right-0 -mt-0.5 -mr-0.5 flex h-4.5 w-4.5 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-[#E6540B] text-white text-[10px] sm:text-xs font-semibold">
             <p>{unreadCount}</p>
           </span>
         )}
@@ -89,9 +88,9 @@ const DropdownNotifications: React.FC = () => {
       {dropdownOpen && (
         <div
           className={`
-            absolute right-0 sm:right-0 mt-4 w-70 sm:w-92
+            absolute right-0 sm:right-0 mt-3 w-72 sm:w-92
             max-h-[480px] flex flex-col rounded-xl 
-            border border-gray-300 bg-gray-100 shadow-md 
+            border border-[#1A1613]/10 bg-[#FFFDF8] shadow-xl shadow-[#1A1613]/10
             overflow-hidden z-50
             transform transition-all duration-200 ease-out
             origin-top-right scale-95 opacity-0
@@ -99,64 +98,64 @@ const DropdownNotifications: React.FC = () => {
           `}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-gray-100">
+          <div className="flex items-center justify-between px-5 py-3 border-b border-[#1A1613]/10 bg-[#FFFDF8]">
             <div className="flex items-center gap-3">
-              <h5 className="text-lg font-semibold text-gray-600">
+              <h5 className="text-base font-semibold text-[#1A1613]">
                 Notifications
               </h5>
               {unreadCount > 0 && (
-                <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-[#E6540B]/10 text-[#E6540B] border border-[#E6540B]/20">
                   {unreadCount} new
                 </span>
               )}
             </div>
 
             <button
-            type='button'
+              type='button'
               onClick={() => setDropdownOpen(false)}
-              className="outline-none focus:outline-none focus-visible:outline-none p-1.5 cursor-pointer rounded-full bg-gray-300 hover:bg-gray-400 transition-colors"
+              className="outline-none focus:outline-none p-1.5 cursor-pointer rounded-full bg-[#F4EEDF] hover:bg-[#EDE5D0] text-[#1A1613] transition-colors"
               aria-label="Close notifications"
             >
-              <X className="h-5 w-5 text-black" />
+              <X className="h-4 w-4" />
             </button>
           </div>
 
           {/* Notification List */}
           <div className="flex-1 overflow-y-auto custom-scrollbar">
             {notifications.length === 0 ? (
-              <div className="py-12 text-center text-gray-500">
+              <div className="py-12 text-center text-[#1A1613]/55 text-sm">
                 No new notifications
               </div>
             ) : (
-              <ul className="divide-y divide-gray-200">
+              <ul className="divide-y divide-[#1A1613]/10">
                 {notifications.map((notif) => {
                   const { icon, border } = getIconAndColor(notif.type);
                   return (
                     <li
                       key={notif.id}
                       className={`
-                        flex cursor-pointer gap-4 py-2 border-b border-gray-300 transition-colors
+                        flex cursor-pointer gap-4 py-2.5 px-4 transition-colors
                         ${notif.unread 
-                          ? 'bg-gray-100' 
-                          : 'hover:bg-gray-200'}
+                          ? 'bg-[#F4EEDF]/30 hover:bg-[#F4EEDF]/60' 
+                          : 'hover:bg-[#F4EEDF]/40'}
                       `}
                     >
                       {/* Left colored border */}
                       <div className={`h-full rounded-full ${border} flex-shrink-0`} />
 
                       {/* Icon */}
-                      <div className="p-2 rounded-full">{icon}</div>
+                      <div className="p-1.5 rounded-full self-start mt-0.5">{icon}</div>
 
                       {/* Content */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-sm font-medium text-[#1A1613]">
                           {notif.title}
                         </p>
-                        <p className="mt-1 text-sm text-gray-600 line-clamp-2">
+                        <p className="mt-0.5 text-xs text-[#1A1613]/65 line-clamp-2">
                           {notif.message}
                         </p>
-                        <p className="mt-1.5 text-xs text-gray-500 flex items-center gap-1.5">
-                          <Clock className="h-3.5 w-3.5" />
+                        <p className="mt-1 text-[11px] text-[#1A1613]/45 flex items-center gap-1.5">
+                          <Clock className="h-3 w-3" />
                           {notif.time}
                         </p>
                       </div>
@@ -168,11 +167,11 @@ const DropdownNotifications: React.FC = () => {
           </div>
 
           {/* Footer */}
-          <div className="px-5 py-3 border-t border-gray-200 bg-gray-100 text-center">
+          <div className="px-5 py-2.5 border-t border-[#1A1613]/10 bg-[#FBF9F4] text-center">
             <Link
               to="/notifications"
               onClick={() => setDropdownOpen(false)}
-              className="outline-none focus:outline-none text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
+              className="outline-none focus:outline-none text-xs font-semibold text-[#E6540B] hover:underline transition-colors"
             >
               View all notifications
             </Link>

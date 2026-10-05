@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   Search,
   RefreshCw,
@@ -53,7 +54,29 @@ const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [searchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    const q = searchParams.get("search");
+    if (q) {
+      const lower = q.trim().toLowerCase();
+      if (lower === "customer" || lower === "customers") {
+        setRoleFilter("customer");
+      } else if (lower === "admin" || lower === "admins") {
+        setRoleFilter("admin");
+      } else {
+        setSearchTerm(q);
+      }
+      setCurrentPage(1);
+    }
+
+    const roleParam = searchParams.get("role");
+    if (roleParam && (roleParam === "customer" || roleParam === "admin" || roleParam === "ALL")) {
+      setRoleFilter(roleParam);
+      setCurrentPage(1);
+    }
+  }, [searchParams]);
   const [roleFilter, setRoleFilter] = useState<string>("ALL");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "name_asc" | "name_desc">("newest");
   const [selectedUser, setSelectedUser] = useState<ManagedUser | null>(null);

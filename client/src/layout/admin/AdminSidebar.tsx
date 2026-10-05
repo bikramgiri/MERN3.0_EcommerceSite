@@ -9,7 +9,6 @@ import {
   Categories,
   DashboardIcon,
   UserProfileIcon,
-  ChatIconComponent,
 } from "../../icons/icons";
 import { ShoppingCart, Sparkles, X } from "lucide-react";
 import SidebarWidget from "./SidebarWidget";
@@ -60,14 +59,14 @@ const navItems: NavItem[] = [
   },
   {
     icon: UserProfileIcon,
-    name: 'User Profile',
+    name: 'Profile',
     path: '/admin-dashboard/profile',
   },
-  {
-    icon: ChatIconComponent,
-    name: 'Chat',
-    path: '/admin-dashboard/chat',
-  },
+  // {
+  //   icon: ChatIconComponent,
+  //   name: 'Chat',
+  //   path: '/admin-dashboard/chat',
+  // },
   {
     icon: Setting,
     name: 'Settings',

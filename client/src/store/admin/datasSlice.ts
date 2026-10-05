@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { DatasState, OrderData, TopSellingProduct, OrderDistributionData } from "../../types/admin/datasTypes";
+import { DatasState, OrderData, TopSellingProduct, OrderDistributionData, SalesRecord } from "../../types/admin/datasTypes";
 import { Status } from "../../global/statuses";
 import { UserData, Review } from "../../types/customer/productTypes";
 import { AppDispatch } from "../store";
@@ -17,6 +17,7 @@ const initialState: DatasState = {
   recentReviews: [],
   topSellingProducts: [],
   orderDistribution: undefined,
+  salesAnalytics: [],
   status: Status.IDLE,
 };
 
@@ -32,6 +33,7 @@ interface DatasPayload {
   recentReviews: Review[];
   topSellingProducts?: TopSellingProduct[];
   orderDistribution?: OrderDistributionData;
+  salesAnalytics?: SalesRecord[];
 }
 
 const datasSlice = createSlice({
@@ -53,6 +55,7 @@ const datasSlice = createSlice({
       state.recentReviews = action.payload.recentReviews;
       state.topSellingProducts = action.payload.topSellingProducts || [];
       state.orderDistribution = action.payload.orderDistribution;
+      state.salesAnalytics = action.payload.salesAnalytics || [];
     },
   },
 });

@@ -35,6 +35,7 @@ function initials(name?: string) {
 const CustomerAndReviewsSection: React.FC<CustomerAndReviewsSectionProps> = ({
   recentUsers,
   recentReviews,
+  totalReviews,
   recentOrders,
 }) => {
   const [userSearch, setUserSearch] = useState("");
@@ -47,7 +48,7 @@ const CustomerAndReviewsSection: React.FC<CustomerAndReviewsSectionProps> = ({
           recentReviews.reduce((sum, r) => sum + (r.rating || 0), 0) /
           recentReviews.length
         ).toFixed(1)
-      : "4.5";
+      : "0.0";
 
   // Filter users
   const filteredUsers = recentUsers.filter((u) => {
@@ -219,7 +220,9 @@ const CustomerAndReviewsSection: React.FC<CustomerAndReviewsSectionProps> = ({
                 </span>
               </div>
               <p className="text-xs text-[#1A1613]/60 mt-0.5">
-                Feedback and product satisfaction
+                {totalReviews !== undefined
+                  ? `${totalReviews} total reviews in store`
+                  : "Feedback and product satisfaction"}
               </p>
             </div>
 

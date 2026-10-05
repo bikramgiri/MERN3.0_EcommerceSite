@@ -5,11 +5,15 @@ import {
   removeFromCart,
   updateCartItems,
 } from "../../../store/customer/cartSlice";
-import { Loader2, Minus, Plus, Trash2 } from "lucide-react";
+import { Loader2, Minus, Plus, Trash2, Truck } from "lucide-react";
 import Breadcrumb from "../../../global/Breadcrumb";
 import { getAverageRatingNumber } from "../../../utils/helpers";
 import { toast } from "react-toastify";
 import axios from "axios";
+import {
+  useStoreSettings,
+  calculateShipping,
+} from "../../../services/storeSettingsService";
 
 interface ApiErrorPayload {
   field?: string;
@@ -98,7 +102,11 @@ const Cart = () => {
     (sum, item) => sum + item.product.productPrice * item.quantity,
     0,
   );
-  const shipping = 50;
+  const storeSettings = useStoreSettings();
+  const { fee: shipping, isFree: isFreeShipping } = calculateShipping(
+    subtotal,
+    storeSettings
+  );
   const total = subtotal + shipping;
 
   return (
@@ -300,6 +308,35 @@ const Cart = () => {
                     Order Summary
                   </h2>
 
+                  {storeSettings.freeShippingThreshold > 0 && (
+                    <div className="mb-5 p-3 rounded-xl bg-orange-50/70 border border-orange-200/60 text-xs">
+                      <div className="flex items-center gap-2 mb-1.5 font-medium text-gray-800">
+                        <Truck className="w-3.5 h-3.5 text-[#E6540B] shrink-0" />
+                        {isFreeShipping ? (
+                          <span className="text-emerald-700 font-semibold">
+                            You've qualified for FREE delivery!
+                          </span>
+                        ) : (
+                          <span>
+                            Add{" "}
+                            <strong className="text-[#E6540B]">
+                              Rs. {(storeSettings.freeShippingThreshold - subtotal).toFixed(0)}
+                            </strong>{" "}
+                            more to get <strong>FREE delivery</strong>
+                          </span>
+                        )}
+                      </div>
+                      <div className="w-full bg-gray-200/80 rounded-full h-1.5 overflow-hidden">
+                        <div
+                          className="bg-[#E6540B] h-full rounded-full transition-all duration-300"
+                          style={{
+                            width: `${Math.min(100, (subtotal / storeSettings.freeShippingThreshold) * 100)}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-3 sm:space-y-4 text-[#1A1613] text-sm sm:text-base">
                     <div className="flex justify-between">
                       <span>Total Items</span>
@@ -316,7 +353,7 @@ const Cart = () => {
                     <div className="flex justify-between">
                       <span>Shipping</span>
                       <span className="font-['IBM_Plex_Mono',monospace] font-semibold text-green-700">
-                        Rs. {shipping}
+                        {isFreeShipping ? "FREE" : `Rs. ${shipping}`}
                       </span>
                     </div>
                     <div className="border-t border-[#1A1613]/10 pt-4 flex justify-between text-lg sm:text-xl font-bold">

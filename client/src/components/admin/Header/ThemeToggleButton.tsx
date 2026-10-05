@@ -7,10 +7,11 @@ export const ThemeToggleButton: React.FC = () => {
   return (
     <button
       onClick={toggleTheme}
-      className="relative cursor-pointer focus:outline-none focus:ring-0 h-11 w-11 flex items-center justify-center text-gray-600 transition-colors bg-gray-100 border border-gray-300 rounded-full hover:text-gray-500 hover:bg-gray-200"
+      className="relative cursor-pointer focus:outline-none focus:ring-0 h-10 w-10 sm:h-11 sm:w-11 flex items-center justify-center text-[#1A1613]/70 hover:text-[#1A1613] transition-colors bg-[#F4EEDF]/70 border border-[#1A1613]/10 rounded-full hover:bg-[#F4EEDF]"
+      aria-label="Toggle theme"
     >
-      <Sun className="h-6 w-6 hidden dark:block" />
-      <Moon className="h-6 w-6 dark:hidden" />
+      <Sun className="h-5 w-5 hidden dark:block text-[#1A1613]" />
+      <Moon className="h-5 w-5 dark:hidden text-[#1A1613]" />
       {/* <svg
         className="hidden dark:block"
         width="20"

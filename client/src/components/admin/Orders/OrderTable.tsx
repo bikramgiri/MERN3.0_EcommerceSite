@@ -14,6 +14,7 @@ import {
   ImageIcon,
 } from "lucide-react";
 import { AdminOrder, AdminOrderStatus } from "../../../types/admin/orderTypes";
+import { useStoreSettings } from "../../../services/storeSettingsService";
 
 interface OrderTableProps {
   orders: AdminOrder[];
@@ -36,6 +37,7 @@ const OrderTable: React.FC<OrderTableProps> = ({
   copiedId,
   formatDate,
 }) => {
+  const { orderPrefix = "TRV-" } = useStoreSettings();
   const getStatusBadge = (status: AdminOrderStatus) => {
     switch (status) {
       case "Delivered":
@@ -187,7 +189,7 @@ const OrderTable: React.FC<OrderTableProps> = ({
                   <td className="py-3.5 px-4">
                     <div className="flex items-center gap-1.5">
                       <span className="font-mono text-xs font-bold text-[#1A1613]">
-                        #{order.id.slice(0, 8)}
+                        {orderPrefix || "#"}{order.id.slice(0, 8)}
                       </span>
                       <button
                         onClick={(e) => onCopyId(order.id, e)}

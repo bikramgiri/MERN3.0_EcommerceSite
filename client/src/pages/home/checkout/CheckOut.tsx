@@ -17,6 +17,11 @@ import Breadcrumb from "../../../global/Breadcrumb";
 import { getAverageRatingNumber } from "../../../utils/helpers";
 import { toast } from "react-toastify";
 import axios from "axios";
+import { connectSocket } from "../../../services/socket";
+import {
+  useStoreSettings,
+  calculateShipping,
+} from "../../../services/storeSettingsService";
 
 interface ApiErrorPayload {
   field?: string;
@@ -58,6 +63,15 @@ const CheckOut = () => {
     PaymentMethod.COD,
   );
   const [removingId, setRemovingId] = useState<string | null>(null);
+
+  // Real-time checkout session tracking
+  useEffect(() => {
+    const socket = connectSocket();
+    socket.emit("customer:checkout-start");
+    return () => {
+      socket.emit("customer:checkout-end");
+    };
+  }, []);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [data, setData] = useState<OrderData>({
@@ -128,14 +142,19 @@ const CheckOut = () => {
     (sum, item) => sum + item.product.productPrice * item.quantity,
     0,
   );
-  const shipping = 50;
+  const storeSettings = useStoreSettings();
+  const { fee: shipping, isFree: isFreeShipping } = calculateShipping(
+    subtotal,
+    storeSettings
+  );
   const total = subtotal + shipping;
 
-  const paymentMethods = [
+  const allPaymentMethods = [
     {
       id: "cod",
       name: "COD",
       value: PaymentMethod.COD,
+      enabled: storeSettings.enableCod,
       icon: (
         <svg
           className="w-7 h-7 text-[#1A1613]/60"
@@ -156,6 +175,7 @@ const CheckOut = () => {
       id: "khalti",
       name: "Khalti",
       value: PaymentMethod.Khalti,
+      enabled: storeSettings.enableOnlinePayment,
       icon: (
         <svg
           className="w-7 h-7 text-[#5C2D91]"
@@ -170,6 +190,7 @@ const CheckOut = () => {
       id: "esewa",
       name: "eSewa",
       value: PaymentMethod.Esewa,
+      enabled: storeSettings.enableOnlinePayment,
       icon: (
         <svg
           className="w-7 h-7 text-[#3A7D44]"
@@ -181,6 +202,19 @@ const CheckOut = () => {
       ),
     },
   ];
+
+  const paymentMethods = allPaymentMethods.filter((m) => m.enabled);
+
+  useEffect(() => {
+    if (paymentMethods.length > 0 && !paymentMethods.some((m) => m.value === paymentMethod)) {
+      const fallback = paymentMethods[0].value;
+      setPaymentMethod(fallback);
+      setData((prev) => ({
+        ...prev,
+        paymentDetails: { paymentMethod: fallback },
+      }));
+    }
+  }, [paymentMethods, paymentMethod]);
 
   const handlePaymentMethod = (e: ChangeEvent<HTMLInputElement>) => {
     const method = e.target.value as PaymentMethod;
@@ -196,6 +230,15 @@ const CheckOut = () => {
   const handlePlaceOrder = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     if (isSubmitting) return;
+
+    if (storeSettings.maintenanceMode) {
+      toast.error(
+        storeSettings.maintenanceMessage ||
+          "Store is currently undergoing brief maintenance. Orders are temporarily paused."
+      );
+      return;
+    }
+
     setErrors(emptyErrors);
 
     let hasError = false;
@@ -564,41 +607,47 @@ const CheckOut = () => {
                 Payment Method
               </h2>
               <div className="space-y-3">
-                {paymentMethods.map((method) => (
-                  <label
-                    key={method.id}
-                    className={`flex items-center p-3 sm:p-4 border rounded-2xl cursor-pointer transition-all duration-200
-                      ${
-                        paymentMethod === method.value
-                          ? "border-[#E6540B]/60 bg-[#E6540B]/5"
-                          : "border-[#1A1613]/10 hover:border-[#1A1613]/20 hover:bg-[#F4EEDF]"
-                      }
-                      ${isSubmitting ? "opacity-60 pointer-events-none" : ""}`}
-                  >
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value={method.value}
-                      onChange={handlePaymentMethod}
-                      checked={paymentMethod === method.value}
-                      disabled={isSubmitting}
-                      className="w-4 h-4 accent-[#E6540B]"
-                    />
-                    <div className="ml-4 flex items-center justify-between w-full">
-                      <div className="flex items-center gap-3">
-                        {method.icon}
-                        <span className="text-base sm:text-lg font-medium text-[#1A1613]">
-                          {method.name}
-                        </span>
+                {paymentMethods.length === 0 ? (
+                  <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200/80 text-xs text-amber-900 leading-relaxed">
+                    No payment methods are currently active in store settings. Please reach out to store support.
+                  </div>
+                ) : (
+                  paymentMethods.map((method) => (
+                    <label
+                      key={method.id}
+                      className={`flex items-center p-3 sm:p-4 border rounded-2xl cursor-pointer transition-all duration-200
+                        ${
+                          paymentMethod === method.value
+                            ? "border-[#E6540B]/60 bg-[#E6540B]/5"
+                            : "border-[#1A1613]/10 hover:border-[#1A1613]/20 hover:bg-[#F4EEDF]"
+                        }
+                        ${isSubmitting ? "opacity-60 pointer-events-none" : ""}`}
+                    >
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value={method.value}
+                        onChange={handlePaymentMethod}
+                        checked={paymentMethod === method.value}
+                        disabled={isSubmitting}
+                        className="w-4 h-4 accent-[#E6540B]"
+                      />
+                      <div className="ml-4 flex items-center justify-between w-full">
+                        <div className="flex items-center gap-3">
+                          {method.icon}
+                          <span className="text-base sm:text-lg font-medium text-[#1A1613]">
+                            {method.name}
+                          </span>
+                        </div>
+                        {paymentMethod === method.value && (
+                          <span className="text-sm font-semibold text-[#E6540B]">
+                            Selected
+                          </span>
+                        )}
                       </div>
-                      {paymentMethod === method.value && (
-                        <span className="text-sm font-semibold text-[#E6540B]">
-                          Selected
-                        </span>
-                      )}
-                    </div>
-                  </label>
-                ))}
+                    </label>
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -759,7 +808,7 @@ const CheckOut = () => {
                 <div className="flex justify-between">
                   <span>Shipping</span>
                   <span className="font-['IBM_Plex_Mono',monospace] font-semibold text-green-700">
-                    Rs. {shipping}
+                    {isFreeShipping ? "FREE" : `Rs. ${shipping}`}
                   </span>
                 </div>
                 <div className="border-t border-[#1A1613]/10 pt-4 flex justify-between text-lg sm:text-xl font-bold">
@@ -786,7 +835,32 @@ const CheckOut = () => {
                 </div>
               </div>
 
-              {paymentMethod === PaymentMethod.COD ? (
+              {storeSettings.maintenanceMode ? (
+                <div className="mt-6 sm:mt-8 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-center">
+                  <p className="text-sm font-semibold text-amber-900 mb-1">
+                    Ordering Temporarily Paused
+                  </p>
+                  <p className="text-xs text-amber-800">
+                    {storeSettings.maintenanceMessage || "Store is currently in maintenance mode."}
+                  </p>
+                  <button
+                    type="button"
+                    disabled
+                    className="w-full mt-3 py-3.5 bg-gray-200 text-gray-500 text-sm font-semibold rounded-xl cursor-not-allowed"
+                  >
+                    Maintenance Active
+                  </button>
+                </div>
+              ) : paymentMethods.length === 0 ? (
+                <div className="mt-6 sm:mt-8 p-4 rounded-xl bg-red-50 border border-red-200 text-center">
+                  <p className="text-sm font-semibold text-red-900 mb-1">
+                    No Payment Methods Available
+                  </p>
+                  <p className="text-xs text-red-700">
+                    Please contact store support to place your order.
+                  </p>
+                </div>
+              ) : paymentMethod === PaymentMethod.COD ? (
                 <button
                   type="button"
                   onClick={handlePlaceOrder}

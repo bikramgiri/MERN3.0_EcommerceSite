@@ -27,23 +27,76 @@ import Layout from "./layout/customer/Layout.js";
 import About from "./pages/home/about/About.js";
 import { useAppDispatch } from "./hooks/hooks.js";
 import { useEffect } from "react";
-import { handleGoogleLogin } from "./store/auth/authSlice.js";
+import { handleGoogleLogin, logout } from "./store/auth/authSlice.js";
+import { isTokenExpired, getTokenRemainingMs } from "./utils/token.js";
+import { handleSessionExpiry } from "./http/index.js";
 import AdminDashboard from "./pages/admin/adminDashboard.js";
 import UserManagement from "./pages/admin/UserManagement.js";
 import CategoryManagement from "./pages/admin/CategoryManagement";
 import ProductManagement from "./pages/admin/ProductManagement";
 import OrderManagement from "./pages/admin/OrderManagement";
 import ReviewManagement from "./pages/admin/ReviewManagement";
+import AdminProfile from "./pages/admin/Profile.js";
+import AdminSettings from "./pages/admin/Settings";
 import ProtectedRoute from "./global/ProjectedRoute.js";
 import { UserRole } from "./types/customer/authTypes.js";
 import AdminLayout from "./layout/admin/AdminLayout.js";
 import { ThemeProvider } from "./context/ThemeContext.js";
 import NotExists from "./components/admin/NotExists.js";
+import { connectSocket } from "./services/socket.js";
 
 function App() {
   const dispatch = useAppDispatch();
+
   useEffect(() => {
     dispatch(handleGoogleLogin());
+
+    // Connect socket so live storefront visitors are counted in real-time
+    connectSocket();
+
+    const checkTokenStatus = () => {
+      const token = localStorage.getItem("token");
+      if (token && isTokenExpired(token)) {
+        handleSessionExpiry();
+      }
+    };
+
+    // Check on initial load
+    checkTokenStatus();
+
+    // Schedule automatic logout when remaining time expires
+    let timerId: ReturnType<typeof setTimeout> | null = null;
+    const token = localStorage.getItem("token");
+    if (token) {
+      const remainingMs = getTokenRemainingMs(token);
+      if (remainingMs > 0) {
+        timerId = setTimeout(() => {
+          handleSessionExpiry();
+        }, remainingMs);
+      }
+    }
+
+    // Check when user returns to tab
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        checkTokenStatus();
+      }
+    };
+
+    const handleSessionExpiredEvent = () => {
+      dispatch(logout());
+    };
+
+    window.addEventListener("focus", checkTokenStatus);
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("auth:session-expired", handleSessionExpiredEvent);
+
+    return () => {
+      if (timerId) clearTimeout(timerId);
+      window.removeEventListener("focus", checkTokenStatus);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("auth:session-expired", handleSessionExpiredEvent);
+    };
   }, [dispatch]);
   return (
     <ThemeProvider>
@@ -191,6 +244,22 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={[UserRole.Admin]}>
                 <ReviewManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="profile"
+            element={
+              <ProtectedRoute allowedRoles={[UserRole.Admin]}>
+                <AdminProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="settings"
+            element={
+              <ProtectedRoute allowedRoles={[UserRole.Admin]}>
+                <AdminSettings />
               </ProtectedRoute>
             }
           />

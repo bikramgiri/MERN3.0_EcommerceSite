@@ -84,12 +84,21 @@ const authSlice = createSlice({
     },
     editProfile: (state: AuthState, action: PayloadAction<UserData>) => {
       state.user = action.payload;
+      if (typeof window !== "undefined" && localStorage) {
+        localStorage.setItem("user", JSON.stringify(action.payload));
+      }
     },
     editAvatar: (state: AuthState, action: PayloadAction<string>) => {
-      state.user.avatar = action.payload;
+      state.user = { ...state.user, avatar: action.payload };
+      if (typeof window !== "undefined" && localStorage) {
+        localStorage.setItem("user", JSON.stringify(state.user));
+      }
     },
     removeAvatar: (state: AuthState) => {
       state.user = { ...state.user, avatar: "" };
+      if (typeof window !== "undefined" && localStorage) {
+        localStorage.setItem("user", JSON.stringify(state.user));
+      }
     },
   },
 });

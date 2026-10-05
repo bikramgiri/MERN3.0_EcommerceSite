@@ -30,6 +30,7 @@ import CategoryGrid from "../../components/admin/Categories/CategoryGrid";
 import CategoryModal from "../../components/admin/Categories/CategoryModal";
 import CategoryViewModal from "../../components/admin/Categories/CategoryViewModal";
 import CategoryDeleteModal from "../../components/admin/Categories/CategoryDeleteModal";
+import { useSearchParams } from "react-router-dom";
 
 function formatDate(dateStr?: string) {
   if (!dateStr) return "N/A";
@@ -45,9 +46,18 @@ const CategoryManagement: React.FC = () => {
   const { categories, status, actionLoading } = useAppSelector(
     (state) => state.adminCategory
   );
+  const [searchParams] = useSearchParams();
 
   // Search, filter & view state
   const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    const q = searchParams.get("search");
+    if (q) {
+      setSearchTerm(q);
+      setCurrentPage(1);
+    }
+  }, [searchParams]);
   const [productFilter, setProductFilter] = useState<"ALL" | "ACTIVE" | "EMPTY">("ALL");
   const [sortBy, setSortBy] = useState<
     "newest" | "oldest" | "name_asc" | "name_desc" | "products_desc"

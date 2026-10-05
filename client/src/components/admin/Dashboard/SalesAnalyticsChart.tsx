@@ -2,70 +2,124 @@ import React, { useMemo, useState } from "react";
 import ReactApexChart from "react-apexcharts";
 import { ApexOptions } from "apexcharts";
 import { TrendingUp } from "lucide-react";
-import { OrderData } from "../../../types/admin/datasTypes";
+import { OrderData, SalesRecord } from "../../../types/admin/datasTypes";
 
 interface SalesAnalyticsChartProps {
   recentOrders: OrderData[];
   totalRevenue: number;
   totalOrders: number;
+  salesAnalytics?: SalesRecord[];
 }
 
 const SalesAnalyticsChart: React.FC<SalesAnalyticsChartProps> = ({
   recentOrders,
   totalRevenue,
   totalOrders,
+  salesAnalytics = [],
 }) => {
   const [metric, setMetric] = useState<"revenue" | "orders">("revenue");
   const [timeRange, setTimeRange] = useState<"7d" | "30d" | "all">("30d");
 
-  // Aggregate orders by date
+  // Aggregate orders by real calendar dates
   const chartData = useMemo(() => {
-    // Generate label and values
-    const dateMap = new Map<string, { revenue: number; count: number }>();
+    const ordersList =
+      salesAnalytics && salesAnalytics.length > 0
+        ? salesAnalytics
+        : recentOrders;
 
-    // Default dates for the last 7 or 14 days if orders are sparse
-    const sorted = [...recentOrders].sort(
+    if (timeRange === "7d") {
+      const now = new Date();
+      const points: { label: string; dateKey: string; revenue: number; count: number }[] = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(now.getDate() - i);
+        const dateKey = d.toISOString().slice(0, 10);
+        const label = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+        points.push({ label, dateKey, revenue: 0, count: 0 });
+      }
+
+      ordersList.forEach((order) => {
+        const orderDate = new Date(order.createdAt).toISOString().slice(0, 10);
+        const matched = points.find((p) => p.dateKey === orderDate);
+        if (matched) {
+          matched.revenue += Number(order.totalAmount) || 0;
+          matched.count += 1;
+        }
+      });
+
+      return {
+        categories: points.map((p) => p.label),
+        revenueSeries: points.map((p) => p.revenue),
+        ordersSeries: points.map((p) => p.count),
+      };
+    }
+
+    if (timeRange === "30d") {
+      const now = new Date();
+      const points: { label: string; dateKey: string; revenue: number; count: number }[] = [];
+      // Step by 3-4 days to show clean, legible chart points over 30 days
+      for (let i = 28; i >= 0; i -= 4) {
+        const d = new Date(now);
+        d.setDate(now.getDate() - i);
+        const dateKey = d.toISOString().slice(0, 10);
+        const label = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+        points.push({ label, dateKey, revenue: 0, count: 0 });
+      }
+
+      ordersList.forEach((order) => {
+        const orderTime = new Date(order.createdAt).getTime();
+        const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+        if (orderTime >= thirtyDaysAgo) {
+          const orderDate = new Date(order.createdAt).toISOString().slice(0, 10);
+          // Find closest point or exact match
+          const exact = points.find((p) => p.dateKey === orderDate);
+          if (exact) {
+            exact.revenue += Number(order.totalAmount) || 0;
+            exact.count += 1;
+          } else {
+            // Attribute to the latest bucket point
+            points[points.length - 1].revenue += Number(order.totalAmount) || 0;
+            points[points.length - 1].count += 1;
+          }
+        }
+      });
+
+      return {
+        categories: points.map((p) => p.label),
+        revenueSeries: points.map((p) => p.revenue),
+        ordersSeries: points.map((p) => p.count),
+      };
+    }
+
+    // "all" time: group chronologically by month or distinct dates
+    const dateMap = new Map<string, { revenue: number; count: number }>();
+    const sorted = [...ordersList].sort(
       (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
 
-    if (sorted.length > 0) {
-      sorted.forEach((order) => {
-        const d = new Date(order.createdAt);
-        const key = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-        const existing = dateMap.get(key) || { revenue: 0, count: 0 };
-        dateMap.set(key, {
-          revenue: existing.revenue + (Number(order.totalAmount) || 0),
-          count: existing.count + 1,
-        });
+    sorted.forEach((order) => {
+      const d = new Date(order.createdAt);
+      const key = d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+      const curr = dateMap.get(key) || { revenue: 0, count: 0 };
+      curr.revenue += Number(order.totalAmount) || 0;
+      curr.count += 1;
+      dateMap.set(key, curr);
+    });
+
+    if (dateMap.size === 0) {
+      const currentMonth = new Date().toLocaleDateString("en-US", {
+        month: "short",
+        year: "numeric",
       });
+      dateMap.set(currentMonth, { revenue: totalRevenue, count: totalOrders });
     }
-
-    // If map has few entries, fill standard timeline points
-    if (dateMap.size < 6) {
-      const sampleDays = ["Jul 20", "Jul 22", "Jul 24", "Jul 25", "Jul 27", "Jul 29"];
-      const sampleRev = [200, 350, 450, 300, 500, totalRevenue || 600];
-      const sampleCounts = [2, 3, 4, 3, 5, totalOrders || 4];
-
-      sampleDays.forEach((day, i) => {
-        if (!dateMap.has(day)) {
-          dateMap.set(day, {
-            revenue: sampleRev[i % sampleRev.length],
-            count: sampleCounts[i % sampleCounts.length],
-          });
-        }
-      });
-    }
-
-    const categories = Array.from(dateMap.keys());
-    const revenueSeries = Array.from(dateMap.values()).map((v) => v.revenue);
-    const ordersSeries = Array.from(dateMap.values()).map((v) => v.count);
 
     return {
-      categories,
-      revenueSeries,
-      ordersSeries,
+      categories: Array.from(dateMap.keys()),
+      revenueSeries: Array.from(dateMap.values()).map((v) => v.revenue),
+      ordersSeries: Array.from(dateMap.values()).map((v) => v.count),
     };
-  }, [recentOrders, totalRevenue, totalOrders]);
+  }, [salesAnalytics, recentOrders, timeRange, totalRevenue, totalOrders]);
 
   const activeSeries =
     metric === "revenue"
@@ -83,10 +137,11 @@ const SalesAnalyticsChart: React.FC<SalesAnalyticsChartProps> = ({
         ];
 
   const avgOrderValue = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
+  const pool = salesAnalytics.length > 0 ? salesAnalytics : recentOrders;
   const highestOrder =
-    recentOrders.length > 0
-      ? Math.max(...recentOrders.map((o) => Number(o.totalAmount) || 0))
-      : 150;
+    pool.length > 0
+      ? Math.max(...pool.map((o) => Number(o.totalAmount) || 0))
+      : totalRevenue || 0;
 
   const chartOptions: ApexOptions = {
     chart: {

@@ -108,7 +108,7 @@ const DropdownUser = () => {
 
           <div className="py-2">
             <Link
-              to="/profile"
+              to="/admin-dashboard/profile"
               className="flex items-center gap-3 px-5 py-2.5 text-[#1A1613] transition-colors hover:bg-[#F4EEDF] hover:text-[#E6540B]"
               onClick={() => setDropdownOpen(false)}
             >
@@ -116,7 +116,7 @@ const DropdownUser = () => {
               Profile
             </Link>
             <Link
-              to="/settings"
+              to="/admin-dashboard/settings"
               className="flex items-center gap-3 px-5 py-2.5 text-[#1A1613] transition-colors hover:bg-[#F4EEDF] hover:text-[#E6540B]"
               onClick={() => setDropdownOpen(false)}
             >

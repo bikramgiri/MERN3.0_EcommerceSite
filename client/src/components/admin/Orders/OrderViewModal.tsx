@@ -18,6 +18,7 @@ import {
   Printer,
 } from "lucide-react";
 import { AdminOrder } from "../../../types/admin/orderTypes";
+import { useStoreSettings } from "../../../services/storeSettingsService";
 
 interface OrderViewModalProps {
   order: AdminOrder | null;
@@ -36,6 +37,7 @@ const OrderViewModal: React.FC<OrderViewModalProps> = ({
   copiedId,
   formatDate,
 }) => {
+  const storeSettings = useStoreSettings();
   if (!order) return null;
 
   const items = order.OrderDetails || [];
@@ -249,12 +251,12 @@ const OrderViewModal: React.FC<OrderViewModalProps> = ({
             <table class="header-table">
               <tr>
                 <td style="vertical-align: middle;">
-                  <div class="brand-name">Truvora.</div>
+                  <div class="brand-name">${storeSettings.storeName}.</div>
                   <div class="brand-tagline">Quality Everyday Goods • Verified Order Slip</div>
                 </td>
                 <td style="vertical-align: middle;">
                   <div class="slip-title">Packing Slip</div>
-                  <div class="slip-meta"><strong>Order:</strong> #${order.id.slice(0, 8)}</div>
+                  <div class="slip-meta"><strong>Order:</strong> ${storeSettings.orderPrefix || "#"}${order.id.slice(0, 8)}</div>
                   <div class="slip-meta"><strong>Date:</strong> ${formatDate(order.createdAt)}</div>
                 </td>
               </tr>
@@ -320,7 +322,7 @@ const OrderViewModal: React.FC<OrderViewModalProps> = ({
             </div>
 
             <div class="footer-note">
-              Thank you for shopping with Truvora! For order tracking or returns, visit truvora.com or contact support.
+              Thank you for shopping with ${storeSettings.storeName}! For order tracking or returns, contact ${storeSettings.supportEmail || "support"} or call ${storeSettings.supportPhone || ""}.
             </div>
           </div>
         </body>
@@ -394,7 +396,7 @@ const OrderViewModal: React.FC<OrderViewModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-bold text-[#1A1613]">
-                  Order #{order.id.slice(0, 8)}
+                  Order {storeSettings.orderPrefix || "#"}{order.id.slice(0, 8)}
                 </h3>
                 <button
                   onClick={(e) => onCopyId(order.id, e)}

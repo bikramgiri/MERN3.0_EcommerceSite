@@ -5,6 +5,14 @@ export interface OrderData extends FetchOrder {
   User: UserData;
 }
 
+export interface SalesRecord {
+  id: string;
+  totalAmount: number;
+  orderStatus: string;
+  paymentStatus: string;
+  createdAt: string;
+}
+
 export interface TopSellingProduct {
   product: {
     id: string;
@@ -61,5 +69,6 @@ export interface DatasState {
   recentReviews: Review[];
   topSellingProducts: TopSellingProduct[];
   orderDistribution?: OrderDistributionData;
+  salesAnalytics?: SalesRecord[];
   status: string;
 }

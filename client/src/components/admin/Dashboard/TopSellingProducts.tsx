@@ -89,8 +89,12 @@ const TopSellingProducts: React.FC<TopSellingProductsProps> = ({
           </p>
         </div>
       ) : (
-        <div className="overflow-x-auto mt-4">
-          <table className="w-full text-left text-xs text-[#1A1613]">
+        <>
+          <div className="sm:hidden mt-3 px-3 py-1.5 bg-[#FDF8ED] rounded-lg border border-[#1A1613]/10 text-[11px] text-[#1A1613]/60 flex items-center justify-between">
+            <span>↔ Scroll horizontally to view ranking &amp; performance</span>
+          </div>
+          <div className="overflow-x-auto mt-2">
+            <table className="w-full min-w-[720px] text-left text-xs text-[#1A1613]">
             <thead className="bg-[#F4EEDF]/40 text-[11px] uppercase tracking-wider text-[#1A1613]/60 font-semibold border-b border-[#1A1613]/10">
               <tr>
                 <th className="py-3 px-3 w-12 text-center">Rank</th>
@@ -244,6 +248,7 @@ const TopSellingProducts: React.FC<TopSellingProductsProps> = ({
             </tbody>
           </table>
         </div>
+        </>
       )}
     </div>
   );

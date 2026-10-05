@@ -1,8 +1,10 @@
-import { Mail, Send} from "lucide-react";
+import { Mail, Send, Phone, MapPin } from "lucide-react";
 import { FaFacebook, FaInstagram, FaTwitter, FaLinkedin } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import { useStoreSettings } from "../../../services/storeSettingsService";
 
 const Footer = () => {
+  const storeSettings = useStoreSettings();
   const quickLinks = [
     { name: "Home", path: "/" },
     { name: "Shop", path: "/products" },
@@ -16,7 +18,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
           <div className="text-center md:text-left">
             <Link to="/" className="inline-block mb-2 font-['Fraunces',serif] text-2xl italic font-semibold">
-              Truvora<span className="text-[#E6540B]">.</span>
+              {storeSettings.storeName}<span className="text-[#E6540B]">.</span>
             </Link>
 
             <p className="text-[#1A1613]/60 leading-relaxed max-w-md mx-auto md:mx-0">
@@ -78,6 +80,33 @@ const Footer = () => {
                   </Link>
                 </li>
               ))}
+              {storeSettings.supportEmail && (
+                <li className="pt-2 text-xs text-[#1A1613]/70 space-y-1">
+                  <span className="font-semibold block text-[#1A1613]">Get in Touch</span>
+                  <a
+                    href={`mailto:${storeSettings.supportEmail}`}
+                    className="hover:text-[#E6540B] transition-colors flex items-center justify-center md:justify-start gap-1.5"
+                  >
+                    <Mail className="w-3.5 h-3.5 text-[#E6540B] shrink-0" />
+                    <span>{storeSettings.supportEmail}</span>
+                  </a>
+                  {storeSettings.supportPhone && (
+                    <a
+                      href={`tel:${storeSettings.supportPhone}`}
+                      className="hover:text-[#E6540B] transition-colors flex items-center justify-center md:justify-start gap-1.5"
+                    >
+                      <Phone className="w-3.5 h-3.5 text-[#E6540B] shrink-0" />
+                      <span>{storeSettings.supportPhone}</span>
+                    </a>
+                  )}
+                  {storeSettings.address && (
+                    <span className="text-[#1A1613]/60 text-[11px] flex items-center justify-center md:justify-start gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-[#E6540B] shrink-0" />
+                      <span>{storeSettings.address}</span>
+                    </span>
+                  )}
+                </li>
+              )}
             </ul>
           </div>
 
@@ -115,7 +144,7 @@ const Footer = () => {
         <div className="mt-8 pt-8 border-t border-[#1A1613]/30">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-[#1A1613]/60">
             <p>
-              © {new Date().getFullYear()} Truvora. All rights reserved.
+              © {new Date().getFullYear()} {storeSettings.storeName}. All rights reserved.
             </p>
 
             <div className="flex gap-6">
