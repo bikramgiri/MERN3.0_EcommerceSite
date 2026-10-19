@@ -21,9 +21,6 @@ export const getSocket = (): Socket => {
     const SOCKET_URL = getSocketUrl();
     socket = io(SOCKET_URL, {
       auth: { token },
-      extraHeaders: {
-        token: token,
-      },
       autoConnect: false,
       reconnection: true,
       reconnectionAttempts: 10,
@@ -53,12 +50,21 @@ export const getSocket = (): Socket => {
 /**
  * Explicitly connects the socket if not already connected.
  */
+// Token the current connection was authenticated with
+let connectedToken: string | null = null;
+
 export const connectSocket = (): Socket => {
   const s = getSocket();
   const token = localStorage.getItem("token") || "";
   s.auth = { token };
 
+  // The server only reads the token when a connection starts, so after a login or
+  // logout reconnect; otherwise the socket keeps acting as the previous user/guest
+  if (s.connected && connectedToken !== token) {
+    s.disconnect();
+  }
   if (!s.connected) {
+    connectedToken = token;
     s.connect();
   }
   return s;
@@ -71,5 +77,6 @@ export const disconnectSocket = (): void => {
   if (socket) {
     socket.disconnect();
     socket = null;
+    connectedToken = null;
   }
 };

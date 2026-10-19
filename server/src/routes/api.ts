@@ -12,6 +12,10 @@ import cartRoutes from './customer/cart/cartRoutes';
 import reviewRoutes from './customer/review/reviewRoutes';
 import wishlistRoutes from './customer/wishlist/wishlistRoutes';
 import customerOrderRoutes from './customer/order/customerOrderRoutes';
+import storeSettingsRoutes from './settings/storeSettingsRoutes';
+import newsletterRoutes from './customer/newsletter/newsletterRoutes';
+import storeProductRoutes from './customer/product/storeProductRoutes';
+import notificationRoutes from './common/notificationRoutes';
 
 const router: Router = express.Router()
 
@@ -27,5 +31,9 @@ router.use("/customer", cartRoutes)
 router.use("/customer", customerOrderRoutes)
 router.use("/customer", reviewRoutes)
 router.use("/customer", wishlistRoutes)
+router.use("/", storeSettingsRoutes)
+router.use("/", newsletterRoutes)
+router.use("/", storeProductRoutes)
+router.use("/", notificationRoutes)
 
 export default router;

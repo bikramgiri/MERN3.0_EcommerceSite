@@ -9,6 +9,45 @@ import { getPublicIdFromAvatar } from "../../../services/cloudinaryHelper";
 import fs from "fs";
 import path from "path";
 import { emitToAdmin } from "../../../services/socketService";
+import { notifyCustomer } from "../../../services/notificationService";
+
+// Reviews here are loaded with their Product included
+type ReviewWithProduct = { Product?: { productName?: string } };
+
+/**
+ * Tell the author when moderation hides their review or makes it visible again.
+ * APPROVED = visible to shoppers; PENDING and FLAGGED = hidden. No message if visibility didn't change.
+ */
+const notifyReviewVisibility = async (
+  review: Review,
+  previousStatus: string | null,
+  newStatus: string,
+) => {
+  const wasVisible = previousStatus === "APPROVED" || previousStatus === null;
+  const isVisible = newStatus === "APPROVED";
+  if (wasVisible === isVisible) return;
+
+  const productName = (review as unknown as ReviewWithProduct).Product?.productName ?? "a product";
+  await notifyCustomer(
+    review.userId,
+    isVisible
+      ? {
+          type: "review-visible",
+          title: "Review published",
+          message: `Your review of ${productName} is visible again.`,
+          link: `/productdetails/${review.productId}#reviews`,
+        }
+      : {
+          type: "review-hidden",
+          title: newStatus === "PENDING" ? "Review under review" : "Review hidden",
+          message:
+            newStatus === "PENDING"
+              ? `Your review of ${productName} is being checked by our team and is hidden for now.`
+              : `Your review of ${productName} was hidden because it may not follow our review rules.`,
+          link: `/productdetails/${review.productId}#reviews`,
+        },
+  );
+};
 
 class AdminReviewController {
   // *Fetch all reviews
@@ -166,8 +205,11 @@ class AdminReviewController {
       return;
     }
 
+    const previousStatus = review.status;
     review.status = status;
     await review.save();
+
+    await notifyReviewVisibility(review, previousStatus, status);
 
     const plainReview = review.toJSON();
     if (plainReview.reviewImage) {
@@ -228,6 +270,7 @@ class AdminReviewController {
       return;
     }
 
+    const hadReply = !!review.adminReply;
     if (!adminReply || typeof adminReply !== "string" || adminReply.trim() === "") {
       review.adminReply = null;
       review.repliedAt = null;
@@ -237,6 +280,18 @@ class AdminReviewController {
     }
 
     await review.save();
+
+    // New or changed reply -> let the reviewer know
+    if (review.adminReply) {
+      const productName = (review as unknown as ReviewWithProduct).Product?.productName ?? "a product";
+      const reply = review.adminReply;
+      await notifyCustomer(review.userId, {
+        type: "review-reply",
+        title: hadReply ? "Store reply updated" : "The store replied to your review",
+        message: `On ${productName}: "${reply.length > 120 ? `${reply.slice(0, 120)}…` : reply}"`,
+        link: `/productdetails/${review.productId}#reviews`,
+      });
+    }
 
     const plainReview = review.toJSON();
     if (plainReview.reviewImage) {
@@ -282,6 +337,12 @@ class AdminReviewController {
       return;
     }
 
+    // Remember each review's current status so authors can be told about visibility changes
+    const before = await Review.findAll({
+      where: { id: reviewIds },
+      include: [{ model: Product, attributes: ["id", "productName"] }],
+    });
+
     await Review.update(
       { status },
       {
@@ -290,6 +351,10 @@ class AdminReviewController {
         },
       },
     );
+
+    for (const review of before) {
+      await notifyReviewVisibility(review, review.status, status);
+    }
 
     emitToAdmin("admin:dashboard-refresh", {
       type: "review-bulk-updated",

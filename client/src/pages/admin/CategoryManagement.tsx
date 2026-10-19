@@ -25,6 +25,7 @@ import { fetchCategories as syncCustomerCategories } from "../../store/customer/
 import { fetchDatas as syncDashboardStats } from "../../store/admin/datasSlice";
 import { AdminCategory } from "../../types/admin/categoryTypes";
 import { Status } from "../../global/statuses";
+import { Skeleton } from "../../global/Skeleton";
 import CategoryTable from "../../components/admin/Categories/CategoryTable";
 import CategoryGrid from "../../components/admin/Categories/CategoryGrid";
 import CategoryModal from "../../components/admin/Categories/CategoryModal";
@@ -208,6 +209,9 @@ const CategoryManagement: React.FC = () => {
   }, [filteredCategories, currentPage, pageSize]);
 
   const isLoading = status === Status.LOADING;
+  // Skeletons only until the first response; refreshes keep the loaded rows visible
+  const initialLoading =
+    (status === Status.IDLE || status === Status.LOADING) && categories.length === 0;
 
   // KPI Metrics
   const totalCategoriesCount = categories.length;
@@ -228,16 +232,16 @@ const CategoryManagement: React.FC = () => {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#E6540B]/10 text-[#E6540B]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#E6540B]/10 dark:bg-[#E6540B]/15 text-[#E6540B]">
               <Layers className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold tracking-tight text-[#1A1613] sm:text-2xl">
+                <h1 className="text-xl font-bold tracking-tight text-[#1A1613] dark:text-[#F5EFE6] sm:text-2xl">
                   Category Management
                 </h1>
               </div>
-              <p className="text-xs text-[#1A1613]/60 mt-0.5">
+              <p className="text-xs text-[#1A1613]/60 dark:text-[#F5EFE6]/50 mt-0.5">
                 Organize, manage, and curate store product categories
               </p>
             </div>
@@ -248,7 +252,7 @@ const CategoryManagement: React.FC = () => {
           <button
             onClick={handleRefresh}
             disabled={isLoading}
-            className="inline-flex items-center gap-2 rounded-xl border border-[#1A1613]/15 bg-[#FFFDF8] px-4 py-2.5 text-xs font-semibold text-[#1A1613] shadow-xs hover:bg-[#F4EEDF] transition-all active:scale-95 disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl border border-[#1A1613]/15 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] px-4 py-2.5 text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] shadow-xs hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] transition-all active:scale-95 disabled:opacity-50"
           >
             <RefreshCw
               className={`w-3.5 h-3.5 ${
@@ -275,24 +279,28 @@ const CategoryManagement: React.FC = () => {
           onClick={handleResetFilters}
           className={`p-4 rounded-2xl border transition-all cursor-pointer select-none active:scale-[0.98] ${
             !isFiltered
-              ? "border-[#E6540B]/40 bg-[#FFFDF8] shadow-xs"
-              : "border-[#1A1613]/10 bg-[#FFFDF8] shadow-xs hover:border-[#E6540B]/40"
+              ? "border-[#E6540B]/40 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs"
+              : "border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs hover:border-[#E6540B]/40"
           }`}
           title="Click to reset filters and view all categories"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#1A1613]/60">
+            <span className="text-xs font-medium text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
               Total Categories
             </span>
-            <div className="w-8 h-8 rounded-lg bg-[#E6540B]/10 text-[#E6540B] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-[#E6540B]/10 dark:bg-[#E6540B]/15 text-[#E6540B] flex items-center justify-center">
               <Layers className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-[#1A1613]">
-              {isLoading ? "..." : totalCategoriesCount}
-            </span>
-            <span className="text-[11px] text-[#1A1613]/40">in catalog</span>
+            {initialLoading ? (
+              <Skeleton className="h-8 w-14" />
+            ) : (
+              <span className="text-2xl font-bold text-[#1A1613] dark:text-[#F5EFE6]">
+                {totalCategoriesCount}
+              </span>
+            )}
+            <span className="text-[11px] text-[#1A1613]/40 dark:text-[#F5EFE6]/50">in catalog</span>
           </div>
         </div>
 
@@ -308,31 +316,35 @@ const CategoryManagement: React.FC = () => {
           }}
           className={`p-4 rounded-2xl border transition-all cursor-pointer select-none active:scale-[0.98] ${
             productFilter === "ACTIVE"
-              ? "border-emerald-500 bg-emerald-50/50 shadow-sm ring-2 ring-emerald-500/20"
-              : "border-[#1A1613]/10 bg-[#FFFDF8] shadow-xs hover:border-emerald-400 hover:shadow-xs"
+              ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-500/10 shadow-sm ring-2 ring-emerald-500/20"
+              : "border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs hover:border-emerald-400 hover:shadow-xs"
           }`}
           title="Click to filter categories with products (>0)"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#1A1613]/60">
+            <span className="text-xs font-medium text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
               Active Collections
             </span>
             <div className="flex items-center gap-1.5">
               {productFilter === "ACTIVE" && (
-                <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-100/90 px-1.5 py-0.5 rounded-md">
+                <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-100/90 dark:bg-emerald-500/15 px-1.5 py-0.5 rounded-md">
                   Filtered
                 </span>
               )}
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                 <CheckCircle2 className="w-4 h-4" />
               </div>
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-emerald-700">
-              {isLoading ? "..." : activeCategoriesCount}
-            </span>
-            <span className="text-[11px] text-[#1A1613]/40">with products</span>
+            {initialLoading ? (
+              <Skeleton className="h-8 w-14" />
+            ) : (
+              <span className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
+                {activeCategoriesCount}
+              </span>
+            )}
+            <span className="text-[11px] text-[#1A1613]/40 dark:text-[#F5EFE6]/50">with products</span>
           </div>
         </div>
 
@@ -348,62 +360,74 @@ const CategoryManagement: React.FC = () => {
           }}
           className={`p-4 rounded-2xl border transition-all cursor-pointer select-none active:scale-[0.98] ${
             productFilter === "EMPTY"
-              ? "border-amber-500 bg-amber-50/50 shadow-sm ring-2 ring-amber-500/20"
-              : "border-[#1A1613]/10 bg-[#FFFDF8] shadow-xs hover:border-amber-400 hover:shadow-xs"
+              ? "border-amber-500 bg-amber-50/50 dark:bg-amber-500/10 shadow-sm ring-2 ring-amber-500/20"
+              : "border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs hover:border-amber-400 hover:shadow-xs"
           }`}
           title="Click to filter empty categories needing products (0)"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#1A1613]/60">
+            <span className="text-xs font-medium text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
               Empty Collections
             </span>
             <div className="flex items-center gap-1.5">
               {productFilter === "EMPTY" && (
-                <span className="text-[10px] font-semibold text-amber-700 bg-amber-100/90 px-1.5 py-0.5 rounded-md">
+                <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-100/90 dark:bg-amber-500/15 px-1.5 py-0.5 rounded-md">
                   Filtered
                 </span>
               )}
-              <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center">
                 <AlertCircle className="w-4 h-4" />
               </div>
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-amber-700">
-              {isLoading ? "..." : emptyCategoriesCount}
-            </span>
-            <span className="text-[11px] text-[#1A1613]/40">
-              {emptyCategoriesCount > 0 ? "needs products" : "all populated"}
-            </span>
+            {initialLoading ? (
+              <Skeleton className="h-8 w-14" />
+            ) : (
+              <span className="text-2xl font-bold text-amber-700 dark:text-amber-400">
+                {emptyCategoriesCount}
+              </span>
+            )}
+            {initialLoading ? (
+              <Skeleton className="h-2.5 w-16" />
+            ) : (
+              <span className="text-[11px] text-[#1A1613]/40 dark:text-[#F5EFE6]/50">
+                {emptyCategoriesCount > 0 ? "needs products" : "all populated"}
+              </span>
+            )}
           </div>
         </div>
 
         {/* Total Assigned Products */}
-        <div className="p-4 rounded-2xl border border-[#1A1613]/10 bg-[#FFFDF8] shadow-xs">
+        <div className="p-4 rounded-2xl border border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#1A1613]/60">
+            <span className="text-xs font-medium text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
               Assigned Products
             </span>
-            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center">
               <Package className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-blue-800">
-              {isLoading ? "..." : totalAssignedProducts}
-            </span>
-            <span className="text-[11px] text-[#1A1613]/40">classified items</span>
+            {initialLoading ? (
+              <Skeleton className="h-8 w-14" />
+            ) : (
+              <span className="text-2xl font-bold text-blue-800 dark:text-blue-300">
+                {totalAssignedProducts}
+              </span>
+            )}
+            <span className="text-[11px] text-[#1A1613]/40 dark:text-[#F5EFE6]/50">classified items</span>
           </div>
         </div>
       </div>
 
       {/* 3. Search, Sort, View Controls & Content Block */}
-      <div className="rounded-xl border border-[#1A1613]/10 bg-[#FFFDF8] shadow-xs overflow-hidden">
-        <div className="p-4 sm:p-5 border-b border-[#1A1613]/10">
+      <div className="rounded-xl border border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs overflow-hidden">
+        <div className="p-4 sm:p-5 border-b border-[#1A1613]/10 dark:border-white/10">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             {/* Search Box */}
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#1A1613]/40 w-4 h-4" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#1A1613]/40 dark:text-[#F5EFE6]/50 w-4 h-4" />
               <input
                 type="text"
                 placeholder="Search categories by name, description, or ID..."
@@ -412,12 +436,12 @@ const CategoryManagement: React.FC = () => {
                   setSearchTerm(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full h-10 pl-10 pr-9 rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] text-xs text-[#1A1613] placeholder:text-[#1A1613]/40 focus:outline-none focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
+                className="w-full h-10 pl-10 pr-9 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] text-xs text-[#1A1613] dark:text-[#F5EFE6] placeholder:text-[#1A1613]/40 dark:placeholder:text-[#F5EFE6]/40 focus:outline-none focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
               />
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1A1613]/40 hover:text-[#1A1613] cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1A1613]/40 dark:text-[#F5EFE6]/50 hover:text-[#1A1613] dark:hover:text-[#F5EFE6] cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -433,7 +457,7 @@ const CategoryManagement: React.FC = () => {
                   setProductFilter(e.target.value as any);
                   setCurrentPage(1);
                 }}
-                className="h-9 rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] px-3 text-xs font-medium text-[#1A1613] focus:outline-none focus:border-[#E6540B] cursor-pointer"
+                className="h-9 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] px-3 text-xs font-medium text-[#1A1613] dark:text-[#F5EFE6] dark:scheme-dark focus:outline-none focus:border-[#E6540B] cursor-pointer"
               >
                 <option value="ALL">All Categories</option>
                 <option value="ACTIVE">With Products (&gt;0)</option>
@@ -441,13 +465,13 @@ const CategoryManagement: React.FC = () => {
               </select>
 
               {/* Sort Dropdown */}
-              <div className="flex items-center gap-1.5 rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] px-3 h-9 text-xs text-[#1A1613]">
-                <ArrowUpDown className="w-3.5 h-3.5 text-[#1A1613]/50" />
-                <span className="text-[#1A1613]/50 text-[11px]">Sort:</span>
+              <div className="flex items-center gap-1.5 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] px-3 h-9 text-xs text-[#1A1613] dark:text-[#F5EFE6]">
+                <ArrowUpDown className="w-3.5 h-3.5 text-[#1A1613]/50 dark:text-[#F5EFE6]/50" />
+                <span className="text-[#1A1613]/50 dark:text-[#F5EFE6]/50 text-[11px]">Sort:</span>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as any)}
-                  className="bg-transparent font-semibold text-xs text-[#1A1613] focus:outline-none cursor-pointer"
+                  className="bg-transparent font-semibold text-xs text-[#1A1613] dark:text-[#F5EFE6] dark:scheme-dark focus:outline-none cursor-pointer"
                 >
                   <option value="newest">Newest First</option>
                   <option value="oldest">Oldest First</option>
@@ -462,7 +486,7 @@ const CategoryManagement: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleResetFilters}
-                  className="h-9 px-3 rounded-lg border border-dashed border-[#1A1613]/25 text-xs font-semibold text-[#1A1613]/70 hover:text-[#E6540B] hover:border-[#E6540B] transition-colors cursor-pointer"
+                  className="h-9 px-3 rounded-lg border border-dashed border-[#1A1613]/25 dark:border-white/15 text-xs font-semibold text-[#1A1613]/70 dark:text-[#F5EFE6]/70 hover:text-[#E6540B] hover:border-[#E6540B] transition-colors cursor-pointer"
                   title="Reset all search & filters"
                 >
                   Reset
@@ -470,14 +494,14 @@ const CategoryManagement: React.FC = () => {
               )}
 
               {/* View Mode Toggle */}
-              <div className="flex items-center rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] p-0.5">
+              <div className="flex items-center rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] p-0.5">
                 <button
                   type="button"
                   onClick={() => setViewMode("table")}
                   className={`p-1.5 rounded-md transition-all cursor-pointer ${
                     viewMode === "table"
                       ? "bg-[#E6540B] text-white shadow-xs"
-                      : "text-[#1A1613]/60 hover:text-[#1A1613]"
+                      : "text-[#1A1613]/60 dark:text-[#F5EFE6]/50 hover:text-[#1A1613] dark:hover:text-[#F5EFE6]"
                   }`}
                   title="Table View"
                 >
@@ -489,7 +513,7 @@ const CategoryManagement: React.FC = () => {
                   className={`p-1.5 rounded-md transition-all cursor-pointer ${
                     viewMode === "grid"
                       ? "bg-[#E6540B] text-white shadow-xs"
-                      : "text-[#1A1613]/60 hover:text-[#1A1613]"
+                      : "text-[#1A1613]/60 dark:text-[#F5EFE6]/50 hover:text-[#1A1613] dark:hover:text-[#F5EFE6]"
                   }`}
                   title="Grid Cards View"
                 >
@@ -501,7 +525,7 @@ const CategoryManagement: React.FC = () => {
         </div>
 
         {/* Category List (Skeleton on initial loading) */}
-        {isLoading && categories.length === 0 ? (
+        {initialLoading ? (
           viewMode === "table" ? (
             <CategoryTable
               categories={[]}
@@ -525,13 +549,13 @@ const CategoryManagement: React.FC = () => {
           )
         ) : filteredCategories.length === 0 ? (
           <div className="p-12 text-center">
-            <div className="w-12 h-12 rounded-2xl bg-[#E6540B]/10 text-[#E6540B] flex items-center justify-center mx-auto mb-3">
+            <div className="w-12 h-12 rounded-2xl bg-[#E6540B]/10 dark:bg-[#E6540B]/15 text-[#E6540B] flex items-center justify-center mx-auto mb-3">
               <Layers className="w-6 h-6" />
             </div>
-            <h3 className="text-sm font-bold text-[#1A1613]">
+            <h3 className="text-sm font-bold text-[#1A1613] dark:text-[#F5EFE6]">
               No categories found
             </h3>
-            <p className="text-xs text-[#1A1613]/50 mt-1 max-w-sm mx-auto">
+            <p className="text-xs text-[#1A1613]/50 dark:text-[#F5EFE6]/50 mt-1 max-w-sm mx-auto">
               {searchTerm
                 ? `No categories match "${searchTerm}". Try a different search keyword.`
                 : "You have not created any categories yet. Add your first category to organize your catalog."}
@@ -539,7 +563,7 @@ const CategoryManagement: React.FC = () => {
             {searchTerm ? (
               <button
                 onClick={() => setSearchTerm("")}
-                className="mt-3.5 inline-flex items-center gap-1.5 rounded-lg border border-[#1A1613]/15 px-3 py-1.5 text-xs font-semibold text-[#1A1613] hover:bg-[#F4EEDF]"
+                className="mt-3.5 inline-flex items-center gap-1.5 rounded-lg border border-[#1A1613]/15 dark:border-white/10 px-3 py-1.5 text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420]"
               >
                 Clear Search
               </button>
@@ -575,21 +599,21 @@ const CategoryManagement: React.FC = () => {
 
         {/* Pagination */}
         {filteredCategories.length > 0 && (
-          <div className="p-4 border-t border-[#1A1613]/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-[#1A1613]/60">
+          <div className="p-4 border-t border-[#1A1613]/10 dark:border-white/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
             <div>
               Showing{" "}
-              <span className="font-semibold text-[#1A1613]">
+              <span className="font-semibold text-[#1A1613] dark:text-[#F5EFE6]">
                 {Math.min(
                   filteredCategories.length,
                   (currentPage - 1) * pageSize + 1
                 )}
               </span>{" "}
               to{" "}
-              <span className="font-semibold text-[#1A1613]">
+              <span className="font-semibold text-[#1A1613] dark:text-[#F5EFE6]">
                 {Math.min(currentPage * pageSize, filteredCategories.length)}
               </span>{" "}
               of{" "}
-              <span className="font-semibold text-[#1A1613]">
+              <span className="font-semibold text-[#1A1613] dark:text-[#F5EFE6]">
                 {filteredCategories.length}
               </span>{" "}
               categories
@@ -599,7 +623,7 @@ const CategoryManagement: React.FC = () => {
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="p-1.5 rounded-lg border border-[#1A1613]/15 text-[#1A1613] disabled:opacity-40 hover:bg-[#F4EEDF] transition-all"
+                className="p-1.5 rounded-lg border border-[#1A1613]/15 dark:border-white/10 text-[#1A1613] dark:text-[#F5EFE6] disabled:opacity-40 hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] transition-all"
                 title="Previous Page"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -613,7 +637,7 @@ const CategoryManagement: React.FC = () => {
                     className={`w-7 h-7 rounded-lg text-xs font-semibold transition-all ${
                       currentPage === page
                         ? "bg-[#E6540B] text-white"
-                        : "text-[#1A1613]/70 hover:bg-[#F4EEDF]"
+                        : "text-[#1A1613]/70 dark:text-[#F5EFE6]/70 hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420]"
                     }`}
                   >
                     {page}
@@ -626,7 +650,7 @@ const CategoryManagement: React.FC = () => {
                   setCurrentPage((p) => Math.min(totalPages, p + 1))
                 }
                 disabled={currentPage === totalPages}
-                className="p-1.5 rounded-lg border border-[#1A1613]/15 text-[#1A1613] disabled:opacity-40 hover:bg-[#F4EEDF] transition-all"
+                className="p-1.5 rounded-lg border border-[#1A1613]/15 dark:border-white/10 text-[#1A1613] dark:text-[#F5EFE6] disabled:opacity-40 hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] transition-all"
                 title="Next Page"
               >
                 <ChevronRight className="w-4 h-4" />

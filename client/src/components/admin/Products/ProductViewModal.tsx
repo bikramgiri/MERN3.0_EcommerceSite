@@ -127,7 +127,7 @@ const ProductViewModal: React.FC<ProductViewModalProps> = ({
     const s = (status || "").toLowerCase();
     if (s === "delivered") {
       return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
           <CheckCircle2 className="w-3 h-3" />
           <span>Delivered</span>
         </span>
@@ -135,7 +135,7 @@ const ProductViewModal: React.FC<ProductViewModalProps> = ({
     }
     if (s === "pending") {
       return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-700">
+        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-500/30 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-400">
           <Clock className="w-3 h-3" />
           <span>Pending</span>
         </span>
@@ -143,14 +143,14 @@ const ProductViewModal: React.FC<ProductViewModalProps> = ({
     }
     if (s === "cancelled") {
       return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 border border-rose-200 px-2 py-0.5 text-[10px] font-bold text-rose-700">
+        <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 dark:bg-rose-500/15 border border-rose-200 dark:border-rose-500/30 px-2 py-0.5 text-[10px] font-bold text-rose-700 dark:text-rose-400">
           <AlertCircle className="w-3 h-3" />
           <span>Cancelled</span>
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-200 px-2 py-0.5 text-[10px] font-bold text-blue-700 capitalize">
+      <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 dark:bg-blue-500/15 border border-blue-200 dark:border-blue-500/30 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:text-blue-400 capitalize">
         <span>{status || "Processing"}</span>
       </span>
     );
@@ -158,39 +158,39 @@ const ProductViewModal: React.FC<ProductViewModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="w-full max-w-2xl rounded-2xl border border-[#1A1613]/15 bg-[#FFFDF8] p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-2xl rounded-2xl border border-[#1A1613]/15 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
         {/* 1. Modal Top Bar: Title & Close */}
-        <div className="flex items-center justify-between pb-3 border-b border-[#1A1613]/10">
+        <div className="flex items-center justify-between pb-3 border-b border-[#1A1613]/10 dark:border-white/10">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#E6540B]/10 text-[#E6540B] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-[#E6540B]/10 dark:bg-[#E6540B]/15 text-[#E6540B] flex items-center justify-center">
               <Package className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-[#1A1613]">
+              <h3 className="text-base font-bold text-[#1A1613] dark:text-[#F5EFE6]">
                 {product.productName}
               </h3>
-              <p className="text-xs text-[#1A1613]/55">
+              <p className="text-xs text-[#1A1613]/55 dark:text-[#F5EFE6]/50">
                 Product specifications, stock levels, and sales history
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#1A1613]/40 hover:text-[#1A1613] hover:bg-[#F4EEDF] transition-all"
+            className="p-1.5 rounded-lg text-[#1A1613]/40 dark:text-[#F5EFE6]/50 hover:text-[#1A1613] dark:hover:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] transition-all"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* 2. Navigation Tabs */}
-        <div className="flex items-center gap-1 p-1 rounded-xl bg-[#F4EEDF]/40 border border-[#1A1613]/10">
+        <div className="flex items-center gap-1 p-1 rounded-xl bg-[#F4EEDF]/40 dark:bg-[#2A2420] border border-[#1A1613]/10 dark:border-white/10">
           <button
             type="button"
             onClick={() => setActiveTab("overview")}
             className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-bold transition-all ${
               activeTab === "overview"
-                ? "bg-[#FFFDF8] text-[#E6540B] shadow-xs"
-                : "text-[#1A1613]/60 hover:text-[#1A1613]"
+                ? "bg-[#FFFDF8] dark:bg-[#1E1A17] text-[#E6540B] shadow-xs"
+                : "text-[#1A1613]/60 dark:text-[#F5EFE6]/50 hover:text-[#1A1613] dark:hover:text-[#F5EFE6]"
             }`}
           >
             <Package className="w-3.5 h-3.5" />
@@ -202,14 +202,14 @@ const ProductViewModal: React.FC<ProductViewModalProps> = ({
             onClick={() => setActiveTab("orders")}
             className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-bold transition-all ${
               activeTab === "orders"
-                ? "bg-[#FFFDF8] text-[#E6540B] shadow-xs"
-                : "text-[#1A1613]/60 hover:text-[#1A1613]"
+                ? "bg-[#FFFDF8] dark:bg-[#1E1A17] text-[#E6540B] shadow-xs"
+                : "text-[#1A1613]/60 dark:text-[#F5EFE6]/50 hover:text-[#1A1613] dark:hover:text-[#F5EFE6]"
             }`}
           >
             <ShoppingBag className="w-3.5 h-3.5" />
             <span>Orders &amp; Sales History</span>
             {hasFetchedOrders && (
-              <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-[#E6540B]/10 text-[#E6540B]">
+              <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-[#E6540B]/10 dark:bg-[#E6540B]/15 text-[#E6540B]">
                 {orders.length}
               </span>
             )}
@@ -220,7 +220,7 @@ const ProductViewModal: React.FC<ProductViewModalProps> = ({
         {activeTab === "overview" && (
           <div className="space-y-4">
             {/* Product Image Banner */}
-            <div className="h-48 sm:h-56 w-full rounded-xl overflow-hidden border border-[#1A1613]/10 bg-[#FDF8ED] relative flex items-center justify-center">
+            <div className="h-48 sm:h-56 w-full rounded-xl overflow-hidden border border-[#1A1613]/10 dark:border-white/10 bg-[#FDF8ED] dark:bg-[#2A2420] relative flex items-center justify-center">
               {product.productImage ? (
                 <img
                   src={product.productImage}
@@ -228,7 +228,7 @@ const ProductViewModal: React.FC<ProductViewModalProps> = ({
                   className="w-full h-full object-contain p-2"
                 />
               ) : (
-                <ImageIcon className="w-12 h-12 text-[#1A1613]/25" />
+                <ImageIcon className="w-12 h-12 text-[#1A1613]/25 dark:text-[#F5EFE6]/30" />
               )}
 
               {/* Floating Category Pill */}
@@ -269,9 +269,9 @@ const ProductViewModal: React.FC<ProductViewModalProps> = ({
             </div>
 
             {/* Price & Rating Bar */}
-            <div className="p-3.5 rounded-xl bg-[#FDF8ED] border border-[#1A1613]/10 flex items-center justify-between">
+            <div className="p-3.5 rounded-xl bg-[#FDF8ED] dark:bg-[#1E1A17] border border-[#1A1613]/10 dark:border-white/10 flex items-center justify-between">
               <div>
-                <span className="text-[10px] font-medium text-[#1A1613]/55 block">
+                <span className="text-[10px] font-medium text-[#1A1613]/55 dark:text-[#F5EFE6]/50 block">
                   Selling Price
                 </span>
                 <div className="flex items-baseline gap-2 mt-0.5">
@@ -280,10 +280,10 @@ const ProductViewModal: React.FC<ProductViewModalProps> = ({
                   </span>
                   {discount > 0 && (
                     <>
-                      <span className="text-xs text-[#1A1613]/40 line-through">
+                      <span className="text-xs text-[#1A1613]/40 dark:text-[#F5EFE6]/50 line-through">
                         Rs. {originalPrice.toLocaleString()}
                       </span>
-                      <span className="text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-200 px-1.5 rounded">
+                      <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/15 border border-rose-200 dark:border-rose-500/30 px-1.5 rounded">
                         -{discount}% OFF
                       </span>
                     </>
@@ -292,23 +292,23 @@ const ProductViewModal: React.FC<ProductViewModalProps> = ({
               </div>
 
               <div className="text-right">
-                <span className="text-[10px] font-medium text-[#1A1613]/55 block">
+                <span className="text-[10px] font-medium text-[#1A1613]/55 dark:text-[#F5EFE6]/50 block">
                   Customer Rating
                 </span>
                 <div className="flex items-center gap-1 mt-0.5 justify-end">
                   {avgRating ? (
                     <>
                       <Star className="w-4 h-4 fill-amber-400 text-amber-500" />
-                      <span className="font-bold text-xs text-[#1A1613]">
+                      <span className="font-bold text-xs text-[#1A1613] dark:text-[#F5EFE6]">
                         {avgRating}
                       </span>
-                      <span className="text-[11px] text-[#1A1613]/50">
+                      <span className="text-[11px] text-[#1A1613]/50 dark:text-[#F5EFE6]/50">
                         ({reviews.length}{" "}
                         {reviews.length === 1 ? "review" : "reviews"})
                       </span>
                     </>
                   ) : (
-                    <span className="text-xs text-[#1A1613]/40 italic">
+                    <span className="text-xs text-[#1A1613]/40 dark:text-[#F5EFE6]/50 italic">
                       No reviews yet
                     </span>
                   )}
@@ -318,31 +318,31 @@ const ProductViewModal: React.FC<ProductViewModalProps> = ({
 
             {/* Description */}
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#1A1613]/40">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#1A1613]/40 dark:text-[#F5EFE6]/50">
                 Description
               </span>
-              <p className="text-xs text-[#1A1613]/70 leading-relaxed mt-0.5 whitespace-pre-line">
+              <p className="text-xs text-[#1A1613]/70 dark:text-[#F5EFE6]/70 leading-relaxed mt-0.5 whitespace-pre-line">
                 {product.productDescription || "No description provided."}
               </p>
             </div>
 
             {/* Metadata Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-2 border-t border-[#1A1613]/10 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-2 border-t border-[#1A1613]/10 dark:border-white/10 text-xs">
               <div>
-                <span className="text-[10px] text-[#1A1613]/45 uppercase font-medium">
+                <span className="text-[10px] text-[#1A1613]/45 dark:text-[#F5EFE6]/50 uppercase font-medium">
                   Product ID
                 </span>
                 <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="font-mono text-[11px] text-[#1A1613]/80 truncate">
+                  <span className="font-mono text-[11px] text-[#1A1613]/80 dark:text-[#F5EFE6]/70 truncate">
                     {product.id}
                   </span>
                   <button
                     onClick={(e) => onCopyId(product.id, e)}
                     title="Copy ID"
-                    className="text-[#1A1613]/40 hover:text-[#E6540B] transition-colors"
+                    className="text-[#1A1613]/40 dark:text-[#F5EFE6]/50 hover:text-[#E6540B] transition-colors"
                   >
                     {copiedId === product.id ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                     ) : (
                       <Copy className="w-3.5 h-3.5" />
                     )}
@@ -351,17 +351,17 @@ const ProductViewModal: React.FC<ProductViewModalProps> = ({
               </div>
 
               <div>
-                <span className="text-[10px] text-[#1A1613]/45 uppercase font-medium">
+                <span className="text-[10px] text-[#1A1613]/45 dark:text-[#F5EFE6]/50 uppercase font-medium">
                   Created Date
                 </span>
-                <div className="flex items-center gap-1 text-[#1A1613]/80 mt-0.5">
-                  <Calendar className="w-3.5 h-3.5 text-[#1A1613]/40" />
+                <div className="flex items-center gap-1 text-[#1A1613]/80 dark:text-[#F5EFE6]/70 mt-0.5">
+                  <Calendar className="w-3.5 h-3.5 text-[#1A1613]/40 dark:text-[#F5EFE6]/50" />
                   <span>{formatDate(product.createdAt)}</span>
                 </div>
               </div>
 
               <div className="col-span-2 sm:col-span-1">
-                <span className="text-[10px] text-[#1A1613]/45 uppercase font-medium">
+                <span className="text-[10px] text-[#1A1613]/45 dark:text-[#F5EFE6]/50 uppercase font-medium">
                   Quick Sales Link
                 </span>
                 <button
@@ -382,32 +382,32 @@ const ProductViewModal: React.FC<ProductViewModalProps> = ({
           <div className="space-y-4">
             {/* Sales Summary Cards */}
             <div className="grid grid-cols-3 gap-2.5">
-              <div className="p-3 rounded-xl bg-[#FDF8ED] border border-[#1A1613]/10">
-                <span className="text-[10px] font-medium text-[#1A1613]/55 block">
+              <div className="p-3 rounded-xl bg-[#FDF8ED] dark:bg-[#1E1A17] border border-[#1A1613]/10 dark:border-white/10">
+                <span className="text-[10px] font-medium text-[#1A1613]/55 dark:text-[#F5EFE6]/50 block">
                   Total Orders
                 </span>
                 <div className="flex items-center gap-1.5 mt-1">
                   <ShoppingBag className="w-4 h-4 text-[#E6540B]" />
-                  <span className="text-base font-bold text-[#1A1613]">
+                  <span className="text-base font-bold text-[#1A1613] dark:text-[#F5EFE6]">
                     {ordersLoading ? "..." : orders.length}
                   </span>
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-[#FDF8ED] border border-[#1A1613]/10">
-                <span className="text-[10px] font-medium text-[#1A1613]/55 block">
+              <div className="p-3 rounded-xl bg-[#FDF8ED] dark:bg-[#1E1A17] border border-[#1A1613]/10 dark:border-white/10">
+                <span className="text-[10px] font-medium text-[#1A1613]/55 dark:text-[#F5EFE6]/50 block">
                   Units Sold
                 </span>
                 <div className="flex items-center gap-1.5 mt-1">
-                  <TrendingUp className="w-4 h-4 text-emerald-600" />
-                  <span className="text-base font-bold text-[#1A1613]">
+                  <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span className="text-base font-bold text-[#1A1613] dark:text-[#F5EFE6]">
                     {ordersLoading ? "..." : totalUnitsSold}
                   </span>
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-[#FDF8ED] border border-[#1A1613]/10">
-                <span className="text-[10px] font-medium text-[#1A1613]/55 block">
+              <div className="p-3 rounded-xl bg-[#FDF8ED] dark:bg-[#1E1A17] border border-[#1A1613]/10 dark:border-white/10">
+                <span className="text-[10px] font-medium text-[#1A1613]/55 dark:text-[#F5EFE6]/50 block">
                   Est. Sales Value
                 </span>
                 <div className="flex items-center gap-1 mt-1 truncate">
@@ -423,14 +423,14 @@ const ProductViewModal: React.FC<ProductViewModalProps> = ({
             {/* Orders List Container */}
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-bold text-[#1A1613] uppercase tracking-wider">
+                <h4 className="text-xs font-bold text-[#1A1613] dark:text-[#F5EFE6] uppercase tracking-wider">
                   Customer Purchase Records ({orders.length})
                 </h4>
                 <button
                   type="button"
                   onClick={loadProductOrders}
                   disabled={ordersLoading}
-                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#1A1613]/60 hover:text-[#E6540B] transition-colors"
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#1A1613]/60 dark:text-[#F5EFE6]/50 hover:text-[#E6540B] transition-colors"
                 >
                   <RefreshCw
                     className={`w-3 h-3 ${ordersLoading ? "animate-spin" : ""}`}
@@ -445,13 +445,13 @@ const ProductViewModal: React.FC<ProductViewModalProps> = ({
                   {Array.from({ length: 3 }).map((_, idx) => (
                     <div
                       key={`skeleton-order-${idx}`}
-                      className="p-3.5 rounded-xl border border-[#1A1613]/10 bg-[#FFFDF8] animate-pulse space-y-2"
+                      className="p-3.5 rounded-xl border border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] animate-pulse space-y-2"
                     >
                       <div className="flex justify-between items-center">
-                        <div className="h-3 w-24 rounded bg-[#1A1613]/15" />
-                        <div className="h-4 w-16 rounded-full bg-[#1A1613]/10" />
+                        <div className="h-3 w-24 rounded bg-[#1A1613]/15 dark:bg-white/10" />
+                        <div className="h-4 w-16 rounded-full bg-[#1A1613]/10 dark:bg-white/10" />
                       </div>
-                      <div className="h-3 w-48 rounded bg-[#1A1613]/10" />
+                      <div className="h-3 w-48 rounded bg-[#1A1613]/10 dark:bg-white/10" />
                     </div>
                   ))}
                 </div>
@@ -459,9 +459,9 @@ const ProductViewModal: React.FC<ProductViewModalProps> = ({
 
               {/* State: Error */}
               {!ordersLoading && ordersError && (
-                <div className="p-4 rounded-xl border border-rose-200 bg-rose-50 text-xs text-rose-700 flex items-center justify-between">
+                <div className="p-4 rounded-xl border border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/15 text-xs text-rose-700 dark:text-rose-400 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-rose-600" />
+                    <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400" />
                     <span>{ordersError}</span>
                   </div>
                   <button
@@ -475,12 +475,12 @@ const ProductViewModal: React.FC<ProductViewModalProps> = ({
 
               {/* State: Empty */}
               {!ordersLoading && !ordersError && orders.length === 0 && (
-                <div className="p-8 rounded-xl border border-dashed border-[#1A1613]/15 text-center bg-[#FDF8ED]/40 space-y-2">
-                  <ShoppingBag className="w-9 h-9 mx-auto text-[#1A1613]/30" />
-                  <h5 className="font-bold text-xs text-[#1A1613]">
+                <div className="p-8 rounded-xl border border-dashed border-[#1A1613]/15 dark:border-white/10 text-center bg-[#FDF8ED]/40 dark:bg-white/5 space-y-2">
+                  <ShoppingBag className="w-9 h-9 mx-auto text-[#1A1613]/30 dark:text-[#F5EFE6]/30" />
+                  <h5 className="font-bold text-xs text-[#1A1613] dark:text-[#F5EFE6]">
                     No Orders Placed Yet
                   </h5>
-                  <p className="text-[11px] text-[#1A1613]/55 max-w-sm mx-auto">
+                  <p className="text-[11px] text-[#1A1613]/55 dark:text-[#F5EFE6]/50 max-w-sm mx-auto">
                     This product has not been purchased by any customer yet.
                     When customers buy this item, all purchase records and
                     delivery details will appear here.
@@ -499,22 +499,22 @@ const ProductViewModal: React.FC<ProductViewModalProps> = ({
                     return (
                       <div
                         key={item.id || `order-${idx}`}
-                        className="p-3 rounded-xl border border-[#1A1613]/10 bg-[#FFFDF8] hover:border-[#E6540B]/30 transition-all space-y-2 text-xs"
+                        className="p-3 rounded-xl border border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] hover:border-[#E6540B]/30 transition-all space-y-2 text-xs"
                       >
                         {/* Order Header: ID, Status, Date */}
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
-                            <span className="font-mono text-[11px] font-bold text-[#1A1613]">
+                            <span className="font-mono text-[11px] font-bold text-[#1A1613] dark:text-[#F5EFE6]">
                               Order #{order?.id?.slice(0, 8) || "N/A"}
                             </span>
                             {order?.id && (
                               <button
                                 onClick={(e) => onCopyId(order.id, e)}
                                 title="Copy Order ID"
-                                className="text-[#1A1613]/40 hover:text-[#E6540B]"
+                                className="text-[#1A1613]/40 dark:text-[#F5EFE6]/50 hover:text-[#E6540B]"
                               >
                                 {copiedId === order.id ? (
-                                  <Check className="w-3 h-3 text-emerald-600" />
+                                  <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                                 ) : (
                                   <Copy className="w-3 h-3" />
                                 )}
@@ -528,20 +528,20 @@ const ProductViewModal: React.FC<ProductViewModalProps> = ({
                         </div>
 
                         {/* Customer & Quantity Info */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-[#1A1613]/70 pt-1 border-t border-[#1A1613]/6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-[#1A1613]/70 dark:text-[#F5EFE6]/70 pt-1 border-t border-[#1A1613]/6 dark:border-white/10">
                           <div className="space-y-0.5">
-                            <div className="flex items-center gap-1.5 text-[#1A1613] font-semibold">
+                            <div className="flex items-center gap-1.5 text-[#1A1613] dark:text-[#F5EFE6] font-semibold">
                               <User className="w-3 h-3 text-[#E6540B]" />
                               <span>{customer?.username || "Guest Customer"}</span>
                             </div>
                             {customer?.email && (
-                              <div className="flex items-center gap-1.5 text-[#1A1613]/55">
+                              <div className="flex items-center gap-1.5 text-[#1A1613]/55 dark:text-[#F5EFE6]/50">
                                 <Mail className="w-3 h-3" />
                                 <span className="truncate">{customer.email}</span>
                               </div>
                             )}
                             {order?.phoneNumber && (
-                              <div className="flex items-center gap-1.5 text-[#1A1613]/55">
+                              <div className="flex items-center gap-1.5 text-[#1A1613]/55 dark:text-[#F5EFE6]/50">
                                 <Phone className="w-3 h-3" />
                                 <span>{order.phoneNumber}</span>
                               </div>
@@ -549,27 +549,27 @@ const ProductViewModal: React.FC<ProductViewModalProps> = ({
                           </div>
 
                           <div className="space-y-0.5 sm:text-right">
-                            <div className="text-[#1A1613] font-bold">
+                            <div className="text-[#1A1613] dark:text-[#F5EFE6] font-bold">
                               Quantity:{" "}
                               <span className="text-[#E6540B] text-xs">
                                 {item.quantity} {item.quantity === 1 ? "unit" : "units"}
                               </span>
                             </div>
-                            <div className="text-[10px] text-[#1A1613]/50">
+                            <div className="text-[10px] text-[#1A1613]/50 dark:text-[#F5EFE6]/50">
                               Order Total: Rs.{" "}
                               {(order?.totalAmount || 0).toLocaleString()}
                             </div>
                             {payment && (
                               <div className="flex items-center gap-1 sm:justify-end text-[10px]">
-                                <CreditCard className="w-2.5 h-2.5 text-[#1A1613]/40" />
+                                <CreditCard className="w-2.5 h-2.5 text-[#1A1613]/40 dark:text-[#F5EFE6]/50" />
                                 <span className="uppercase font-semibold">
                                   {payment.paymentMethod || "COD"}
                                 </span>
                                 <span
                                   className={`font-bold ml-1 ${
                                     payment.paymentStatus === "paid"
-                                      ? "text-emerald-600"
-                                      : "text-amber-600"
+                                      ? "text-emerald-600 dark:text-emerald-400"
+                                      : "text-amber-600 dark:text-amber-400"
                                   }`}
                                 >
                                   ({payment.paymentStatus || "unpaid"})
@@ -580,15 +580,15 @@ const ProductViewModal: React.FC<ProductViewModalProps> = ({
                         </div>
 
                         {/* Address & Date Footer */}
-                        <div className="flex items-center justify-between text-[10px] text-[#1A1613]/50 pt-1 border-t border-[#1A1613]/6">
+                        <div className="flex items-center justify-between text-[10px] text-[#1A1613]/50 dark:text-[#F5EFE6]/50 pt-1 border-t border-[#1A1613]/6 dark:border-white/10">
                           <div className="flex items-center gap-1 truncate max-w-[220px]">
-                            <MapPin className="w-3 h-3 shrink-0 text-[#1A1613]/40" />
+                            <MapPin className="w-3 h-3 shrink-0 text-[#1A1613]/40 dark:text-[#F5EFE6]/50" />
                             <span className="truncate">
                               {order?.shippingAddress || "Standard Shipping"}
                             </span>
                           </div>
                           <div className="flex items-center gap-1 whitespace-nowrap">
-                            <Clock className="w-3 h-3 text-[#1A1613]/40" />
+                            <Clock className="w-3 h-3 text-[#1A1613]/40 dark:text-[#F5EFE6]/50" />
                             <span>{formatDate(order?.createdAt)}</span>
                           </div>
                         </div>
@@ -602,13 +602,13 @@ const ProductViewModal: React.FC<ProductViewModalProps> = ({
         )}
 
         {/* 5. Modal Footer Actions */}
-        <div className="flex items-center justify-between pt-3 border-t border-[#1A1613]/10">
+        <div className="flex items-center justify-between pt-3 border-t border-[#1A1613]/10 dark:border-white/10">
           <div>
             {activeTab === "orders" ? (
               <button
                 type="button"
                 onClick={() => setActiveTab("overview")}
-                className="text-xs font-semibold text-[#1A1613]/60 hover:text-[#E6540B] transition-colors"
+                className="text-xs font-semibold text-[#1A1613]/60 dark:text-[#F5EFE6]/50 hover:text-[#E6540B] transition-colors"
               >
                 &larr; Back to Product Specs
               </button>
@@ -619,7 +619,7 @@ const ProductViewModal: React.FC<ProductViewModalProps> = ({
                   onClose();
                   onQuickStock(product);
                 }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E6540B]/30 bg-[#E6540B]/10 text-xs font-semibold text-[#E6540B] hover:bg-[#E6540B]/20 transition-all"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E6540B]/30 bg-[#E6540B]/10 dark:bg-[#E6540B]/15 text-xs font-semibold text-[#E6540B] hover:bg-[#E6540B]/20 transition-all"
               >
                 <Boxes className="w-3.5 h-3.5" />
                 <span>Quick Stock</span>
@@ -632,7 +632,7 @@ const ProductViewModal: React.FC<ProductViewModalProps> = ({
               href={`/productdetails/${product.id}`}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#1A1613]/15 text-xs font-semibold text-[#1A1613] hover:bg-[#F4EEDF] transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#1A1613]/15 dark:border-white/10 text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] transition-all cursor-pointer"
               title="View on Customer Storefront"
             >
               <span>View in Store</span>
@@ -650,7 +650,7 @@ const ProductViewModal: React.FC<ProductViewModalProps> = ({
             </button>
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-[#1A1613]/15 text-xs font-semibold text-[#1A1613] hover:bg-[#F4EEDF] transition-all cursor-pointer"
+              className="px-4 py-2 rounded-xl border border-[#1A1613]/15 dark:border-white/10 text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] transition-all cursor-pointer"
             >
               Close
             </button>

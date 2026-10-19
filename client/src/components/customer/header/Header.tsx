@@ -7,8 +7,10 @@ import {
   LogOut,
   Settings,
   ChevronDown,
+  LayoutDashboard,
+  Package,
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../../hooks/hooks";
 import { CgProfile } from "react-icons/cg";
 import { logoutUser } from "../../../store/auth/authSlice";
@@ -17,57 +19,96 @@ import { fetchCartItems } from "../../../store/customer/cartSlice";
 import Notifications from "./components/Notifications";
 import SearchProducts from "./components/SearchProducts";
 import UserDropdown from "./components/UserDropdown";
+import useIsAdmin from "../../../hooks/useIsAdmin";
+import MaintenanceBanner from "./components/MaintenanceBanner";
+import { connectSocket } from "../../../services/socket";
+import { useStoreSettings } from "../../../services/storeSettingsService";
+
+const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+  `rounded-md font-medium transition-colors hover:text-[#E6540B] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E6540B] focus-visible:ring-offset-4 focus-visible:ring-offset-[#FDF8ED] ${
+    isActive ? "text-[#E6540B]" : "text-[#1A1613]/80"
+  }`;
+
+const mobileLinkClass = ({ isActive }: { isActive: boolean }) =>
+  `block rounded-lg px-3 py-2.5 font-medium transition-colors hover:bg-[#E6540B]/10 hover:text-[#E6540B] ${
+    isActive ? "bg-[#E6540B]/10 text-[#E6540B]" : "text-[#1A1613]/80"
+  }`;
+
+const moreLinks = [
+  { name: "About Us", path: "/about" },
+  { name: "Categories", path: "/#categories" },
+  { name: "FAQ", path: "/faq" },
+];
+
+const badgeText = (count: number) => (count > 9 ? "9+" : String(count));
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const moreRef = useRef<HTMLDivElement>(null);
   const moreCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { storeName } = useStoreSettings();
   const { user, token } = useAppSelector((state) => state.auth);
   const { wishlist } = useAppSelector((state) => state.wishlist);
   const { cart } = useAppSelector((state) => state.cart);
 
   const storedToken = typeof window !== "undefined" ? localStorage.getItem("token") : null;
   const storedUser = JSON.parse(localStorage.getItem("user") || "null");
-  
+
   const effectiveToken = token || storedToken;
   const effectiveUser = user || storedUser;
-  const isLoggedIn = !!effectiveToken && !!effectiveUser; 
+  const isLoggedIn = !!effectiveToken && !!effectiveUser;
+  const isAdmin = useIsAdmin();
+  // Cart and wishlist are customer-only (the API refuses them for admins)
+  const isCustomer = isLoggedIn && !isAdmin;
 
   useEffect(() => {
-    if (effectiveToken && effectiveUser) {
-      dispatch(fetchUserWishlist());
-      dispatch(fetchCartItems());
+    if (isCustomer) {
+      dispatch(fetchUserWishlist()).catch(() => {});
+      dispatch(fetchCartItems()).catch(() => {});
     }
-  }, [dispatch, effectiveToken, effectiveUser]);
+  }, [dispatch, isCustomer]);
 
-  const wishlistCount = wishlist?.length;
-  const cartCount = cart?.length;
+  // Re-authenticate the live connection after login/logout
+  useEffect(() => {
+    connectSocket();
+  }, [effectiveToken]);
+
+  // Close menus when the page changes
+  const [lastPath, setLastPath] = useState(location.pathname + location.hash);
+  if (lastPath !== location.pathname + location.hash) {
+    setLastPath(location.pathname + location.hash);
+    setIsOpen(false);
+    setIsMoreOpen(false);
+  }
+
+  const wishlistCount = wishlist?.length || 0;
+  const cartCount = (cart || []).reduce((total, item) => total + (Number(item.quantity) || 0), 0);
 
   useEffect(() => {
+    if (!isMoreOpen && !isOpen) return;
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsDropdownOpen(false);
-      }
       if (moreRef.current && !moreRef.current.contains(event.target as Node)) {
         setIsMoreOpen(false);
       }
     };
-
-    if (isDropdownOpen || isMoreOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isDropdownOpen, isMoreOpen]);
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMoreOpen(false);
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isMoreOpen, isOpen]);
 
   const openMoreOnHover = () => {
     if (moreCloseTimer.current) clearTimeout(moreCloseTimer.current);
@@ -87,27 +128,18 @@ const Header = () => {
 
   const handleLogOut = async () => {
     await dispatch(logoutUser());
-    setIsDropdownOpen(false);
     setIsMoreOpen(false);
     setIsOpen(false);
     navigate("/login?logout=true");
   };
 
-   const getDashboardPath = () => {
-    if (!effectiveUser) return "/";
-    if (effectiveUser.role === "admin") return "/admin-dashboard";
-    return "/";
-  };
-
-  const renderAvatar = (size: "small" | "large") => {
-    const avatarSize = size === "small" ? "w-10 h-10" : "w-12 h-12";
-    const textSize = size === "small" ? "text-xl" : "text-2xl";
-
+  const renderAvatar = () => {
     if (effectiveUser?.avatar) {
       return (
         <img
-          className={`${avatarSize} rounded-full object-cover`}
-          src={effectiveUser?.avatar}
+          className="h-10 w-10 rounded-full object-cover"
+          src={effectiveUser.avatar}
+          referrerPolicy="no-referrer"
           alt={`${effectiveUser?.username}'s avatar`}
         />
       );
@@ -116,38 +148,33 @@ const Header = () => {
     const initials = effectiveUser?.username?.charAt(0).toUpperCase() || "U";
 
     return (
-      <div
-        className={`${avatarSize} rounded-full bg-[#E6540B] text-white flex items-center justify-center font-bold border-2 border-[#E6540B] ${textSize}`}
-      >
+      <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#E6540B] bg-[#E6540B] text-xl font-bold text-white">
         {initials}
       </div>
     );
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 shadow-md border-b border-[#1A1613]/10 bg-[#FDF8ED]/90 backdrop-blur">
-      <div className="mx-auto max-w-[1500px] px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
+    // flex column + max height lets the mobile menu scroll below the bar (and maintenance banner)
+    <nav className="fixed top-0 left-0 right-0 z-50 flex max-h-dvh flex-col shadow-md border-b border-[#1A1613]/10 bg-[#FDF8ED]/90 backdrop-blur">
+      <MaintenanceBanner />
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between gap-4">
           <Link
             to="/"
-            className="font-['Fraunces',serif] text-2xl italic font-semibold tracking-tight"
+            className="shrink-0 font-['Fraunces',serif] text-2xl italic font-semibold tracking-tight"
           >
-            Truvora<span className="text-[#E6540B]">.</span>
+            {storeName}
+            <span className="text-[#E6540B]">.</span>
           </Link>
 
           <div className="hidden lg:flex items-center gap-8">
-            <Link
-              to="/"
-              className="text-[#1A1613]/80 hover:hover:text-[#E6540B] font-medium transition-colors"
-            >
+            <NavLink to="/" end className={navLinkClass}>
               Home
-            </Link>
-            <Link
-              to="/products"
-              className="text-[#1A1613]/80 hover:hover:text-[#E6540B] font-medium transition-colors"
-            >
+            </NavLink>
+            <NavLink to="/products" className={navLinkClass}>
               Explore Products
-            </Link>
+            </NavLink>
             <div
               className="relative"
               ref={moreRef}
@@ -171,24 +198,18 @@ const Header = () => {
               {isMoreOpen && (
                 <div
                   role="menu"
-                  className="absolute right-0 top-full mt-2 w-30 bg-[#FDF8ED] rounded-md shadow-md py-1 z-50"
+                  className="absolute left-0 top-full mt-2 w-40 rounded-lg border border-[#1A1613]/10 bg-[#FDF8ED] py-1.5 shadow-lg z-50"
                 >
-                  <Link
-                    to="/about"
-                    role="menuitem"
-                    className="block px-4 py-2 text-sm text-[#1A1613]/80 hover:text-[#E6540B] font-medium transition-colors"
-                    onClick={() => setIsMoreOpen(false)}
-                  >
-                    About Us
-                  </Link>
-                  <Link
-                    to="/#categories"
-                    role="menuitem"
-                    className="block px-4 py-2 text-sm text-[#1A1613]/80 hover:text-[#E6540B] font-medium transition-colors"
-                    onClick={() => setIsMoreOpen(false)}
-                  >
-                    Categories
-                  </Link>
+                  {moreLinks.map((link) => (
+                    <Link
+                      key={link.path}
+                      to={link.path}
+                      role="menuitem"
+                      className="block px-4 py-2 text-sm text-[#1A1613]/80 hover:bg-[#F4EEDF] hover:text-[#E6540B] font-medium transition-colors"
+                    >
+                      {link.name}
+                    </Link>
+                  ))}
                 </div>
               )}
             </div>
@@ -196,44 +217,35 @@ const Header = () => {
 
           <SearchProducts />
 
-          <div className="flex items-center gap-4 md:gap-6">
-            {isLoggedIn && (
+          <div className="flex shrink-0 items-center gap-3 sm:gap-4 md:gap-6">
+            {isCustomer && <Notifications />}
+            {isCustomer && (
               <>
-                <Notifications />
-
                 <Link
                   to="/wishlist"
+                  aria-label={wishlistCount > 0 ? `Wishlist, ${wishlistCount} items` : "Wishlist"}
                   className="relative text-[#1A1613]/80 hover:text-[#E6540B] p-1.5 rounded-full transition-colors"
                 >
                   <Heart className="h-6 w-6" />
-                  {wishlistCount > 0 ? (
-                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                      {wishlistCount}
-                    </span>
-                  ) : (
-                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                      0
+                  {wishlistCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                      {badgeText(wishlistCount)}
                     </span>
                   )}
                 </Link>
 
-                <div
-                  {...(cart?.length > 0
-                    ? { onClick: () => navigate("/cart") }
-                    : {})}
-                  className="cursor-pointer relative text-[#1A1613]/80 hover:text-[#E6540B] p-1.5 rounded-full transition-colors"
+                <Link
+                  to="/cart"
+                  aria-label={cartCount > 0 ? `Cart, ${cartCount} items` : "Cart"}
+                  className="relative text-[#1A1613]/80 hover:text-[#E6540B] p-1.5 rounded-full transition-colors"
                 >
                   <ShoppingCart className="h-6 w-6" />
-                  {cartCount > 0 ? (
-                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                      {cartCount}
-                    </span>
-                  ) : (
-                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                      0
+                  {cartCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                      {badgeText(cartCount)}
                     </span>
                   )}
-                </div>
+                </Link>
               </>
             )}
 
@@ -259,7 +271,11 @@ const Header = () => {
             </div>
 
             <button
-              className="cursor-pointer md:hidden text-[#E6540B] hover:text-[#E6540B]/80 p-2 rounded-full hover:bg-[#E6540B]/10 focus:outline-none"
+              type="button"
+              aria-label={isOpen ? "Close menu" : "Open menu"}
+              aria-expanded={isOpen}
+              aria-controls="mobile-menu"
+              className="cursor-pointer lg:hidden text-[#E6540B] hover:text-[#E6540B]/80 p-2 rounded-full hover:bg-[#E6540B]/10 focus:outline-none"
               onClick={() => setIsOpen(!isOpen)}
             >
               {isOpen ? <X size={28} /> : <Menu size={28} />}
@@ -269,116 +285,94 @@ const Header = () => {
       </div>
 
       {isOpen && (
-        <div className="md:hidden bg-[#FDF8ED] border-t border-gray-100 shadow-md">
-          <div className="px-5 py-6 space-y-6">
-            <SearchProducts
-              variant="mobile"
-              onNavigate={() => setIsOpen(false)}
-            />
-
-            <div className="px-2 flex flex-col gap-4">
-              <Link
-                to="/"
-                className=" text-[#1A1613]/80 hover:text-[#E6540B] font-medium transition-colors"
-                onClick={() => setIsOpen(false)}
-              >
-                Home
-              </Link>
-              <Link
-                to="/products"
-                className="text-[#1A1613]/80 hover:text-[#E6540B] font-medium transition-colors"
-                onClick={() => setIsOpen(false)}
-              >
-                Explore Products
-              </Link>
-              <Link
-                to="/about"
-                className="text-[#1A1613]/80 hover:text-[#E6540B] font-medium transition-colors"
-                onClick={() => setIsOpen(false)}
-              >
-                About Us
-              </Link>
+        <div
+          id="mobile-menu"
+          className="lg:hidden min-h-0 overflow-y-auto overscroll-contain border-t border-[#1A1613]/10 bg-[#FDF8ED] shadow-md"
+        >
+          <div className="space-y-5 px-4 py-5 sm:px-6">
+            <div className="md:hidden">
+              <SearchProducts variant="mobile" onNavigate={() => setIsOpen(false)} />
             </div>
 
+            <div className="flex flex-col gap-1">
+              <NavLink to="/" end className={mobileLinkClass}>
+                Home
+              </NavLink>
+              <NavLink to="/products" className={mobileLinkClass}>
+                Explore Products
+              </NavLink>
+              {moreLinks.map((link) =>
+                // NavLink ignores the #hash, so "/#categories" would always look active
+                link.path.includes("#") ? (
+                  <Link key={link.path} to={link.path} className={mobileLinkClass({ isActive: false })}>
+                    {link.name}
+                  </Link>
+                ) : (
+                  <NavLink key={link.path} to={link.path} className={mobileLinkClass}>
+                    {link.name}
+                  </NavLink>
+                ),
+              )}
+            </div>
+
+            {/* From md up, login/account live in the header bar instead */}
             {!isLoggedIn ? (
-              <div className="pt-4 border-t border-gray-100 flex flex-col gap-3">
+              <div className="md:hidden flex flex-col gap-3 border-t border-[#1A1613]/10 pt-4">
                 <Link
                   to="/login"
                   className="text-center py-3 text-[#E6540B] font-medium border border-[#E6540B] rounded-lg hover:bg-[#E6540B]/10 transition-colors"
-                  onClick={() => setIsOpen(false)}
                 >
                   Login
                 </Link>
                 <Link
                   to="/register"
-                  className="text-center py-3 bg-[#E6540B] text-white font-medium rounded-lg hover:bg-[#E6540B]/80 transition-colors"
-                  onClick={() => setIsOpen(false)}
+                  className="text-center py-3 bg-[#E6540B] text-white font-medium rounded-lg hover:bg-[#c94806] transition-colors"
                 >
                   Register
                 </Link>
               </div>
             ) : (
-              <div className="pt-4 border-t border-gray-100 space-y-4">
-                <div className="flex items-center gap-3 px-2">
-                  {renderAvatar("small")}
-                  <div>
-                    <p className="font-medium text-gray-900">
-                      {effectiveUser?.username || "Account"}
+              <div className="md:hidden space-y-2 border-t border-[#1A1613]/10 pt-4">
+                <div className="flex items-center gap-3 px-3 pb-2">
+                  {renderAvatar()}
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-[#1A1613]">
+                      {effectiveUser?.username || "My Account"}
                     </p>
-                    <p className="text-sm text-gray-600 truncate">
-                      Welcome back!
-                    </p>
+                    {effectiveUser?.email && (
+                      <p className="truncate text-sm text-[#1A1613]/60">{effectiveUser.email}</p>
+                    )}
                   </div>
                 </div>
 
-                <div className="py-2">
-                   {effectiveUser?.role === "hosteler" ||
-                effectiveUser?.role === "admin" ? (
-                  <>
-                    <Link
-                      to={getDashboardPath()}
-                      className="block font-medium py-3 px-3 text-gray-900 hover:text-blue-700 hover:bg-gray-200 rounded-lg transition-colors"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      Dashboard
-                    </Link>
-                  </>
+                {isAdmin ? (
+                  <NavLink to="/admin-dashboard" className={mobileLinkClass}>
+                    <LayoutDashboard className="mr-2 inline-block h-5 w-5" />
+                    Admin dashboard
+                  </NavLink>
                 ) : (
                   <>
-                  <Link
-                    to="/profile"
-                    className="block py-2.5 px-2 text-gray-800 hover:text-[#E6540B] hover:bg-[#E6540B]/10 rounded-lg transition-colors"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <CgProfile className="h-5 w-5 inline-block mr-2" />
-                    Profile
-                  </Link>
-
-                  <Link
-                    to="/myorders"
-                    className="block py-2.5 px-2 text-gray-800 hover:text-[#E6540B] hover:bg-[#E6540B]/10 rounded-lg transition-colors"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <ShoppingCart className="h-5 w-5 inline-block mr-2" />
-                    My Orders
-                  </Link>
-
-                  <Link
-                    to="/setting"
-                    className="block py-2.5 px-2 text-gray-800 hover:text-[#E6540B] hover:bg-[#E6540B]/10 rounded-lg transition-colors"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <Settings className="h-5 w-5 inline-block mr-2" />
-                    Setting
-                  </Link>
+                    <NavLink to="/profile" className={mobileLinkClass}>
+                      <CgProfile className="mr-2 inline-block h-5 w-5" />
+                      Profile
+                    </NavLink>
+                    <NavLink to="/my-orders" className={mobileLinkClass}>
+                      <Package className="mr-2 inline-block h-5 w-5" />
+                      My Orders
+                    </NavLink>
+                    <NavLink to="/setting" className={mobileLinkClass}>
+                      <Settings className="mr-2 inline-block h-5 w-5" />
+                      Settings
+                    </NavLink>
                   </>
                 )}
-                </div>
+
                 <button
+                  type="button"
                   onClick={handleLogOut}
-                  className="cursor-pointer w-full text-left py-2.5 px-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                  className="cursor-pointer w-full rounded-lg px-3 py-2.5 text-left font-medium text-red-600 transition-colors hover:bg-red-100"
                 >
-                  <LogOut className="h-5 w-5 inline-block mr-2" />
+                  <LogOut className="mr-2 inline-block h-5 w-5" />
                   Log out
                 </button>
               </div>

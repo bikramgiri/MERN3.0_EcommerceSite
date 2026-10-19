@@ -144,18 +144,18 @@ const ProductModal: React.FC<ProductModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="w-full max-w-xl rounded-2xl border border-[#1A1613]/15 bg-[#FFFDF8] p-6 shadow-xl space-y-5 max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-xl rounded-2xl border border-[#1A1613]/15 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] p-6 shadow-xl space-y-5 max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-[#1A1613]/10">
+        <div className="flex items-center justify-between pb-3 border-b border-[#1A1613]/10 dark:border-white/10">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#E6540B]/10 text-[#E6540B] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-[#E6540B]/10 dark:bg-[#E6540B]/15 text-[#E6540B] flex items-center justify-center">
               {isEdit ? <Edit className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
             </div>
             <div>
-              <h3 className="text-base font-bold text-[#1A1613]">
+              <h3 className="text-base font-bold text-[#1A1613] dark:text-[#F5EFE6]">
                 {isEdit ? "Edit Product" : "Add New Product"}
               </h3>
-              <p className="text-xs text-[#1A1613]/55">
+              <p className="text-xs text-[#1A1613]/55 dark:text-[#F5EFE6]/50">
                 {isEdit
                   ? "Update product information, pricing, and stock"
                   : "Create a new product listing in your catalog"}
@@ -165,7 +165,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
           <button
             onClick={onClose}
             disabled={loading}
-            className="p-1.5 rounded-lg text-[#1A1613]/40 hover:text-[#1A1613] hover:bg-[#F4EEDF] transition-all"
+            className="p-1.5 rounded-lg text-[#1A1613]/40 dark:text-[#F5EFE6]/50 hover:text-[#1A1613] dark:hover:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] transition-all"
           >
             <X className="w-4 h-4" />
           </button>
@@ -175,19 +175,19 @@ const ProductModal: React.FC<ProductModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Image Upload Area */}
           <div>
-            <label className="block text-xs font-bold text-[#1A1613] mb-1.5">
+            <label className="block text-xs font-bold text-[#1A1613] dark:text-[#F5EFE6] mb-1.5">
               Product Image <span className="text-[#E6540B]">*</span>
             </label>
 
             {imagePreview ? (
-              <div className="relative rounded-xl overflow-hidden border border-[#1A1613]/15 bg-[#FDF8ED] h-44 flex items-center justify-center group">
+              <div className="relative rounded-xl overflow-hidden border border-[#1A1613]/15 dark:border-white/10 bg-[#FDF8ED] dark:bg-[#2A2420] h-44 flex items-center justify-center group">
                 <img
                   src={imagePreview}
                   alt="Preview"
                   className="w-full h-full object-contain"
                 />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                  <label className="cursor-pointer px-3 py-1.5 rounded-lg bg-white text-[#1A1613] text-xs font-semibold hover:bg-[#F4EEDF] transition-all">
+                  <label className="cursor-pointer px-3 py-1.5 rounded-lg bg-white dark:bg-[#1E1A17] text-[#1A1613] dark:text-[#F5EFE6] text-xs font-semibold hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] transition-all">
                     Change Image
                     <input
                       type="file"
@@ -206,12 +206,12 @@ const ProductModal: React.FC<ProductModalProps> = ({
                 </div>
               </div>
             ) : (
-              <label className="flex flex-col items-center justify-center h-36 border-2 border-dashed border-[#1A1613]/20 rounded-xl bg-[#FDF8ED]/50 hover:bg-[#FDF8ED] hover:border-[#E6540B]/60 transition-all cursor-pointer p-4 text-center">
+              <label className="flex flex-col items-center justify-center h-36 border-2 border-dashed border-[#1A1613]/20 dark:border-white/15 rounded-xl bg-[#FDF8ED]/50 dark:bg-[#14110F] hover:bg-[#FDF8ED] dark:hover:bg-[#2A2420] hover:border-[#E6540B]/60 transition-all cursor-pointer p-4 text-center">
                 <UploadCloud className="w-8 h-8 text-[#E6540B] mb-2" />
-                <span className="text-xs font-semibold text-[#1A1613]">
+                <span className="text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6]">
                   Click to upload product image
                 </span>
-                <span className="text-[11px] text-[#1A1613]/50 mt-0.5">
+                <span className="text-[11px] text-[#1A1613]/50 dark:text-[#F5EFE6]/50 mt-0.5">
                   PNG, JPG, or WebP (max 5MB)
                 </span>
                 <input
@@ -227,7 +227,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
           {/* Row 1: Name and Category */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-[#1A1613] mb-1">
+              <label className="block text-xs font-bold text-[#1A1613] dark:text-[#F5EFE6] mb-1">
                 Product Name <span className="text-[#E6540B]">*</span>
               </label>
               <input
@@ -237,22 +237,22 @@ const ProductModal: React.FC<ProductModalProps> = ({
                 onChange={(e) => setName(e.target.value)}
                 maxLength={30}
                 required
-                className="w-full h-9 rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] px-3 text-xs text-[#1A1613] placeholder:text-[#1A1613]/40 focus:outline-none focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
+                className="w-full h-9 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] px-3 text-xs text-[#1A1613] dark:text-[#F5EFE6] placeholder:text-[#1A1613]/40 dark:placeholder:text-[#F5EFE6]/40 focus:outline-none focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
               />
-              <span className="text-[10px] text-[#1A1613]/40 mt-0.5 block text-right">
+              <span className="text-[10px] text-[#1A1613]/40 dark:text-[#F5EFE6]/50 mt-0.5 block text-right">
                 {name.length}/30
               </span>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#1A1613] mb-1">
+              <label className="block text-xs font-bold text-[#1A1613] dark:text-[#F5EFE6] mb-1">
                 Category <span className="text-[#E6540B]">*</span>
               </label>
               <select
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
                 required
-                className="w-full h-9 rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] px-3 text-xs text-[#1A1613] focus:outline-none focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
+                className="w-full h-9 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] px-3 text-xs text-[#1A1613] dark:text-[#F5EFE6] dark:scheme-dark focus:outline-none focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
               >
                 <option value="" disabled>
                   Select a category
@@ -269,7 +269,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
           {/* Row 2: Price, Discount & Stock */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-bold text-[#1A1613] mb-1">
+              <label className="block text-xs font-bold text-[#1A1613] dark:text-[#F5EFE6] mb-1">
                 Original Price (Rs.) <span className="text-[#E6540B]">*</span>
               </label>
               <input
@@ -280,12 +280,12 @@ const ProductModal: React.FC<ProductModalProps> = ({
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 required
-                className="w-full h-9 rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] px-3 text-xs text-[#1A1613] placeholder:text-[#1A1613]/40 focus:outline-none focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
+                className="w-full h-9 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] px-3 text-xs text-[#1A1613] dark:text-[#F5EFE6] placeholder:text-[#1A1613]/40 dark:placeholder:text-[#F5EFE6]/40 focus:outline-none focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#1A1613] mb-1">
+              <label className="block text-xs font-bold text-[#1A1613] dark:text-[#F5EFE6] mb-1">
                 Discount (%)
               </label>
               <input
@@ -296,12 +296,12 @@ const ProductModal: React.FC<ProductModalProps> = ({
                 placeholder="0"
                 value={discount}
                 onChange={(e) => setDiscount(e.target.value)}
-                className="w-full h-9 rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] px-3 text-xs text-[#1A1613] placeholder:text-[#1A1613]/40 focus:outline-none focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
+                className="w-full h-9 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] px-3 text-xs text-[#1A1613] dark:text-[#F5EFE6] placeholder:text-[#1A1613]/40 dark:placeholder:text-[#F5EFE6]/40 focus:outline-none focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#1A1613] mb-1">
+              <label className="block text-xs font-bold text-[#1A1613] dark:text-[#F5EFE6] mb-1">
                 Stock Quantity <span className="text-[#E6540B]">*</span>
               </label>
               <input
@@ -312,21 +312,21 @@ const ProductModal: React.FC<ProductModalProps> = ({
                 value={stock}
                 onChange={(e) => setStock(e.target.value)}
                 required
-                className="w-full h-9 rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] px-3 text-xs text-[#1A1613] placeholder:text-[#1A1613]/40 focus:outline-none focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
+                className="w-full h-9 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] px-3 text-xs text-[#1A1613] dark:text-[#F5EFE6] placeholder:text-[#1A1613]/40 dark:placeholder:text-[#F5EFE6]/40 focus:outline-none focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
               />
             </div>
           </div>
 
           {/* Pricing Preview Badge */}
           {numPrice > 0 && (
-            <div className="p-2.5 rounded-lg bg-[#F4EEDF]/40 border border-[#1A1613]/8 text-xs flex items-center justify-between">
-              <span className="text-[#1A1613]/60">Customer Selling Price:</span>
+            <div className="p-2.5 rounded-lg bg-[#F4EEDF]/40 dark:bg-[#2A2420] border border-[#1A1613]/8 dark:border-white/10 text-xs flex items-center justify-between">
+              <span className="text-[#1A1613]/60 dark:text-[#F5EFE6]/50">Customer Selling Price:</span>
               <div className="flex items-center gap-2">
                 <span className="font-bold text-sm text-[#E6540B]">
                   Rs. {finalPrice.toLocaleString()}
                 </span>
                 {numDiscount > 0 && (
-                  <span className="text-[11px] text-[#1A1613]/40 line-through">
+                  <span className="text-[11px] text-[#1A1613]/40 dark:text-[#F5EFE6]/50 line-through">
                     Rs. {numPrice.toLocaleString()} (-{numDiscount}%)
                   </span>
                 )}
@@ -336,7 +336,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-bold text-[#1A1613] mb-1">
+            <label className="block text-xs font-bold text-[#1A1613] dark:text-[#F5EFE6] mb-1">
               Description <span className="text-[#E6540B]">*</span>
             </label>
             <textarea
@@ -346,20 +346,20 @@ const ProductModal: React.FC<ProductModalProps> = ({
               onChange={(e) => setDescription(e.target.value)}
               maxLength={500}
               required
-              className="w-full rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] p-3 text-xs text-[#1A1613] placeholder:text-[#1A1613]/40 focus:outline-none focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B] resize-none"
+              className="w-full rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] p-3 text-xs text-[#1A1613] dark:text-[#F5EFE6] placeholder:text-[#1A1613]/40 dark:placeholder:text-[#F5EFE6]/40 focus:outline-none focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B] resize-none"
             />
-            <span className="text-[10px] text-[#1A1613]/40 mt-0.5 block text-right">
+            <span className="text-[10px] text-[#1A1613]/40 dark:text-[#F5EFE6]/50 mt-0.5 block text-right">
               {description.length}/500
             </span>
           </div>
 
           {/* Modal Actions */}
-          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#1A1613]/10">
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#1A1613]/10 dark:border-white/10">
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2 rounded-xl border border-[#1A1613]/15 text-xs font-semibold text-[#1A1613] hover:bg-[#F4EEDF] transition-all disabled:opacity-50"
+              className="px-4 py-2 rounded-xl border border-[#1A1613]/15 dark:border-white/10 text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] transition-all disabled:opacity-50"
             >
               Cancel
             </button>

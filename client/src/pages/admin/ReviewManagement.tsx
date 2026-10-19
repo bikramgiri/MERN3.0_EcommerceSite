@@ -27,6 +27,7 @@ import {
   ReviewModerationStatus,
 } from "../../types/admin/reviewTypes";
 import { Status } from "../../global/statuses";
+import { Skeleton } from "../../global/Skeleton";
 import ReviewTable from "../../components/admin/Reviews/ReviewTable";
 import ReviewViewModal from "../../components/admin/Reviews/ReviewViewModal";
 import ReviewDeleteModal from "../../components/admin/Reviews/ReviewDeleteModal";
@@ -314,6 +315,9 @@ const ReviewManagement: React.FC = () => {
   };
 
   const loading = status === Status.LOADING;
+  // Skeletons only until the first response; refreshes keep the loaded rows visible
+  const initialLoading =
+    (status === Status.IDLE || status === Status.LOADING) && reviews.length === 0;
 
   return (
     <div className="space-y-6">
@@ -321,14 +325,14 @@ const ReviewManagement: React.FC = () => {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-[#E6540B]/10 text-[#E6540B] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-[#E6540B]/10 dark:bg-[#E6540B]/15 text-[#E6540B] flex items-center justify-center">
               <MessageSquare className="w-5 h-5" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-[#1A1613] sm:text-3xl">
+            <h1 className="text-2xl font-bold tracking-tight text-[#1A1613] dark:text-[#F5EFE6] sm:text-3xl">
               Review Management
             </h1>
           </div>
-          <p className="mt-1 text-xs text-[#1A1613]/60 sm:text-sm">
+          <p className="mt-1 text-xs text-[#1A1613]/60 dark:text-[#F5EFE6]/50 sm:text-sm">
             Moderate product reviews, approve feedback, post official responses, and manage ratings.
           </p>
         </div>
@@ -337,7 +341,7 @@ const ReviewManagement: React.FC = () => {
           <button
             onClick={handleRefresh}
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-xl border border-[#1A1613]/15 bg-[#FFFDF8] px-4 py-2 text-xs font-semibold text-[#1A1613] shadow-xs hover:bg-[#F4EEDF] transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+            className="inline-flex items-center gap-2 rounded-xl border border-[#1A1613]/15 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] px-4 py-2 text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] shadow-xs hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
           >
             <RefreshCw
               className={`w-3.5 h-3.5 ${
@@ -356,42 +360,50 @@ const ReviewManagement: React.FC = () => {
           onClick={handleResetFilters}
           className={`p-4 rounded-2xl border transition-all cursor-pointer select-none active:scale-[0.98] ${
             !isFiltered
-              ? "border-[#E6540B]/40 bg-[#FFFDF8] shadow-xs"
-              : "border-[#1A1613]/10 bg-[#FFFDF8] shadow-xs hover:border-[#E6540B]/40"
+              ? "border-[#E6540B]/40 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs"
+              : "border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs hover:border-[#E6540B]/40"
           }`}
           title="Click to reset filters and view all reviews"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#1A1613]/60">
+            <span className="text-xs font-medium text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
               Total Reviews
             </span>
-            <div className="w-8 h-8 rounded-lg bg-[#E6540B]/10 text-[#E6540B] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-[#E6540B]/10 dark:bg-[#E6540B]/15 text-[#E6540B] flex items-center justify-center">
               <MessageSquare className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-[#1A1613]">
-              {loading ? "..." : totalReviewsCount}
-            </span>
-            <span className="text-[11px] text-[#1A1613]/40">submitted</span>
+            {initialLoading ? (
+              <Skeleton className="h-8 w-14" />
+            ) : (
+              <span className="text-2xl font-bold text-[#1A1613] dark:text-[#F5EFE6]">
+                {totalReviewsCount}
+              </span>
+            )}
+            <span className="text-[11px] text-[#1A1613]/40 dark:text-[#F5EFE6]/50">submitted</span>
           </div>
         </div>
 
         {/* Average Rating */}
-        <div className="p-4 rounded-2xl border border-[#1A1613]/10 bg-[#FFFDF8] shadow-xs">
+        <div className="p-4 rounded-2xl border border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#1A1613]/60">
+            <span className="text-xs font-medium text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
               Average Rating
             </span>
-            <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-500/15 text-amber-500 flex items-center justify-center">
               <Star className="w-4 h-4 fill-amber-400" />
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-amber-700">
-              {loading ? "..." : `${averageRating}`}
-            </span>
-            <span className="text-[11px] text-[#1A1613]/40">out of 5.0</span>
+            {initialLoading ? (
+              <Skeleton className="h-8 w-14" />
+            ) : (
+              <span className="text-2xl font-bold text-amber-700 dark:text-amber-400">
+                {`${averageRating}`}
+              </span>
+            )}
+            <span className="text-[11px] text-[#1A1613]/40 dark:text-[#F5EFE6]/50">out of 5.0</span>
           </div>
         </div>
 
@@ -407,31 +419,35 @@ const ReviewManagement: React.FC = () => {
           }}
           className={`p-4 rounded-2xl border transition-all cursor-pointer select-none active:scale-[0.98] ${
             selectedStatus === "PENDING"
-              ? "border-amber-500 bg-amber-50/50 shadow-sm ring-2 ring-amber-500/20"
-              : "border-[#1A1613]/10 bg-[#FFFDF8] shadow-xs hover:border-amber-400 hover:shadow-xs"
+              ? "border-amber-500 bg-amber-50/50 dark:bg-amber-500/10 shadow-sm ring-2 ring-amber-500/20"
+              : "border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs hover:border-amber-400 hover:shadow-xs"
           }`}
           title="Click to filter reviews awaiting moderation (PENDING)"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#1A1613]/60">
+            <span className="text-xs font-medium text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
               Pending Approval
             </span>
             <div className="flex items-center gap-1.5">
               {selectedStatus === "PENDING" && (
-                <span className="text-[10px] font-semibold text-amber-700 bg-amber-100/90 px-1.5 py-0.5 rounded-md">
+                <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-100/90 dark:bg-amber-500/15 px-1.5 py-0.5 rounded-md">
                   Filtered
                 </span>
               )}
-              <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center">
                 <Clock className="w-4 h-4" />
               </div>
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-amber-700">
-              {loading ? "..." : pendingReviewsCount}
-            </span>
-            <span className="text-[11px] text-[#1A1613]/40">awaiting review</span>
+            {initialLoading ? (
+              <Skeleton className="h-8 w-14" />
+            ) : (
+              <span className="text-2xl font-bold text-amber-700 dark:text-amber-400">
+                {pendingReviewsCount}
+              </span>
+            )}
+            <span className="text-[11px] text-[#1A1613]/40 dark:text-[#F5EFE6]/50">awaiting review</span>
           </div>
         </div>
 
@@ -447,31 +463,35 @@ const ReviewManagement: React.FC = () => {
           }}
           className={`p-4 rounded-2xl border transition-all cursor-pointer select-none active:scale-[0.98] ${
             selectedRating === "1,2"
-              ? "border-rose-500 bg-rose-50/50 shadow-sm ring-2 ring-rose-500/20"
-              : "border-[#1A1613]/10 bg-[#FFFDF8] shadow-xs hover:border-rose-400 hover:shadow-xs"
+              ? "border-rose-500 bg-rose-50/50 dark:bg-rose-500/10 shadow-sm ring-2 ring-rose-500/20"
+              : "border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs hover:border-rose-400 hover:shadow-xs"
           }`}
           title="Click to filter 1 & 2 star reviews"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#1A1613]/60">
+            <span className="text-xs font-medium text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
               Needs Attention
             </span>
             <div className="flex items-center gap-1.5">
               {selectedRating === "1,2" && (
-                <span className="text-[10px] font-semibold text-rose-700 bg-rose-100/90 px-1.5 py-0.5 rounded-md">
+                <span className="text-[10px] font-semibold text-rose-700 dark:text-rose-400 bg-rose-100/90 dark:bg-rose-500/15 px-1.5 py-0.5 rounded-md">
                   Filtered
                 </span>
               )}
-              <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400 flex items-center justify-center">
                 <AlertCircle className="w-4 h-4" />
               </div>
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-rose-700">
-              {loading ? "..." : criticalReviewsCount}
-            </span>
-            <span className="text-[11px] text-[#1A1613]/40">
+            {initialLoading ? (
+              <Skeleton className="h-8 w-14" />
+            ) : (
+              <span className="text-2xl font-bold text-rose-700 dark:text-rose-400">
+                {criticalReviewsCount}
+              </span>
+            )}
+            <span className="text-[11px] text-[#1A1613]/40 dark:text-[#F5EFE6]/50">
               flagged / low ratings
             </span>
           </div>
@@ -480,7 +500,7 @@ const ReviewManagement: React.FC = () => {
 
       {/* 3. Bulk Action Banner (when items are checked) */}
       {selectedReviewIds.length > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-[#1A1613] text-white shadow-md animate-in fade-in slide-in-from-top-1 duration-200">
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-[#1A1613] dark:bg-[#F5EFE6] text-white dark:text-[#1A1613] shadow-md animate-in fade-in slide-in-from-top-1 duration-200">
           <div className="flex items-center gap-2.5">
             <span className="w-6 h-6 rounded-full bg-[#E6540B] text-white font-bold text-xs flex items-center justify-center">
               {selectedReviewIds.length}
@@ -520,7 +540,7 @@ const ReviewManagement: React.FC = () => {
 
             <button
               onClick={() => setSelectedReviewIds([])}
-              className="text-xs text-white/60 hover:text-white underline cursor-pointer ml-1"
+              className="text-xs text-white/60 dark:text-[#1A1613]/60 hover:text-white dark:hover:text-[#1A1613] underline cursor-pointer ml-1"
             >
               Deselect All
             </button>
@@ -529,13 +549,13 @@ const ReviewManagement: React.FC = () => {
       )}
 
       {/* 4. Reviews Container & Filter Bar */}
-      <div className="rounded-xl border border-[#1A1613]/10 bg-[#FFFDF8] shadow-xs overflow-hidden">
+      <div className="rounded-xl border border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs overflow-hidden">
         {/* Filter Controls */}
-        <div className="p-4 sm:p-5 border-b border-[#1A1613]/10 space-y-3">
+        <div className="p-4 sm:p-5 border-b border-[#1A1613]/10 dark:border-white/10 space-y-3">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             {/* Search Input */}
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#1A1613]/40 w-4 h-4" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#1A1613]/40 dark:text-[#F5EFE6]/50 w-4 h-4" />
               <input
                 type="text"
                 placeholder="Search by customer, product, message, reply..."
@@ -544,12 +564,12 @@ const ReviewManagement: React.FC = () => {
                   setSearchTerm(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full h-10 pl-10 pr-9 rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] text-xs text-[#1A1613] placeholder:text-[#1A1613]/40 focus:outline-none focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
+                className="w-full h-10 pl-10 pr-9 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] text-xs text-[#1A1613] dark:text-[#F5EFE6] placeholder:text-[#1A1613]/40 dark:placeholder:text-[#F5EFE6]/40 focus:outline-none focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
               />
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1A1613]/40 hover:text-[#1A1613] cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1A1613]/40 dark:text-[#F5EFE6]/50 hover:text-[#1A1613] dark:hover:text-[#F5EFE6] cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -565,7 +585,7 @@ const ReviewManagement: React.FC = () => {
                   setSelectedStatus(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="flex-1 min-w-[125px] sm:flex-initial sm:min-w-0 h-9 rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] px-3 text-xs font-medium text-[#1A1613] focus:outline-none focus:border-[#E6540B]"
+                className="flex-1 min-w-[125px] sm:flex-initial sm:min-w-0 h-9 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] px-3 text-xs font-medium text-[#1A1613] dark:text-[#F5EFE6] focus:outline-none focus:border-[#E6540B]"
               >
                 <option value="ALL">All Statuses</option>
                 <option value="APPROVED">Approved Only</option>
@@ -580,7 +600,7 @@ const ReviewManagement: React.FC = () => {
                   setSelectedRating(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="flex-1 min-w-[125px] sm:flex-initial sm:min-w-0 h-9 rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] px-3 text-xs font-medium text-[#1A1613] focus:outline-none focus:border-[#E6540B]"
+                className="flex-1 min-w-[125px] sm:flex-initial sm:min-w-0 h-9 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] px-3 text-xs font-medium text-[#1A1613] dark:text-[#F5EFE6] focus:outline-none focus:border-[#E6540B]"
               >
                 <option value="ALL">All Ratings</option>
                 <option value="1,2">1 &amp; 2 Stars (Needs Attention)</option>
@@ -598,7 +618,7 @@ const ReviewManagement: React.FC = () => {
                   setSelectedAttachment(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="flex-1 min-w-[125px] sm:flex-initial sm:min-w-0 h-9 rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] px-3 text-xs font-medium text-[#1A1613] focus:outline-none focus:border-[#E6540B]"
+                className="flex-1 min-w-[125px] sm:flex-initial sm:min-w-0 h-9 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] px-3 text-xs font-medium text-[#1A1613] dark:text-[#F5EFE6] focus:outline-none focus:border-[#E6540B]"
               >
                 <option value="ALL">All Attachments</option>
                 <option value="WITH_PHOTO">With Photos</option>
@@ -609,7 +629,7 @@ const ReviewManagement: React.FC = () => {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                className="flex-1 min-w-[125px] sm:flex-initial sm:min-w-0 h-9 rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] px-3 text-xs font-medium text-[#1A1613] focus:outline-none focus:border-[#E6540B]"
+                className="flex-1 min-w-[125px] sm:flex-initial sm:min-w-0 h-9 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] px-3 text-xs font-medium text-[#1A1613] dark:text-[#F5EFE6] focus:outline-none focus:border-[#E6540B]"
               >
                 <option value="newest">Sort: Newest First</option>
                 <option value="oldest">Sort: Oldest First</option>
@@ -621,7 +641,7 @@ const ReviewManagement: React.FC = () => {
               {isFiltered && (
                 <button
                   onClick={handleResetFilters}
-                  className="h-9 px-3 rounded-lg border border-dashed border-[#1A1613]/25 text-xs font-semibold text-[#1A1613]/70 hover:text-[#E6540B] hover:border-[#E6540B] transition-colors cursor-pointer"
+                  className="h-9 px-3 rounded-lg border border-dashed border-[#1A1613]/25 dark:border-white/20 text-xs font-semibold text-[#1A1613]/70 dark:text-[#F5EFE6]/70 hover:text-[#E6540B] hover:border-[#E6540B] transition-colors cursor-pointer"
                   title="Reset all search & filters"
                 >
                   Reset
@@ -634,7 +654,7 @@ const ReviewManagement: React.FC = () => {
         {/* 5. Table */}
         <ReviewTable
           reviews={paginatedReviews}
-          loading={loading}
+          loading={initialLoading}
           selectedIds={selectedReviewIds}
           onToggleSelect={handleToggleSelect}
           onToggleSelectAll={handleToggleSelectAll}
@@ -646,10 +666,10 @@ const ReviewManagement: React.FC = () => {
         />
 
         {/* 6. Pagination Footer */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-[#1A1613]/10 text-xs text-[#1A1613]/60 bg-[#FDF8ED]/30">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-[#1A1613]/10 dark:border-white/10 text-xs text-[#1A1613]/60 dark:text-[#F5EFE6]/50 bg-[#FDF8ED]/30 dark:bg-white/5">
           <div>
-            {loading ? (
-              <div className="h-3.5 w-32 rounded bg-[#1A1613]/10 animate-pulse" />
+            {initialLoading ? (
+              <div className="h-3.5 w-32 rounded bg-[#1A1613]/10 dark:bg-white/10 animate-pulse" />
             ) : filteredReviews.length === 0 ? (
               "Showing 0 reviews"
             ) : (
@@ -666,7 +686,7 @@ const ReviewManagement: React.FC = () => {
             <button
               disabled={loading || currentPage === 1}
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              className="p-1.5 rounded-lg border border-[#1A1613]/15 text-[#1A1613] hover:bg-[#F4EEDF] disabled:opacity-40 transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg border border-[#1A1613]/15 dark:border-white/10 text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] disabled:opacity-40 transition-colors cursor-pointer"
               title="Previous Page"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -682,7 +702,7 @@ const ReviewManagement: React.FC = () => {
               ) {
                 if (Math.abs(pageNum - currentPage) === 2) {
                   return (
-                    <span key={`dots-${pageNum}`} className="px-1 text-[#1A1613]/40">
+                    <span key={`dots-${pageNum}`} className="px-1 text-[#1A1613]/40 dark:text-[#F5EFE6]/50">
                       ...
                     </span>
                   );
@@ -697,7 +717,7 @@ const ReviewManagement: React.FC = () => {
                   className={`min-w-[28px] h-7 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                     currentPage === pageNum
                       ? "bg-[#E6540B] text-white shadow-xs"
-                      : "border border-[#1A1613]/15 text-[#1A1613] hover:bg-[#F4EEDF]"
+                      : "border border-[#1A1613]/15 dark:border-white/10 text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420]"
                   }`}
                 >
                   {pageNum}
@@ -708,7 +728,7 @@ const ReviewManagement: React.FC = () => {
             <button
               disabled={loading || currentPage === totalPages}
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              className="p-1.5 rounded-lg border border-[#1A1613]/15 text-[#1A1613] hover:bg-[#F4EEDF] disabled:opacity-40 transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg border border-[#1A1613]/15 dark:border-white/10 text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] disabled:opacity-40 transition-colors cursor-pointer"
               title="Next Page"
             >
               <ChevronRight className="w-4 h-4" />

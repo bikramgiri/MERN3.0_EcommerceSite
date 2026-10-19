@@ -348,35 +348,35 @@ const OrderViewModal: React.FC<OrderViewModalProps> = ({
     switch (status) {
       case "Delivered":
         return (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-bold text-emerald-700">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/30 px-3 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-400">
             <CheckCircle2 className="w-3.5 h-3.5" />
             <span>Delivered</span>
           </span>
         );
       case "In Transit":
         return (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 border border-indigo-200 px-3 py-1 text-xs font-bold text-indigo-700">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 dark:bg-indigo-500/15 border border-indigo-200 dark:border-indigo-500/30 px-3 py-1 text-xs font-bold text-indigo-700 dark:text-indigo-400">
             <Truck className="w-3.5 h-3.5" />
             <span>In Transit</span>
           </span>
         );
       case "Preparation":
         return (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 border border-blue-200 px-3 py-1 text-xs font-bold text-blue-700">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-500/15 border border-blue-200 dark:border-blue-500/30 px-3 py-1 text-xs font-bold text-blue-700 dark:text-blue-400">
             <Package className="w-3.5 h-3.5" />
             <span>Preparation</span>
           </span>
         );
       case "Cancelled":
         return (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 border border-rose-200 px-3 py-1 text-xs font-bold text-rose-700">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 dark:bg-rose-500/15 border border-rose-200 dark:border-rose-500/30 px-3 py-1 text-xs font-bold text-rose-700 dark:text-rose-400">
             <XCircle className="w-3.5 h-3.5" />
             <span>Cancelled</span>
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs font-bold text-amber-700">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-500/30 px-3 py-1 text-xs font-bold text-amber-700 dark:text-amber-400">
             <Clock className="w-3.5 h-3.5" />
             <span>Pending</span>
           </span>
@@ -386,31 +386,31 @@ const OrderViewModal: React.FC<OrderViewModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="w-full max-w-2xl rounded-2xl border border-[#1A1613]/15 bg-[#FFFDF8] p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-2xl rounded-2xl border border-[#1A1613]/15 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-[#1A1613]/10">
+        <div className="flex items-center justify-between pb-3 border-b border-[#1A1613]/10 dark:border-white/10">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-[#E6540B]/10 text-[#E6540B] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-[#E6540B]/10 dark:bg-[#E6540B]/15 text-[#E6540B] flex items-center justify-center">
               <ShoppingBag className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-[#1A1613]">
+                <h3 className="text-base font-bold text-[#1A1613] dark:text-[#F5EFE6]">
                   Order {storeSettings.orderPrefix || "#"}{order.id.slice(0, 8)}
                 </h3>
                 <button
                   onClick={(e) => onCopyId(order.id, e)}
                   title="Copy Full Order ID"
-                  className="text-[#1A1613]/40 hover:text-[#E6540B] transition-colors"
+                  className="text-[#1A1613]/40 dark:text-[#F5EFE6]/50 hover:text-[#E6540B] transition-colors"
                 >
                   {copiedId === order.id ? (
-                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   ) : (
                     <Copy className="w-3.5 h-3.5" />
                   )}
                 </button>
               </div>
-              <p className="text-xs text-[#1A1613]/55">
+              <p className="text-xs text-[#1A1613]/55 dark:text-[#F5EFE6]/50">
                 Placed on {formatDate(order.createdAt)}
               </p>
             </div>
@@ -420,7 +420,7 @@ const OrderViewModal: React.FC<OrderViewModalProps> = ({
             {getStatusBadge(order.orderStatus)}
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-[#1A1613]/40 hover:text-[#1A1613] hover:bg-[#F4EEDF] transition-all"
+              className="p-1.5 rounded-lg text-[#1A1613]/40 dark:text-[#F5EFE6]/50 hover:text-[#1A1613] dark:hover:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] transition-all"
             >
               <X className="w-4 h-4" />
             </button>
@@ -430,30 +430,30 @@ const OrderViewModal: React.FC<OrderViewModalProps> = ({
         {/* 2-Column Info Grid: Customer & Payment */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
           {/* Customer & Delivery Card */}
-          <div className="p-3.5 rounded-xl bg-[#FDF8ED] border border-[#1A1613]/10 space-y-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#1A1613]/45 block">
+          <div className="p-3.5 rounded-xl bg-[#FDF8ED] dark:bg-[#1E1A17] border border-[#1A1613]/10 dark:border-white/10 space-y-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#1A1613]/45 dark:text-[#F5EFE6]/50 block">
               Customer &amp; Shipping
             </span>
 
-            <div className="flex items-center gap-2 font-bold text-[#1A1613]">
+            <div className="flex items-center gap-2 font-bold text-[#1A1613] dark:text-[#F5EFE6]">
               <User className="w-3.5 h-3.5 text-[#E6540B]" />
               <span>{user?.username || "Guest Customer"}</span>
             </div>
 
             {user?.email && (
-              <div className="flex items-center gap-2 text-[#1A1613]/70">
-                <Mail className="w-3.5 h-3.5 text-[#1A1613]/40" />
+              <div className="flex items-center gap-2 text-[#1A1613]/70 dark:text-[#F5EFE6]/70">
+                <Mail className="w-3.5 h-3.5 text-[#1A1613]/40 dark:text-[#F5EFE6]/50" />
                 <span className="truncate">{user.email}</span>
               </div>
             )}
 
-            <div className="flex items-center gap-2 text-[#1A1613]/70">
-              <Phone className="w-3.5 h-3.5 text-[#1A1613]/40" />
+            <div className="flex items-center gap-2 text-[#1A1613]/70 dark:text-[#F5EFE6]/70">
+              <Phone className="w-3.5 h-3.5 text-[#1A1613]/40 dark:text-[#F5EFE6]/50" />
               <span>{order.phoneNumber || "No phone provided"}</span>
             </div>
 
-            <div className="flex items-start gap-2 text-[#1A1613]/70 pt-1 border-t border-[#1A1613]/6">
-              <MapPin className="w-3.5 h-3.5 text-[#1A1613]/40 mt-0.5 shrink-0" />
+            <div className="flex items-start gap-2 text-[#1A1613]/70 dark:text-[#F5EFE6]/70 pt-1 border-t border-[#1A1613]/6 dark:border-white/10">
+              <MapPin className="w-3.5 h-3.5 text-[#1A1613]/40 dark:text-[#F5EFE6]/50 mt-0.5 shrink-0" />
               <span className="leading-relaxed">
                 {order.shippingAddress || "Standard delivery address"}
               </span>
@@ -461,29 +461,29 @@ const OrderViewModal: React.FC<OrderViewModalProps> = ({
           </div>
 
           {/* Payment & Order Summary Card */}
-          <div className="p-3.5 rounded-xl bg-[#FDF8ED] border border-[#1A1613]/10 space-y-2 flex flex-col justify-between">
+          <div className="p-3.5 rounded-xl bg-[#FDF8ED] dark:bg-[#1E1A17] border border-[#1A1613]/10 dark:border-white/10 space-y-2 flex flex-col justify-between">
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#1A1613]/45 block mb-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#1A1613]/45 dark:text-[#F5EFE6]/50 block mb-2">
                 Payment Details
               </span>
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-[#1A1613]/60">Payment Method:</span>
-                  <span className="font-bold text-[#1A1613] uppercase">
+                  <span className="text-[#1A1613]/60 dark:text-[#F5EFE6]/50">Payment Method:</span>
+                  <span className="font-bold text-[#1A1613] dark:text-[#F5EFE6] uppercase">
                     {payment?.paymentMethod || "COD"}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-[#1A1613]/60">Payment Status:</span>
+                  <span className="text-[#1A1613]/60 dark:text-[#F5EFE6]/50">Payment Status:</span>
                   <span
                     className={`font-bold px-2 py-0.5 rounded-full text-[10px] ${
                       payment?.paymentStatus === "Paid"
-                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                        ? "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30"
                         : payment?.paymentStatus === "Failed"
-                        ? "bg-rose-50 text-rose-700 border border-rose-200"
-                        : "bg-amber-50 text-amber-700 border border-amber-200"
+                        ? "bg-rose-50 dark:bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30"
+                        : "bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30"
                     }`}
                   >
                     {payment?.paymentStatus || "Pending"}
@@ -491,29 +491,29 @@ const OrderViewModal: React.FC<OrderViewModalProps> = ({
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-[#1A1613]/60">Order Date:</span>
-                  <span className="text-[#1A1613]">
+                  <span className="text-[#1A1613]/60 dark:text-[#F5EFE6]/50">Order Date:</span>
+                  <span className="text-[#1A1613] dark:text-[#F5EFE6]">
                     {formatDate(order.createdAt)}
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="pt-2 border-t border-[#1A1613]/8 space-y-1">
-              <div className="flex items-center justify-between text-xs text-[#1A1613]/65">
+            <div className="pt-2 border-t border-[#1A1613]/8 dark:border-white/10 space-y-1">
+              <div className="flex items-center justify-between text-xs text-[#1A1613]/65 dark:text-[#F5EFE6]/70">
                 <span>Items Subtotal:</span>
-                <span className="font-semibold text-[#1A1613]">
+                <span className="font-semibold text-[#1A1613] dark:text-[#F5EFE6]">
                   Rs. {itemsSubtotal.toLocaleString()}
                 </span>
               </div>
-              <div className="flex items-center justify-between text-xs text-[#1A1613]/65">
+              <div className="flex items-center justify-between text-xs text-[#1A1613]/65 dark:text-[#F5EFE6]/70">
                 <span>Shipping / Delivery:</span>
-                <span className="font-semibold text-[#1A1613]">
+                <span className="font-semibold text-[#1A1613] dark:text-[#F5EFE6]">
                   {shippingFee > 0 ? `Rs. ${shippingFee.toLocaleString()}` : "Free"}
                 </span>
               </div>
-              <div className="pt-1.5 border-t border-[#1A1613]/8 flex items-baseline justify-between">
-                <span className="font-bold text-xs text-[#1A1613]">
+              <div className="pt-1.5 border-t border-[#1A1613]/8 dark:border-white/10 flex items-baseline justify-between">
+                <span className="font-bold text-xs text-[#1A1613] dark:text-[#F5EFE6]">
                   Total Amount:
                 </span>
                 <span className="text-base font-bold text-[#E6540B]">
@@ -527,14 +527,14 @@ const OrderViewModal: React.FC<OrderViewModalProps> = ({
         {/* Ordered Items List */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-bold text-[#1A1613] uppercase tracking-wider">
+            <h4 className="text-xs font-bold text-[#1A1613] dark:text-[#F5EFE6] uppercase tracking-wider">
               Ordered Products ({items.length})
             </h4>
           </div>
 
-          <div className="divide-y divide-[#1A1613]/8 border border-[#1A1613]/10 rounded-xl overflow-hidden bg-white max-h-56 overflow-y-auto">
+          <div className="divide-y divide-[#1A1613]/8 dark:divide-white/10 border border-[#1A1613]/10 dark:border-white/10 rounded-xl overflow-hidden bg-white dark:bg-[#1E1A17] max-h-56 overflow-y-auto">
             {items.length === 0 ? (
-              <div className="p-4 text-center text-xs text-[#1A1613]/50">
+              <div className="p-4 text-center text-xs text-[#1A1613]/50 dark:text-[#F5EFE6]/50">
                 No items recorded in this order.
               </div>
             ) : (
@@ -547,11 +547,11 @@ const OrderViewModal: React.FC<OrderViewModalProps> = ({
                 return (
                   <div
                     key={item.id || `item-${idx}`}
-                    className="p-3 flex items-center justify-between gap-3 text-xs hover:bg-[#FDF8ED]/30 transition-colors"
+                    className="p-3 flex items-center justify-between gap-3 text-xs hover:bg-[#FDF8ED]/30 dark:hover:bg-white/5 transition-colors"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="relative w-11 h-11 rounded-lg overflow-hidden border border-[#1A1613]/10 bg-[#FDF8ED] shrink-0 flex items-center justify-center">
-                        <ImageIcon className="w-5 h-5 text-[#1A1613]/25 shrink-0" />
+                      <div className="relative w-11 h-11 rounded-lg overflow-hidden border border-[#1A1613]/10 dark:border-white/10 bg-[#FDF8ED] dark:bg-[#1E1A17] shrink-0 flex items-center justify-center">
+                        <ImageIcon className="w-5 h-5 text-[#1A1613]/25 dark:text-[#F5EFE6]/40 shrink-0" />
                         {prod?.productImage && (
                           <img
                             src={prod.productImage}
@@ -565,17 +565,17 @@ const OrderViewModal: React.FC<OrderViewModalProps> = ({
                       </div>
 
                       <div className="min-w-0">
-                        <p className="font-bold text-[#1A1613] truncate max-w-[220px]">
+                        <p className="font-bold text-[#1A1613] dark:text-[#F5EFE6] truncate max-w-[220px]">
                           {prod?.productName || "Product"}
                         </p>
-                        <p className="text-[11px] text-[#1A1613]/50 mt-0.5">
+                        <p className="text-[11px] text-[#1A1613]/50 dark:text-[#F5EFE6]/50 mt-0.5">
                           Rs. {price.toLocaleString()} &times; {qty}{" "}
                           {qty === 1 ? "unit" : "units"}
                         </p>
                       </div>
                     </div>
 
-                    <div className="text-right font-bold text-sm text-[#1A1613] whitespace-nowrap">
+                    <div className="text-right font-bold text-sm text-[#1A1613] dark:text-[#F5EFE6] whitespace-nowrap">
                       Rs. {lineTotal.toLocaleString()}
                     </div>
                   </div>
@@ -586,7 +586,7 @@ const OrderViewModal: React.FC<OrderViewModalProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-between pt-3 border-t border-[#1A1613]/10">
+        <div className="flex items-center justify-between pt-3 border-t border-[#1A1613]/10 dark:border-white/10">
           <button
             type="button"
             onClick={() => {
@@ -603,15 +603,15 @@ const OrderViewModal: React.FC<OrderViewModalProps> = ({
             <button
               type="button"
               onClick={handlePrintSlip}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#1A1613]/15 text-xs font-semibold text-[#1A1613] hover:bg-[#F4EEDF] transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#1A1613]/15 dark:border-white/10 text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] transition-all cursor-pointer"
               title="Print Order / Packing Slip"
             >
-              <Printer className="w-3.5 h-3.5 text-[#1A1613]/70" />
+              <Printer className="w-3.5 h-3.5 text-[#1A1613]/70 dark:text-[#F5EFE6]/70" />
               <span className="hidden sm:inline">Print Slip</span>
             </button>
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-[#1A1613]/15 text-xs font-semibold text-[#1A1613] hover:bg-[#F4EEDF] transition-all"
+              className="px-4 py-2 rounded-xl border border-[#1A1613]/15 dark:border-white/10 text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] transition-all"
             >
               Close
             </button>

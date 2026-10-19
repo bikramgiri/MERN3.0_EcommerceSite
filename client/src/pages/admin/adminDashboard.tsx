@@ -7,7 +7,9 @@ import {
   Package,
 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "../../hooks/hooks";
-import CardDataStats from "../../components/admin/CardDataStats";
+import CardDataStats, {
+  CardDataStatsSkeleton,
+} from "../../components/admin/CardDataStats";
 import { fetchDatas } from "../../store/admin/datasSlice";
 import { DollarSign } from "../../icons/icons";
 import AdminWelcomeBanner from "../../components/admin/Dashboard/AdminWelcomeBanner";
@@ -18,6 +20,7 @@ import CustomerAndReviewsSection from "../../components/admin/Dashboard/Customer
 import TopSellingProducts from "../../components/admin/Dashboard/TopSellingProducts";
 import { toast } from "react-toastify";
 import { OrderStatus } from "../../types/customer/checkoutTypes";
+import { Status } from "../../global/statuses";
 import { connectSocket } from "../../services/socket";
 import {
   getStoreSettings,
@@ -337,6 +340,16 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  // Skeletons only before the first response; socket/manual refreshes keep the current data on screen
+  const hasDashboardData =
+    totalOrders > 0 ||
+    totalProducts > 0 ||
+    totalUsers > 0 ||
+    totalCategories > 0 ||
+    recentOrders.length > 0;
+  const isInitialLoading =
+    (status === Status.IDLE || status === Status.LOADING) && !hasDashboardData;
+
   // Preparation & Delivered counts for stats (using orderDistribution for all DB orders if available)
   const prepCount = orderDistribution
     ? orderDistribution.statusBreakdown.preparation
@@ -365,92 +378,101 @@ const AdminDashboard: React.FC = () => {
         activeCheckoutsCount={activeCheckoutsCount}
         activityCount={activities.length}
         onOpenActivityDrawer={() => setIsActivityDrawerOpen(true)}
+        loading={isInitialLoading}
       />
 
       {/* 2. Key Metrics Grid (5 Responsive Stat Cards) */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-5 lg:grid-cols-3 xl:grid-cols-5">
-        {/* Total Products */}
-        <CardDataStats
-          title="Total Products"
-          total={totalProducts.toString() || "0"}
-          subtitle={`${totalCategories} active categories`}
-          badge="In Stock"
-          badgeBg="bg-amber-500/10"
-          badgeColor="text-amber-700"
-          iconBg="bg-amber-500/10"
-          iconColor="text-amber-600"
-          onClick={() => navigate("/admin-dashboard/products")}
-        >
-          <Package className="w-5 h-5" />
-        </CardDataStats>
+        {isInitialLoading ? (
+          Array.from({ length: 5 }).map((_, idx) => (
+            <CardDataStatsSkeleton key={idx} />
+          ))
+        ) : (
+          <>
+            {/* Total Products */}
+            <CardDataStats
+              title="Total Products"
+              total={totalProducts.toString() || "0"}
+              subtitle={`${totalCategories} active categories`}
+              badge="In Stock"
+              badgeBg="bg-amber-500/10 dark:bg-amber-500/15"
+              badgeColor="text-amber-700 dark:text-amber-400"
+              iconBg="bg-amber-500/10 dark:bg-amber-500/15"
+              iconColor="text-amber-600 dark:text-amber-400"
+              onClick={() => navigate("/admin-dashboard/products")}
+            >
+              <Package className="w-5 h-5" />
+            </CardDataStats>
 
-        {/* Total Orders */}
-        <CardDataStats
-          title="Total Orders"
-          total={totalOrders.toString() || "0"}
-          subtitle={`${prepCount} in prep · ${deliveredCount} delivered`}
-          badge={prepCount > 0 ? `${prepCount} Active` : "Fulfilled"}
-          badgeBg="bg-orange-500/10"
-          badgeColor="text-[#E6540B]"
-          iconBg="bg-orange-500/10"
-          iconColor="text-[#E6540B]"
-          onClick={() => navigate("/admin-dashboard/orders")}
-        >
-          <ShoppingCart className="w-5 h-5" />
-        </CardDataStats>
+            {/* Total Orders */}
+            <CardDataStats
+              title="Total Orders"
+              total={totalOrders.toString() || "0"}
+              subtitle={`${prepCount} in prep · ${deliveredCount} delivered`}
+              badge={prepCount > 0 ? `${prepCount} Active` : "Fulfilled"}
+              badgeBg="bg-orange-500/10 dark:bg-orange-500/15"
+              badgeColor="text-[#E6540B]"
+              iconBg="bg-orange-500/10 dark:bg-orange-500/15"
+              iconColor="text-[#E6540B]"
+              onClick={() => navigate("/admin-dashboard/orders")}
+            >
+              <ShoppingCart className="w-5 h-5" />
+            </CardDataStats>
 
-        {/* Total Categories */}
-        <CardDataStats
-          title="Total Categories"
-          total={totalCategories.toString() || "0"}
-          subtitle="Catalog collections"
-          badge="Active"
-          badgeBg="bg-blue-500/10"
-          badgeColor="text-blue-700"
-          iconBg="bg-blue-500/10"
-          iconColor="text-blue-600"
-          onClick={() => navigate("/admin-dashboard/categories")}
-        >
-          <Layers className="w-5 h-5" />
-        </CardDataStats>
+            {/* Total Categories */}
+            <CardDataStats
+              title="Total Categories"
+              total={totalCategories.toString() || "0"}
+              subtitle="Catalog collections"
+              badge="Active"
+              badgeBg="bg-blue-500/10 dark:bg-blue-500/15"
+              badgeColor="text-blue-700 dark:text-blue-400"
+              iconBg="bg-blue-500/10 dark:bg-blue-500/15"
+              iconColor="text-blue-600 dark:text-blue-400"
+              onClick={() => navigate("/admin-dashboard/categories")}
+            >
+              <Layers className="w-5 h-5" />
+            </CardDataStats>
 
-        {/* Registered Users */}
-        <CardDataStats
-          title="Registered Users"
-          total={totalUsers.toString() || "0"}
-          subtitle="Verified customer accounts"
-          badge="Active"
-          badgeBg="bg-emerald-500/10"
-          badgeColor="text-emerald-700"
-          iconBg="bg-emerald-500/10"
-          iconColor="text-emerald-600"
-          onClick={() => navigate("/admin-dashboard/users")}
-        >
-          <UsersIcon className="w-5 h-5" />
-        </CardDataStats>
+            {/* Registered Users */}
+            <CardDataStats
+              title="Registered Users"
+              total={totalUsers.toString() || "0"}
+              subtitle="Verified customer accounts"
+              badge="Active"
+              badgeBg="bg-emerald-500/10 dark:bg-emerald-500/15"
+              badgeColor="text-emerald-700 dark:text-emerald-400"
+              iconBg="bg-emerald-500/10 dark:bg-emerald-500/15"
+              iconColor="text-emerald-600 dark:text-emerald-400"
+              onClick={() => navigate("/admin-dashboard/users")}
+            >
+              <UsersIcon className="w-5 h-5" />
+            </CardDataStats>
 
-        {/* Total Revenue */}
-        <div
-          className={`transition-all duration-500 rounded-2xl ${
-            revenueFlash
-              ? "ring-3 ring-emerald-500 shadow-xl shadow-emerald-500/25 scale-[1.03]"
-              : ""
-          }`}
-        >
-          <CardDataStats
-            title="Total Revenue"
-            total={`Rs ${totalRevenue.toLocaleString()}`}
-            subtitle="100% verified sales"
-            badge={revenueFlash ? "Updated Live!" : "Verified"}
-            badgeBg={revenueFlash ? "bg-emerald-500/20" : "bg-[#E6540B]/10"}
-            badgeColor={revenueFlash ? "text-emerald-700" : "text-[#E6540B]"}
-            iconBg="bg-[#E6540B]/10"
-            iconColor="text-[#E6540B]"
-            onClick={() => navigate("/admin-dashboard/orders")}
-          >
-            {DollarSign}
-          </CardDataStats>
-        </div>
+            {/* Total Revenue */}
+            <div
+              className={`transition-all duration-500 rounded-2xl ${
+                revenueFlash
+                  ? "ring-3 ring-emerald-500 shadow-xl shadow-emerald-500/25 scale-[1.03]"
+                  : ""
+              }`}
+            >
+              <CardDataStats
+                title="Total Revenue"
+                total={`Rs ${totalRevenue.toLocaleString()}`}
+                subtitle="100% verified sales"
+                badge={revenueFlash ? "Updated Live!" : "Verified"}
+                badgeBg={revenueFlash ? "bg-emerald-500/20" : "bg-[#E6540B]/10 dark:bg-[#E6540B]/15"}
+                badgeColor={revenueFlash ? "text-emerald-700 dark:text-emerald-400" : "text-[#E6540B]"}
+                iconBg="bg-[#E6540B]/10 dark:bg-[#E6540B]/15"
+                iconColor="text-[#E6540B]"
+                onClick={() => navigate("/admin-dashboard/orders")}
+              >
+                {DollarSign}
+              </CardDataStats>
+            </div>
+          </>
+        )}
       </div>
 
       {/* 3. Analytics & Distribution Section (2/3 Chart + 1/3 Status Breakdown) */}
@@ -461,6 +483,7 @@ const AdminDashboard: React.FC = () => {
             totalRevenue={totalRevenue}
             totalOrders={totalOrders}
             salesAnalytics={salesAnalytics}
+            loading={isInitialLoading}
           />
         </div>
         <div className="lg:col-span-4">
@@ -468,6 +491,7 @@ const AdminDashboard: React.FC = () => {
             recentOrders={recentOrders}
             totalOrders={totalOrders}
             orderDistribution={orderDistribution}
+            loading={isInitialLoading}
           />
         </div>
       </div>
@@ -475,13 +499,13 @@ const AdminDashboard: React.FC = () => {
       {/* 4. Top Selling Products Leaderboard */}
       <TopSellingProducts
         topSellingProducts={topSellingProducts || []}
-        status={status}
+        loading={isInitialLoading}
       />
 
       {/* 5. Interactive Orders Table with Search, Filter Tabs & Detail Modal */}
       <InteractiveOrdersTable
         recentOrders={recentOrders}
-        status={status}
+        loading={isInitialLoading}
       />
 
       {/* 6. Split Bottom Section: Recent Customers & Recent Reviews */}
@@ -490,6 +514,7 @@ const AdminDashboard: React.FC = () => {
         recentReviews={recentReviews}
         totalReviews={totalReviews}
         recentOrders={recentOrders}
+        loading={isInitialLoading}
       />
 
       {/* 7. Real-Time Live Activity Feed Drawer */}

@@ -79,6 +79,15 @@ export const emitToAdmin = (event: string, data?: any): void => {
 };
 
 /**
+ * Send an event only to one signed-in user's sockets (all their open tabs)
+ */
+export const emitToUser = (userId: string, event: string, data?: any): void => {
+  if (ioInstance && userId) {
+    ioInstance.to(`user:${userId}`).emit(event, data);
+  }
+};
+
+/**
  * Broadcast an event to all connected sockets
  */
 export const emitToAll = (event: string, data?: any): void => {

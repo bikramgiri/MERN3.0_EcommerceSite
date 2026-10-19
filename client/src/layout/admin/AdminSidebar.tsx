@@ -10,7 +10,7 @@ import {
   DashboardIcon,
   UserProfileIcon,
 } from "../../icons/icons";
-import { ShoppingCart, Sparkles, X } from "lucide-react";
+import { Mail, ShoppingCart, Sparkles, X } from "lucide-react";
 import SidebarWidget from "./SidebarWidget";
 import { useSidebar } from "../../context/SidebarContext";
 
@@ -56,6 +56,11 @@ const navItems: NavItem[] = [
     icon: <Sparkles className="w-5 h-5 flex-shrink-0" />,
     name: 'Reviews',
     path: '/admin-dashboard/reviews',
+  },
+  {
+    icon: <Mail className="w-5 h-5 flex-shrink-0" />,
+    name: 'Subscribers',
+    path: '/admin-dashboard/subscribers',
   },
   {
     icon: UserProfileIcon,
@@ -157,14 +162,14 @@ const AdminSidebar: React.FC = () => {
 
   // Truvora warm palette — accent clay-orange active state instead of indigo
   const activeClasses = `
-    bg-[#E6540B]/10 border border-[#E6540B]/25 text-[#E6540B]
+    bg-[#E6540B]/10 dark:bg-[#E6540B]/15 border border-[#E6540B]/25 text-[#E6540B]
     rounded-lg
   `;
 
   const inactiveClasses = `
-    text-[#1A1613]/70
-    hover:bg-[#F4EEDF]
-    hover:text-[#1A1613]
+    text-[#1A1613]/70 dark:text-[#F5EFE6]/70
+    hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420]
+    hover:text-[#1A1613] dark:hover:text-[#F5EFE6]
   `;
 
   const renderMenuItems = (items: NavItem[], menuType: "main" | "others") => (
@@ -219,13 +224,13 @@ const AdminSidebar: React.FC = () => {
                       to={subItem.path}
                       className={`outline-none focus:outline-none block py-1.5 px-3 rounded-md text-sm transition-colors
                         ${isActive(subItem.path)
-                          ? "bg-[#E6540B]/10 text-[#E6540B] font-semibold"
-                          : "text-[#1A1613]/60 hover:bg-[#F4EEDF]"}`}
+                          ? "bg-[#E6540B]/10 dark:bg-[#E6540B]/15 text-[#E6540B] font-semibold"
+                          : "text-[#1A1613]/60 dark:text-[#F5EFE6]/50 hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420]"}`}
                     >
                       {subItem.name}
                       <span className="float-right text-xs">
-                        {subItem.new && <span className="text-[#4F6B4A]">new</span>}
-                        {subItem.pro && <span className="text-[#9B3A2E]">pro</span>}
+                        {subItem.new && <span className="text-[#4F6B4A] dark:text-green-400">new</span>}
+                        {subItem.pro && <span className="text-[#9B3A2E] dark:text-red-400">pro</span>}
                       </span>
                     </Link>
                   </li>
@@ -242,14 +247,14 @@ const AdminSidebar: React.FC = () => {
  <>
     {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-[#1A1613]/40 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 bg-[#1A1613]/40 dark:bg-black/60 backdrop-blur-sm z-40 lg:hidden"
           onClick={toggleMobileSidebar}
         />
       )}
 
     <aside
     ref={sidebarRef}
-      className={`fixed top-0 left-0 z-50 h-screen transition-all duration-300 ease-in-out bg-[#FFFDF8] border-r border-[#1A1613]/10 shadow-md shadow-[#1A1613]/5 flex flex-col
+      className={`fixed top-0 left-0 z-50 h-screen transition-all duration-300 ease-in-out bg-[#FFFDF8] dark:bg-[#1E1A17] border-r border-[#1A1613]/10 dark:border-white/10 shadow-md shadow-[#1A1613]/5 dark:shadow-black/40 flex flex-col
       ${
         isExpanded || isMobileOpen
           ? 'w-[260px]'
@@ -263,7 +268,7 @@ const AdminSidebar: React.FC = () => {
       onMouseLeave={() => setIsHovered(false)}
     >
       <div
-        className={`focus:outline-none focus:ring-0 flex items-center h-19 px-2 border-b border-[#1A1613]/10 justify-between ${
+        className={`focus:outline-none focus:ring-0 flex items-center h-19 px-2 border-b border-[#1A1613]/10 dark:border-white/10 justify-between ${
           !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start'
         }`}
       >
@@ -276,10 +281,10 @@ const AdminSidebar: React.FC = () => {
                 <span className="text-[#FDF8ED] py-1.5 px-3 rounded-md bg-[#E6540B] font-['Fraunces',serif] font-semibold text-2xl">T</span>
               </p>
             <div className="flex-1 min-w-0">
-              <p className="font-['Fraunces',serif] text-xl italic font-semibold text-[#1A1613]">
+              <p className="font-['Fraunces',serif] text-xl italic font-semibold text-[#1A1613] dark:text-[#F5EFE6]">
                 Truvora<span className="text-[#E6540B]">.</span>
               </p>
-              <p className="text-sm font-medium text-[#1A1613]/55 truncate">
+              <p className="text-sm font-medium text-[#1A1613]/55 dark:text-[#F5EFE6]/50 truncate">
            Admin Panel
           </p>
             </div>
@@ -293,7 +298,7 @@ const AdminSidebar: React.FC = () => {
 
         {/* Mobile close button */}
           <button
-            className="outline-none focus:outline-none lg:hidden bg-[#F4EEDF] p-1.5 hover:bg-[#EDE5D0] rounded-full text-[#1A1613]"
+            className="outline-none focus:outline-none lg:hidden bg-[#F4EEDF] dark:bg-[#2A2420] p-1.5 hover:bg-[#EDE5D0] dark:hover:bg-white/10 rounded-full text-[#1A1613] dark:text-[#F5EFE6]"
             onClick={toggleMobileSidebar}
             aria-label="Close sidebar"
           >

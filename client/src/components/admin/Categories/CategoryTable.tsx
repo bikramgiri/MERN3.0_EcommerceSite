@@ -28,14 +28,14 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
   return (
     <div>
       {/* Mobile scroll hint */}
-      <div className="sm:hidden px-4 py-2 bg-[#FDF8ED] border-b border-[#1A1613]/10 text-[11px] text-[#1A1613]/60 flex items-center justify-between">
+      <div className="sm:hidden px-4 py-2 bg-[#FDF8ED] dark:bg-[#1E1A17] border-b border-[#1A1613]/10 dark:border-white/10 text-[11px] text-[#1A1613]/60 dark:text-[#F5EFE6]/50 flex items-center justify-between">
         <span>↔ Scroll horizontally to view details &amp; actions</span>
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full min-w-[720px] text-left border-collapse">
           <thead>
-            <tr className="border-b border-[#1A1613]/10 bg-[#F4EEDF]/40 text-[11px] font-bold uppercase tracking-wider text-[#1A1613]/60">
+            <tr className="border-b border-[#1A1613]/10 dark:border-white/10 bg-[#F4EEDF]/40 dark:bg-[#2A2420] text-[11px] font-bold uppercase tracking-wider text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
             <th className="py-3.5 px-4">Category</th>
             <th className="py-3.5 px-4">Description</th>
             <th className="py-3.5 px-4 text-center">Products</th>
@@ -43,20 +43,20 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
             <th className="py-3.5 px-4 text-right">Actions</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-[#1A1613]/8 text-xs text-[#1A1613]">
+        <tbody className="divide-y divide-[#1A1613]/8 dark:divide-white/10 text-xs text-[#1A1613] dark:text-[#F5EFE6]">
           {loading ? (
             Array.from({ length: 6 }).map((_, idx) => (
               <tr key={`skeleton-${idx}`} className="animate-pulse">
                 {/* Category Info & Image Skeleton */}
                 <td className="py-3.5 px-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-xl bg-[#1A1613]/10 shrink-0" />
+                    <div className="w-11 h-11 rounded-xl bg-[#1A1613]/10 dark:bg-white/10 shrink-0" />
                     <div className="space-y-2 flex-1 min-w-0">
                       <div
-                        className="h-3.5 rounded bg-[#1A1613]/15"
+                        className="h-3.5 rounded bg-[#1A1613]/15 dark:bg-white/10"
                         style={{ width: `${90 + (idx % 4) * 25}px` }}
                       />
-                      <div className="h-2.5 rounded bg-[#1A1613]/10 w-24" />
+                      <div className="h-2.5 rounded bg-[#1A1613]/10 dark:bg-white/10 w-24" />
                     </div>
                   </div>
                 </td>
@@ -64,27 +64,27 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
                 {/* Description Skeleton */}
                 <td className="py-3.5 px-4 max-w-xs">
                   <div className="space-y-1.5">
-                    <div className="h-3 rounded bg-[#1A1613]/10 w-full" />
-                    <div className="h-3 rounded bg-[#1A1613]/10 w-3/4" />
+                    <div className="h-3 rounded bg-[#1A1613]/10 dark:bg-white/10 w-full" />
+                    <div className="h-3 rounded bg-[#1A1613]/10 dark:bg-white/10 w-3/4" />
                   </div>
                 </td>
 
                 {/* Products Count Skeleton */}
                 <td className="py-3.5 px-4 text-center">
-                  <div className="h-6 w-14 rounded-full bg-[#1A1613]/10 mx-auto" />
+                  <div className="h-6 w-14 rounded-full bg-[#1A1613]/10 dark:bg-white/10 mx-auto" />
                 </td>
 
                 {/* Created Date Skeleton */}
                 <td className="py-3.5 px-4">
-                  <div className="h-3.5 w-20 rounded bg-[#1A1613]/10" />
+                  <div className="h-3.5 w-20 rounded bg-[#1A1613]/10 dark:bg-white/10" />
                 </td>
 
                 {/* Actions Skeleton */}
                 <td className="py-3.5 px-4 text-right">
                   <div className="flex items-center justify-end gap-1.5">
-                    <div className="w-7 h-7 rounded-lg bg-[#1A1613]/10" />
-                    <div className="w-7 h-7 rounded-lg bg-[#1A1613]/10" />
-                    <div className="w-7 h-7 rounded-lg bg-[#1A1613]/10" />
+                    <div className="w-7 h-7 rounded-lg bg-[#1A1613]/10 dark:bg-white/10" />
+                    <div className="w-7 h-7 rounded-lg bg-[#1A1613]/10 dark:bg-white/10" />
+                    <div className="w-7 h-7 rounded-lg bg-[#1A1613]/10 dark:bg-white/10" />
                   </div>
                 </td>
               </tr>
@@ -93,12 +93,12 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
             categories.map((category) => (
             <tr
               key={category.id}
-              className="hover:bg-[#F4EEDF]/30 transition-colors group"
+              className="hover:bg-[#F4EEDF]/30 dark:hover:bg-white/5 transition-colors group"
             >
               {/* Category Info & Image */}
               <td className="py-3.5 px-4">
                 <div className="flex items-center gap-3">
-                  <div className="relative w-11 h-11 rounded-xl overflow-hidden border border-[#1A1613]/10 bg-[#FDF8ED] flex-shrink-0 flex items-center justify-center">
+                  <div className="relative w-11 h-11 rounded-xl overflow-hidden border border-[#1A1613]/10 dark:border-white/10 bg-[#FDF8ED] dark:bg-[#2A2420] flex-shrink-0 flex items-center justify-center">
                     {category.categoryImage ? (
                       <img
                         src={category.categoryImage}
@@ -109,25 +109,25 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
                         }}
                       />
                     ) : (
-                      <ImageIcon className="w-5 h-5 text-[#1A1613]/30" />
+                      <ImageIcon className="w-5 h-5 text-[#1A1613]/30 dark:text-[#F5EFE6]/30" />
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="font-bold text-[#1A1613] text-sm truncate">
+                    <p className="font-bold text-[#1A1613] dark:text-[#F5EFE6] text-sm truncate">
                       {category.categoryName}
                     </p>
                     {category.id && (
                       <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-[10px] text-[#1A1613]/40 font-mono truncate max-w-[120px]">
+                        <span className="text-[10px] text-[#1A1613]/40 dark:text-[#F5EFE6]/50 font-mono truncate max-w-[120px]">
                           {category.id}
                         </span>
                         <button
                           onClick={(e) => onCopyId(category.id, e)}
                           title="Copy Category ID"
-                          className="text-[#1A1613]/40 hover:text-[#E6540B] transition-colors cursor-pointer"
+                          className="text-[#1A1613]/40 dark:text-[#F5EFE6]/50 hover:text-[#E6540B] transition-colors cursor-pointer"
                         >
                           {copiedId === category.id ? (
-                            <Check className="w-3 h-3 text-emerald-600" />
+                            <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                           ) : (
                             <Copy className="w-3 h-3" />
                           )}
@@ -140,7 +140,7 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
 
               {/* Description */}
               <td className="py-3.5 px-4 max-w-xs">
-                <p className="text-xs text-[#1A1613]/70 line-clamp-2 leading-relaxed">
+                <p className="text-xs text-[#1A1613]/70 dark:text-[#F5EFE6]/70 line-clamp-2 leading-relaxed">
                   {category.categoryDescription || "No description provided"}
                 </p>
               </td>
@@ -164,8 +164,8 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
                   }}
                   className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold cursor-pointer transition-all hover:scale-105 active:scale-95 ${
                     (category.totalProducts || 0) > 0
-                      ? "bg-amber-500/10 text-amber-700 hover:bg-amber-500/20"
-                      : "bg-[#1A1613]/5 text-[#1A1613]/40 hover:bg-[#1A1613]/10"
+                      ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20"
+                      : "bg-[#1A1613]/5 dark:bg-[#2A2420] text-[#1A1613]/40 dark:text-[#F5EFE6]/50 hover:bg-[#1A1613]/10 dark:hover:bg-white/10"
                   }`}
                   title={`View ${category.totalProducts || 0} products in ${category.categoryName}`}
                 >
@@ -175,7 +175,7 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
               </td>
 
               {/* Created Date */}
-              <td className="py-3.5 px-4 text-xs text-[#1A1613]/60 whitespace-nowrap">
+              <td className="py-3.5 px-4 text-xs text-[#1A1613]/60 dark:text-[#F5EFE6]/50 whitespace-nowrap">
                 {formatDate(category.createdAt)}
               </td>
 
@@ -184,21 +184,21 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
                 <div className="flex items-center justify-end gap-1">
                   <button
                     onClick={() => onView(category)}
-                    className="p-1.5 rounded-lg text-[#1A1613]/60 hover:text-[#1A1613] hover:bg-[#F4EEDF] transition-all cursor-pointer"
+                    className="p-1.5 rounded-lg text-[#1A1613]/60 dark:text-[#F5EFE6]/50 hover:text-[#1A1613] dark:hover:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] transition-all cursor-pointer"
                     title="View Details"
                   >
                     <Eye className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => onEdit(category)}
-                    className="p-1.5 rounded-lg text-[#1A1613]/60 hover:text-[#E6540B] hover:bg-[#F4EEDF] transition-all cursor-pointer"
+                    className="p-1.5 rounded-lg text-[#1A1613]/60 dark:text-[#F5EFE6]/50 hover:text-[#E6540B] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] transition-all cursor-pointer"
                     title="Edit Category"
                   >
                     <Edit className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => onDelete(category)}
-                    className="p-1.5 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-50 transition-all cursor-pointer"
+                    className="p-1.5 rounded-lg text-rose-500 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-500/15 transition-all cursor-pointer"
                     title="Delete Category"
                   >
                     <Trash2 className="w-4 h-4" />

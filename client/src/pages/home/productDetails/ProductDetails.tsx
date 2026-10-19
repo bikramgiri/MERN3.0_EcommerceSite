@@ -15,8 +15,9 @@ const ProductDetails = () => {
 
   return (
     <>
-      <SingleProduct productId={id} />
-      <Review productId={id} />
+      {/* key resets quantity, review filters and paging when moving to another product */}
+      <SingleProduct key={`product-${id}`} productId={id} />
+      <Review key={`reviews-${id}`} productId={id} />
     </>
   );
 };

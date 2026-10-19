@@ -1,5 +1,6 @@
 import React from "react";
 import { Sparkles } from "lucide-react";
+import { Skeleton } from "../../../global/Skeleton";
 
 interface CategoryStatsCardsProps {
   totalCategories: number;
@@ -17,61 +18,73 @@ const CategoryStatsCards: React.FC<CategoryStatsCardsProps> = ({
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {/* Stat 1: Total Categories */}
-      <div className="rounded-2xl border border-[#1A1613]/8 bg-[#FFFDF8] p-4.5 shadow-[0_2px_12px_-4px_rgba(26,22,19,0.04)]">
+      <div className="rounded-2xl border border-[#1A1613]/8 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] p-4.5 shadow-[0_2px_12px_-4px_rgba(26,22,19,0.04)]">
         <div className="flex items-center justify-between">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#1A1613]/55">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#1A1613]/55 dark:text-[#F5EFE6]/50">
             Total Categories
           </span>
-          <span className="inline-flex items-center rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+          <span className="inline-flex items-center rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-semibold text-blue-700 dark:text-blue-400">
             Active Catalog
           </span>
         </div>
-        <h4 className="mt-2 text-2xl font-extrabold tracking-tight text-[#1A1613]">
-          {loading ? "..." : totalCategories}
-        </h4>
-        <p className="mt-1 text-xs text-[#1A1613]/60">
+        {loading ? (
+          <Skeleton className="mt-2 h-8 w-14" />
+        ) : (
+          <h4 className="mt-2 text-2xl font-extrabold tracking-tight text-[#1A1613] dark:text-[#F5EFE6]">
+            {totalCategories}
+          </h4>
+        )}
+        <p className="mt-1 text-xs text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
           Available departments in store
         </p>
       </div>
 
       {/* Stat 2: Assigned Products */}
-      <div className="rounded-2xl border border-[#1A1613]/8 bg-[#FFFDF8] p-4.5 shadow-[0_2px_12px_-4px_rgba(26,22,19,0.04)]">
+      <div className="rounded-2xl border border-[#1A1613]/8 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] p-4.5 shadow-[0_2px_12px_-4px_rgba(26,22,19,0.04)]">
         <div className="flex items-center justify-between">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#1A1613]/55">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#1A1613]/55 dark:text-[#F5EFE6]/50">
             Assigned Products
           </span>
-          <span className="inline-flex items-center rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+          <span className="inline-flex items-center rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-400">
             In Stock
           </span>
         </div>
-        <h4 className="mt-2 text-2xl font-extrabold tracking-tight text-[#1A1613]">
-          {loading ? "..." : totalAssignedProducts}
-        </h4>
-        <p className="mt-1 text-xs text-[#1A1613]/60">
+        {loading ? (
+          <Skeleton className="mt-2 h-8 w-14" />
+        ) : (
+          <h4 className="mt-2 text-2xl font-extrabold tracking-tight text-[#1A1613] dark:text-[#F5EFE6]">
+            {totalAssignedProducts}
+          </h4>
+        )}
+        <p className="mt-1 text-xs text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
           Products classified under collections
         </p>
       </div>
 
       {/* Stat 3: Empty Categories */}
-      <div className="rounded-2xl border border-[#1A1613]/8 bg-[#FFFDF8] p-4.5 shadow-[0_2px_12px_-4px_rgba(26,22,19,0.04)]">
+      <div className="rounded-2xl border border-[#1A1613]/8 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] p-4.5 shadow-[0_2px_12px_-4px_rgba(26,22,19,0.04)]">
         <div className="flex items-center justify-between">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#1A1613]/55">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#1A1613]/55 dark:text-[#F5EFE6]/50">
             Empty Collections
           </span>
           <span
             className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${
               emptyCategoriesCount > 0
-                ? "bg-rose-500/10 text-rose-700"
-                : "bg-emerald-500/10 text-emerald-700"
+                ? "bg-rose-500/10 text-rose-700 dark:text-rose-400"
+                : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
             }`}
           >
             {emptyCategoriesCount > 0 ? "Needs Items" : "Balanced"}
           </span>
         </div>
-        <h4 className="mt-2 text-2xl font-extrabold tracking-tight text-[#1A1613]">
-          {loading ? "..." : emptyCategoriesCount}
-        </h4>
-        <p className="mt-1 text-xs text-[#1A1613]/60">
+        {loading ? (
+          <Skeleton className="mt-2 h-8 w-14" />
+        ) : (
+          <h4 className="mt-2 text-2xl font-extrabold tracking-tight text-[#1A1613] dark:text-[#F5EFE6]">
+            {emptyCategoriesCount}
+          </h4>
+        )}
+        <p className="mt-1 text-xs text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
           {emptyCategoriesCount === 0
             ? "All categories have items"
             : "Categories without any products"}
@@ -79,20 +92,20 @@ const CategoryStatsCards: React.FC<CategoryStatsCardsProps> = ({
       </div>
 
       {/* Stat 4: Catalog Status */}
-      <div className="rounded-2xl border border-[#1A1613]/8 bg-[#FFFDF8] p-4.5 shadow-[0_2px_12px_-4px_rgba(26,22,19,0.04)]">
+      <div className="rounded-2xl border border-[#1A1613]/8 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] p-4.5 shadow-[0_2px_12px_-4px_rgba(26,22,19,0.04)]">
         <div className="flex items-center justify-between">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#1A1613]/55">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#1A1613]/55 dark:text-[#F5EFE6]/50">
             Catalog Health
           </span>
-          <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+          <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">
             Optimal
           </span>
         </div>
-        <h4 className="mt-2 text-2xl font-extrabold tracking-tight text-emerald-700 flex items-center gap-1.5">
-          <Sparkles className="w-5 h-5 text-emerald-600" />
+        <h4 className="mt-2 text-2xl font-extrabold tracking-tight text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+          <Sparkles className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
           <span>100% Live</span>
         </h4>
-        <p className="mt-1 text-xs text-[#1A1613]/60">
+        <p className="mt-1 text-xs text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
           All categories active for customer orders
         </p>
       </div>

@@ -4,6 +4,7 @@ import generateToken from "./generateToken";
 import User from "../database/models/userModel";
 import { envConfig } from "../config/config";
 import { emitToAdmin } from "./socketService";
+import { notifyNewCustomer } from "./notificationService";
 const passport = require("passport");
 const GoogleStrategy = require('passport-google-oauth').OAuth2Strategy;
 const jwt = require("jsonwebtoken");
@@ -61,6 +62,7 @@ passport.use(new GoogleStrategy({
           type: "user-registered",
           userId: user.id,
         });
+        await notifyNewCustomer(user.id, user.username, user.email, "Google");
       } else if (!user.googleId) {
         // Link existing account
         user.googleId = googleId;

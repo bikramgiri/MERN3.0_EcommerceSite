@@ -90,23 +90,24 @@ export function fetchSingleProduct(productId: string) {
     dispatch: AppDispatch,
     getState: () => RootState,
   ) {
-    const store = getState();
-    const products = store.product.product;
-    const existProduct = products.find(
+    // Show the copy from the product list straight away (if any), but always refresh it,
+    // so stock, price and reviews on the details page are never stale
+    const cached = getState().product.product.find(
       (product: Product) => product.id === productId,
     );
-    if (existProduct) {
-      dispatch(setSingleProduct(existProduct));
+    if (cached) {
+      dispatch(setSingleProduct(cached));
       dispatch(setStatus(Status.SUCCESS));
     } else {
       dispatch(setStatus(Status.LOADING));
-      try {
-        const response = await API.get(`/admin/product/${productId}`);
-        if (response.status === 200) {
-          dispatch(setSingleProduct(response.data.data));
-          dispatch(setStatus(Status.SUCCESS));
-        }
-      } catch (error) {
+    }
+    try {
+      const response = await API.get(`/admin/product/${productId}`);
+      dispatch(setSingleProduct(response.data.data));
+      dispatch(setStatus(Status.SUCCESS));
+    } catch (error) {
+      // With a cached copy on screen, a failed refresh can be ignored
+      if (!cached) {
         dispatch(setStatus(Status.ERROR));
         throw error;
       }
@@ -114,16 +115,3 @@ export function fetchSingleProduct(productId: string) {
   };
 }
 
-export function fetchProductsByCategory(categoryId: string) {
-  return async function fetchProductsByCategoryThunk(dispatch: AppDispatch) {
-    dispatch(setStatus(Status.LOADING));
-    try {
-      const response = await API.get(`/admin/product/category/${categoryId}`);
-      dispatch(setProducts(response.data.data));
-      dispatch(setStatus(Status.SUCCESS));
-    } catch (error) {
-      dispatch(setStatus(Status.ERROR));
-      throw error;
-    }
-  };
-}

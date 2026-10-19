@@ -24,6 +24,51 @@ import { sequelize } from "../../../database/connection";
 import Review from "../../../database/models/reviewModel";
 import { Op } from "sequelize";
 import { emitToAdmin } from "../../../services/socketService";
+import {
+  calculateShippingCost,
+  getStoreSettings,
+} from "../../../services/storeSettingsService";
+import {
+  notifyAdmins,
+  notifyCustomer,
+  orderLabel,
+} from "../../../services/notificationService";
+
+const formatRs = (amount: number | string) => `Rs ${Number(amount).toLocaleString()}`;
+
+// Online payment confirmed: tell the customer and the admin team
+const notifyPaidOrder = async (order: Order, gateway: string, customerName?: string) => {
+  const label = await orderLabel(order.id);
+  await notifyCustomer(order.userId, {
+    type: "payment-received",
+    title: "Payment received",
+    message: `We received your ${gateway} payment of ${formatRs(order.totalAmount)} for order ${label}. It's now being prepared.`,
+    link: `/my-orders/orderdetails/${order.id}`,
+  });
+  await notifyAdmins({
+    type: "new-order",
+    title: Number(order.totalAmount) >= 15000 ? "New high-value order" : "New order",
+    message: `${customerName || "A customer"} paid ${formatRs(order.totalAmount)} by ${gateway} for order ${label}.`,
+    link: "/admin-dashboard/orders",
+  });
+};
+
+// Online payment failed or was cancelled
+const notifyFailedPayment = async (order: Order, gateway: string) => {
+  const label = await orderLabel(order.id);
+  await notifyCustomer(order.userId, {
+    type: "payment-failed",
+    title: "Payment not completed",
+    message: `Your ${gateway} payment for order ${label} didn't go through. You can try again or choose cash on delivery.`,
+    link: `/my-orders/orderdetails/${order.id}`,
+  });
+  await notifyAdmins({
+    type: "payment-failed",
+    title: "Payment failed",
+    message: `${gateway} payment for order ${label} (${formatRs(order.totalAmount)}) failed or was cancelled.`,
+    link: "/admin-dashboard/orders",
+  });
+};
 
 class CustomerOrderController {
   // *Create order and integrate payment gateway
@@ -35,6 +80,17 @@ class CustomerOrderController {
     if (!userId) {
       res.status(401).json({
         message: "Unauthorized",
+        field: "general",
+      });
+      return;
+    }
+
+    const settings = await getStoreSettings();
+    if (settings.maintenanceMode) {
+      res.status(503).json({
+        message:
+          settings.maintenanceMessage ||
+          "Store is currently undergoing brief maintenance. Orders are temporarily paused.",
         field: "general",
       });
       return;
@@ -91,7 +147,6 @@ class CustomerOrderController {
 
     let calculatedTotalCost = 0;
     let productsTotalCost = 0;
-    let shippingCost = 50;
     for (const item of products) {
       const product = await Product.findByPk(item.productId);
       if (!product) {
@@ -122,6 +177,7 @@ class CustomerOrderController {
       const qty = Number(item.quantity) || 1;
       productsTotalCost += price * qty;
     }
+    const shippingCost = calculateShippingCost(productsTotalCost, settings);
     calculatedTotalCost = productsTotalCost + shippingCost;
 
     if (calculatedTotalCost <= 0) {
@@ -145,6 +201,20 @@ class CustomerOrderController {
     if (!Object.values(PaymentMethod).includes(paymentDetails.paymentMethod)) {
       res.status(400).json({
         message: "Invalid payment method",
+        field: "paymentMethod",
+      });
+      return;
+    }
+
+    const isCod = paymentDetails.paymentMethod === PaymentMethod.COD;
+    if (
+      (isCod && !settings.enableCod) ||
+      (!isCod && !settings.enableOnlinePayment)
+    ) {
+      res.status(400).json({
+        message: isCod
+          ? "Cash on delivery is currently unavailable"
+          : "Online payment is currently unavailable",
         field: "paymentMethod",
       });
       return;
@@ -229,12 +299,24 @@ class CustomerOrderController {
               productImage: product.productImage,
               remainingStock: 0,
             });
-          } else if (stock < 5) {
+            await notifyAdmins({
+              type: "out-of-stock",
+              title: "Out of stock",
+              message: `${product.productName} just sold out. Restock it so customers can keep buying.`,
+              link: "/admin-dashboard/products",
+            });
+          } else if (stock < settings.lowStockThreshold) {
             emitToAdmin("admin:low-stock", {
               productId: product.id,
               productName: product.productName,
               productImage: product.productImage,
               remainingStock: stock,
+            });
+            await notifyAdmins({
+              type: "low-stock",
+              title: "Low stock",
+              message: `Only ${stock} left of ${product.productName}.`,
+              link: "/admin-dashboard/products",
             });
           }
         }
@@ -466,6 +548,21 @@ class CustomerOrderController {
         orderId: order.id,
       });
 
+      const label = await orderLabel(order.id);
+      const amount = `Rs ${Number(order.totalAmount).toLocaleString()}`;
+      await notifyCustomer(userId, {
+        type: "order-placed",
+        title: "Order placed",
+        message: `Thanks! Your order ${label} (${amount}, cash on delivery) has been placed. We'll let you know when it's being prepared.`,
+        link: `/my-orders/orderdetails/${order.id}`,
+      });
+      await notifyAdmins({
+        type: "new-order",
+        title: isHighValue ? "New high-value order" : "New order",
+        message: `${req.user?.username || "A customer"} placed order ${label} for ${amount} (cash on delivery).`,
+        link: "/admin-dashboard/orders",
+      });
+
       res.status(201).json({
         message: "Order created successfully",
         data: order,
@@ -533,6 +630,9 @@ class CustomerOrderController {
           return;
         }
 
+        // Revisiting the payment page re-runs verification; only notify the first time
+        const firstConfirmation = payment.paymentStatus !== PaymentStatus.Paid;
+
         await sequelize.transaction(async (t) => {
           payment.paymentStatus = PaymentStatus.Paid;
           await payment.save({ transaction: t });
@@ -540,6 +640,10 @@ class CustomerOrderController {
           order.orderStatus = OrderStatus.Preparation;
           await order.save({ transaction: t });
         });
+
+        if (firstConfirmation) {
+          await notifyPaidOrder(order, "Khalti", req.user?.username);
+        }
 
         // Real-time notification for admin
         emitToAdmin("admin:order-created", {
@@ -598,6 +702,7 @@ class CustomerOrderController {
               amount: order.totalAmount,
               reason: "Khalti payment cancelled or verification failed",
             });
+            await notifyFailedPayment(order, "Khalti");
           }
         }
 
@@ -671,6 +776,13 @@ class CustomerOrderController {
           amount: total_amount,
           reason: `eSewa reported status: ${verifyData.status}`,
         });
+        const failedPayment = await Payment.findOne({ where: { pidx: transaction_uuid } });
+        const failedOrder = failedPayment
+          ? await Order.findOne({ where: { paymentId: failedPayment.id } })
+          : null;
+        if (failedOrder && failedOrder.userId === userId) {
+          await notifyFailedPayment(failedOrder, "eSewa");
+        }
 
         res.status(400).json({
           message: "eSewa payment verification failed",
@@ -698,6 +810,9 @@ class CustomerOrderController {
         return;
       }
 
+      // Revisiting the payment page re-runs verification; only notify the first time
+      const firstConfirmation = payment.paymentStatus !== PaymentStatus.Paid;
+
       await sequelize.transaction(async (t) => {
         payment.paymentStatus = PaymentStatus.Paid;
         payment.pidx = transaction_code; // Store transaction_code in pidx for reference
@@ -706,6 +821,10 @@ class CustomerOrderController {
         order.orderStatus = OrderStatus.Preparation;
         await order.save({ transaction: t });
       });
+
+      if (firstConfirmation) {
+        await notifyPaidOrder(order, "eSewa", req.user?.username);
+      }
 
       // Real-time notification for admin
       emitToAdmin("admin:order-created", {
@@ -1023,7 +1142,6 @@ class CustomerOrderController {
       });
 
       let productsTotalCost = 0;
-      let shippingCost = 50;
       for (const item of products) {
         const product = await Product.findByPk(item.productId);
         if (!product) {
@@ -1054,6 +1172,10 @@ class CustomerOrderController {
         const qty = Number(item.quantity) || 1;
         productsTotalCost += price * qty;
       }
+      const shippingCost = calculateShippingCost(
+        productsTotalCost,
+        await getStoreSettings(),
+      );
       const calculatedTotalCost = productsTotalCost + shippingCost;
 
       if (calculatedTotalCost <= 0) {
@@ -1198,6 +1320,13 @@ class CustomerOrderController {
         existingPayment.paymentStatus = PaymentStatus.Pending;
         existingPayment.pidx = null;
         await existingPayment.save({ transaction: t });
+      });
+
+      await notifyAdmins({
+        type: "order-edited",
+        title: "Order edited",
+        message: `${req.user?.username || "A customer"} changed order ${await orderLabel(order.id)}. New total: ${formatRs(calculatedTotalCost)}.`,
+        link: "/admin-dashboard/orders",
       });
 
       const orderDetailsWithFullImage = updatedOrderDetails.map((detail) => {
@@ -1409,6 +1538,20 @@ class CustomerOrderController {
         orderId: order.id,
       });
 
+      const label = await orderLabel(order.id);
+      await notifyAdmins({
+        type: "order-cancelled",
+        title: "Order cancelled",
+        message: `${req.user?.username || "A customer"} cancelled order ${label} (${formatRs(order.totalAmount)}).`,
+        link: "/admin-dashboard/orders",
+      });
+      await notifyCustomer(order.userId, {
+        type: "order-cancelled",
+        title: "Order cancelled",
+        message: `Your order ${label} has been cancelled.`,
+        link: `/my-orders/orderdetails/${order.id}`,
+      });
+
       res.status(200).json({
         message: "Order cancelled successfully",
       });
@@ -1507,6 +1650,14 @@ class CustomerOrderController {
         if (paymentId) {
           await Payment.destroy({ where: { id: paymentId }, transaction: t });
         }
+      });
+
+      emitToAdmin("admin:dashboard-refresh", { type: "order-deleted", orderId: order.id });
+      await notifyAdmins({
+        type: "order-deleted",
+        title: "Order deleted",
+        message: `${req.user?.username || "A customer"} deleted pending order ${await orderLabel(order.id)} (${formatRs(order.totalAmount)}). Its stock was returned.`,
+        link: "/admin-dashboard/orders",
       });
 
       res.status(200).json({ message: "Order deleted successfully" });

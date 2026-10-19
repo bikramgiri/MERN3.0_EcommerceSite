@@ -96,18 +96,18 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="w-full max-w-lg rounded-2xl border border-[#1A1613]/15 bg-[#FFFDF8] p-6 shadow-xl space-y-5 max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-lg rounded-2xl border border-[#1A1613]/15 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] p-6 shadow-xl space-y-5 max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-[#1A1613]/10">
+        <div className="flex items-center justify-between pb-3 border-b border-[#1A1613]/10 dark:border-white/10">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#E6540B]/10 text-[#E6540B] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-[#E6540B]/10 dark:bg-[#E6540B]/15 text-[#E6540B] flex items-center justify-center">
               {isEdit ? <Edit className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
             </div>
             <div>
-              <h3 className="text-base font-bold text-[#1A1613]">
+              <h3 className="text-base font-bold text-[#1A1613] dark:text-[#F5EFE6]">
                 {isEdit ? "Edit Category" : "Create New Category"}
               </h3>
-              <p className="text-xs text-[#1A1613]/60">
+              <p className="text-xs text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
                 {isEdit
                   ? "Update department title, description, or banner image"
                   : "Add a new category collection to your product catalog"}
@@ -117,7 +117,7 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
           <button
             onClick={onClose}
             disabled={loading}
-            className="p-1.5 rounded-lg text-[#1A1613]/40 hover:text-[#1A1613] hover:bg-[#F4EEDF]"
+            className="p-1.5 rounded-lg text-[#1A1613]/40 dark:text-[#F5EFE6]/50 hover:text-[#1A1613] dark:hover:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420]"
           >
             <X className="w-4 h-4" />
           </button>
@@ -128,14 +128,14 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
           {/* Category Name */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="text-xs font-semibold text-[#1A1613]">
+              <label className="text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6]">
                 Category Name <span className="text-rose-500">*</span>
               </label>
               <span
                 className={`text-[10px] ${
                   name.length >= 5 && name.length <= 30
-                    ? "text-emerald-600 font-semibold"
-                    : "text-[#1A1613]/40"
+                    ? "text-emerald-600 dark:text-emerald-400 font-semibold"
+                    : "text-[#1A1613]/40 dark:text-[#F5EFE6]/50"
                 }`}
               >
                 {name.length} / 30 chars (min 5)
@@ -147,7 +147,7 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
               maxLength={30}
-              className="w-full h-10 px-3 rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] text-xs text-[#1A1613] placeholder:text-[#1A1613]/40 focus:outline-none focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
+              className="w-full h-10 px-3 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] text-xs text-[#1A1613] dark:text-[#F5EFE6] placeholder:text-[#1A1613]/40 dark:placeholder:text-[#F5EFE6]/40 focus:outline-none focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
               required
             />
           </div>
@@ -155,14 +155,14 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
           {/* Category Description */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="text-xs font-semibold text-[#1A1613]">
+              <label className="text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6]">
                 Description <span className="text-rose-500">*</span>
               </label>
               <span
                 className={`text-[10px] ${
                   description.length >= 5 && description.length <= 100
-                    ? "text-emerald-600 font-semibold"
-                    : "text-[#1A1613]/40"
+                    ? "text-emerald-600 dark:text-emerald-400 font-semibold"
+                    : "text-[#1A1613]/40 dark:text-[#F5EFE6]/50"
                 }`}
               >
                 {description.length} / 100 chars (min 5)
@@ -174,35 +174,35 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
               onChange={(e) => setDescription(e.target.value)}
               maxLength={100}
               rows={3}
-              className="w-full p-3 rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] text-xs text-[#1A1613] placeholder:text-[#1A1613]/40 focus:outline-none focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B] resize-none"
+              className="w-full p-3 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] text-xs text-[#1A1613] dark:text-[#F5EFE6] placeholder:text-[#1A1613]/40 dark:placeholder:text-[#F5EFE6]/40 focus:outline-none focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B] resize-none"
               required
             />
           </div>
 
           {/* Category Image Upload */}
           <div>
-            <label className="text-xs font-semibold text-[#1A1613] block mb-1">
+            <label className="text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] block mb-1">
               Category Banner Image {!isEdit && <span className="text-rose-500">*</span>}
             </label>
             {imagePreview ? (
-              <div className="relative rounded-xl border border-[#1A1613]/15 bg-[#FDF8ED] p-2 flex items-center justify-between">
+              <div className="relative rounded-xl border border-[#1A1613]/15 dark:border-white/10 bg-[#FDF8ED] dark:bg-[#1E1A17] p-2 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <img
                     src={imagePreview}
                     alt="Preview"
-                    className="w-14 h-14 rounded-lg object-cover border border-[#1A1613]/10"
+                    className="w-14 h-14 rounded-lg object-cover border border-[#1A1613]/10 dark:border-white/10"
                   />
                   <div>
-                    <p className="text-xs font-semibold text-[#1A1613] truncate max-w-[200px]">
+                    <p className="text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] truncate max-w-[200px]">
                       {imageFile ? imageFile.name : isEdit ? "Current Banner Image" : "Selected Image"}
                     </p>
-                    <p className="text-[10px] text-emerald-600 font-medium">
+                    <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
                       {imageFile ? "New file ready for upload" : "Using saved category banner"}
                     </p>
                   </div>
                 </div>
                 {isEdit ? (
-                  <label className="px-3 py-1.5 rounded-lg border border-[#1A1613]/15 bg-[#FFFDF8] text-[11px] font-semibold text-[#1A1613] hover:bg-[#F4EEDF] cursor-pointer">
+                  <label className="px-3 py-1.5 rounded-lg border border-[#1A1613]/15 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] text-[11px] font-semibold text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] cursor-pointer">
                     Change
                     <input
                       type="file"
@@ -215,7 +215,7 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
                   <button
                     type="button"
                     onClick={handleClearImage}
-                    className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50"
+                    className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/15"
                     title="Remove image"
                   >
                     <X className="w-4 h-4" />
@@ -223,12 +223,12 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
                 )}
               </div>
             ) : (
-              <label className="flex flex-col items-center justify-center border-2 border-dashed border-[#1A1613]/20 rounded-xl p-5 bg-[#FDF8ED]/50 hover:bg-[#FDF8ED] cursor-pointer transition-colors group">
+              <label className="flex flex-col items-center justify-center border-2 border-dashed border-[#1A1613]/20 dark:border-white/15 rounded-xl p-5 bg-[#FDF8ED]/50 dark:bg-[#14110F] hover:bg-[#FDF8ED] dark:hover:bg-[#2A2420] cursor-pointer transition-colors group">
                 <UploadCloud className="w-8 h-8 text-[#E6540B] group-hover:scale-110 transition-transform mb-1.5" />
-                <span className="text-xs font-semibold text-[#1A1613]">
+                <span className="text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6]">
                   {isEdit ? "Upload replacement banner image" : "Click to choose banner image"}
                 </span>
-                <span className="text-[10px] text-[#1A1613]/50 mt-0.5">
+                <span className="text-[10px] text-[#1A1613]/50 dark:text-[#F5EFE6]/50 mt-0.5">
                   JPG, PNG, or WebP up to 5MB
                 </span>
                 <input
@@ -242,12 +242,12 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
           </div>
 
           {/* Modal Actions */}
-          <div className="pt-3 border-t border-[#1A1613]/10 flex items-center justify-end gap-2.5">
+          <div className="pt-3 border-t border-[#1A1613]/10 dark:border-white/10 flex items-center justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2 rounded-xl border border-[#1A1613]/15 text-xs font-semibold text-[#1A1613] hover:bg-[#F4EEDF] transition-all"
+              className="px-4 py-2 rounded-xl border border-[#1A1613]/15 dark:border-white/10 text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] transition-all"
             >
               Cancel
             </button>

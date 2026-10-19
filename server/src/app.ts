@@ -4,15 +4,19 @@ import { connectDB } from './database/connection';
 import apiRoutes from './routes/api';
 import cors from 'cors';
 
+// Local dev ports plus the live storefront address from CLIENT_URL in .env
+export const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:5175",
+  ...(process.env.CLIENT_URL ? [process.env.CLIENT_URL.replace(/\/$/, "")] : []),
+];
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({extended : true}));
 app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "http://localhost:5174",
-    "http://localhost:5175",
-  ],
+  origin: allowedOrigins,
   credentials: true,
 }))
 

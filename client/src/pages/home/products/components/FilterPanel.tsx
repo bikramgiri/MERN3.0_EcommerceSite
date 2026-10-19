@@ -1,227 +1,194 @@
-import { useEffect, useState } from "react";
-import { X, SlidersHorizontal, RotateCcw } from "lucide-react";
-import { useAppDispatch, useAppSelector } from "../../../../hooks/hooks";
-import { FilterOptions } from "../../../../types/customer/productTypes";
-import { fetchCategories } from "../../../../store/customer/categorySlice";
+import { useId, useState, type FormEvent } from "react";
+import { Star, X } from "lucide-react";
 
-interface FilterPanelProps {
-  filters: FilterOptions;
-  categoryFilter: string;
-  onFilterChange: (filters: FilterOptions) => void;
-  onCategoryChange: (categoryId: string) => void;
-  onClose?: () => void;
-  isMobile?: boolean;
+export interface FilterValues {
+  category: string; // category id or "all"
+  minPrice?: number;
+  maxPrice?: number;
+  minRating?: number;
 }
 
-export function FilterPanel({
-  filters,
-  categoryFilter,
-  onFilterChange,
-  onCategoryChange,
-  onClose,
-  isMobile = false,
-}: FilterPanelProps) {
-  const dispatch = useAppDispatch();
-  const { categories } = useAppSelector((state) => state.category);
+interface FilterPanelProps {
+  values: FilterValues;
+  categories: { id: string; name: string; count: number }[];
+  onChange: (changes: Partial<FilterValues>) => void;
+  onReset: () => void;
+  onClose?: () => void; // shown as an X on the mobile sheet
+}
 
-  const [localFilters, setLocalFilters] = useState<FilterOptions>(filters);
-  const [localCategory, setLocalCategory] = useState(categoryFilter);
+const RATING_OPTIONS = [4, 3, 2];
 
-  useEffect(() => {
-    dispatch(fetchCategories());
-  }, [dispatch]);
+const sectionTitle = "mb-3 text-sm font-semibold text-[#1A1613]";
 
-  useEffect(() => {
-    setTimeout(() => {
-      setLocalFilters(filters);
-    }, 100);
-    setTimeout(() => {
-      setLocalCategory(categoryFilter);
-    }, 100);
-  }, [filters, categoryFilter]);
+/** Category, price and rating filters (sidebar on desktop, bottom sheet on mobile) */
+export function FilterPanel({ values, categories, onChange, onReset, onClose }: FilterPanelProps) {
+  // Unique per instance: the sidebar and the mobile sheet can both be mounted
+  const uid = useId();
+  // Price inputs apply on submit so the list doesn't jump on every keystroke
+  const [minInput, setMinInput] = useState(values.minPrice?.toString() ?? "");
+  const [maxInput, setMaxInput] = useState(values.maxPrice?.toString() ?? "");
+  const [priceError, setPriceError] = useState("");
 
-  const handleReset = () => {
-    setLocalFilters({});
-    setLocalCategory("all");
-    onFilterChange({});
-    onCategoryChange("all");
+  // Keep inputs in sync when filters change elsewhere (chips, reset, back button)
+  const [synced, setSynced] = useState({ min: values.minPrice, max: values.maxPrice });
+  if (synced.min !== values.minPrice || synced.max !== values.maxPrice) {
+    setSynced({ min: values.minPrice, max: values.maxPrice });
+    setMinInput(values.minPrice?.toString() ?? "");
+    setMaxInput(values.maxPrice?.toString() ?? "");
+    setPriceError("");
+  }
+
+  const applyPrice = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const min = minInput === "" ? undefined : Number(minInput);
+    const max = maxInput === "" ? undefined : Number(maxInput);
+    if ((min !== undefined && min < 0) || (max !== undefined && max < 0)) {
+      setPriceError("Prices can't be negative");
+      return;
+    }
+    if (min !== undefined && max !== undefined && min > max) {
+      setPriceError("Min price can't be more than max price");
+      return;
+    }
+    setPriceError("");
+    onChange({ minPrice: min, maxPrice: max });
   };
 
+  const categoryButton = (active: boolean) =>
+    `flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+      active
+        ? "bg-[#E6540B]/10 font-semibold text-[#E6540B]"
+        : "text-[#1A1613]/80 hover:bg-[#F4EEDF]"
+    }`;
+
+  const total = categories.reduce((sum, c) => sum + c.count, 0);
+
   return (
-    <div
-      className={`bg-[#FDF8ED] text-[#1A1613] font-['Inter',sans-serif] ${
-        isMobile
-          ? "h-full overflow-y-auto"
-          : "rounded-xl border border-[#1A1613]/10 shadow-sm"
-      } p-5 space-y-6`}
-    >
+    <div className="space-y-6 text-[#1A1613]">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <SlidersHorizontal className="w-5 h-5 text-[#E6540B]" />
-          <h2 className="text-lg font-['Fraunces',serif] font-bold text-[#1A1613]">
-            Filters
-          </h2>
-        </div>
-        <div className="flex items-center gap-2">
+        <h2 className="text-lg font-semibold">Filters</h2>
+        <div className="flex items-center gap-1">
           <button
-            onClick={handleReset}
-            className="cursor-pointer flex items-center gap-1 text-md text-[#1A1613]/50 hover:text-[#9B3A2E] transition-colors"
+            type="button"
+            onClick={onReset}
+            className="cursor-pointer rounded-md px-2 py-1 text-sm text-[#1A1613]/60 hover:text-[#E6540B]"
           >
-            <RotateCcw className="w-4 h-4" />
-            Reset all
+            Clear all
           </button>
-          {isMobile && (
+          {onClose && (
             <button
+              type="button"
               onClick={onClose}
-              className="cursor-pointer p-1.5 hover:bg-[#F4EEDF] rounded-lg"
+              aria-label="Close filters"
+              className="cursor-pointer rounded-lg p-1.5 hover:bg-[#F4EEDF]"
             >
-              <X className="w-5 h-5" />
+              <X className="h-5 w-5" />
             </button>
           )}
         </div>
       </div>
 
-      <div className="space-y-2">
-        <h3 className="text-xs font-['IBM_Plex_Mono',monospace] font-bold text-[#1A1613]/50 uppercase tracking-wider">
-          Category
-        </h3>
-        <div className="space-y-1">
+      <section>
+        <h3 className={sectionTitle}>Category</h3>
+        <div className="space-y-0.5">
           <button
-            onClick={() => {
-              setLocalCategory("all");
-              onCategoryChange("all");
-            }}
-            className={`cursor-pointer w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              localCategory === "all"
-                ? "bg-[#F4EEDF] text-[#8A3B12] border border-[#E6540B]/30"
-                : "text-[#1A1613]/70 hover:bg-[#F4EEDF]"
-            }`}
+            type="button"
+            onClick={() => onChange({ category: "all" })}
+            className={categoryButton(values.category === "all")}
           >
-            All Categories
+            All categories
+            <span className="text-xs text-[#1A1613]/50">{total}</span>
           </button>
           {categories.map((cat) => (
             <button
               key={cat.id}
-              onClick={() => {
-                setLocalCategory(cat.id ?? "all");
-                onCategoryChange(cat.id ?? "all");
-              }}
-              className={`cursor-pointer w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                localCategory === cat.id
-                  ? "bg-[#F4EEDF] text-[#8A3B12] border border-[#E6540B]/30"
-                  : "text-[#1A1613]/70 hover:bg-[#F4EEDF]"
-              }`}
+              type="button"
+              onClick={() => onChange({ category: cat.id })}
+              className={categoryButton(values.category === cat.id)}
             >
-              {cat.categoryName}
+              <span className="truncate">{cat.name}</span>
+              <span className="text-xs text-[#1A1613]/50">{cat.count}</span>
             </button>
           ))}
         </div>
-      </div>
+      </section>
 
-      <div className="border-t border-[#1A1613]/10" />
-
-      <div className="space-y-3">
-        <h3 className="text-xs font-['IBM_Plex_Mono',monospace] font-bold text-[#1A1613]/50 uppercase tracking-wider">
-          Price (NPR)
-        </h3>
-        <div className="flex gap-2">
-          <div className="flex-1">
-            <label className="text-xs text-[#1A1613]/50 mb-1 block">Min</label>
+      <section className="border-t border-[#1A1613]/10 pt-6">
+        <h3 className={sectionTitle}>Price (Rs)</h3>
+        <form onSubmit={applyPrice} className="space-y-2">
+          <div className="flex items-center gap-2">
+            <label className="sr-only" htmlFor={`${uid}-min`}>
+              Minimum price
+            </label>
             <input
+              id={`${uid}-min`}
               type="number"
-              placeholder="0"
+              inputMode="numeric"
               min={0}
-              value={localFilters.minPrice ?? ""}
-              onChange={(e) => {
-                const updated = {
-                  ...localFilters,
-                  minPrice: e.target.value ? Number(e.target.value) : undefined,
-                };
-                setLocalFilters(updated);
-                onFilterChange(updated);
-              }}
-              className="w-full px-3 py-2 border border-[#1A1613]/15 rounded-lg text-sm bg-[#FDF8ED] text-[#1A1613] focus:outline-none focus:ring-2 focus:ring-[#E6540B]/40"
+              placeholder="Min"
+              value={minInput}
+              onChange={(e) => setMinInput(e.target.value)}
+              className="w-full rounded-lg border border-[#1A1613]/20 bg-white px-3 py-2 text-sm focus:border-[#E6540B] focus:outline-none focus:ring-1 focus:ring-[#E6540B]"
+            />
+            <span className="text-[#1A1613]/40">–</span>
+            <label className="sr-only" htmlFor={`${uid}-max`}>
+              Maximum price
+            </label>
+            <input
+              id={`${uid}-max`}
+              type="number"
+              inputMode="numeric"
+              min={0}
+              placeholder="Max"
+              value={maxInput}
+              onChange={(e) => setMaxInput(e.target.value)}
+              className="w-full rounded-lg border border-[#1A1613]/20 bg-white px-3 py-2 text-sm focus:border-[#E6540B] focus:outline-none focus:ring-1 focus:ring-[#E6540B]"
             />
           </div>
-          <div className="flex-1">
-            <label className="text-xs text-[#1A1613]/50 mb-1 block">Max</label>
-            <input
-              type="number"
-              placeholder="Any"
-              min={0}
-              value={localFilters.maxPrice ?? ""}
-              onChange={(e) => {
-                const updated = {
-                  ...localFilters,
-                  maxPrice: e.target.value ? Number(e.target.value) : undefined,
-                };
-                setLocalFilters(updated);
-                onFilterChange(updated);
-              }}
-              className="w-full px-3 py-2 border border-[#1A1613]/15 rounded-lg text-sm bg-[#FDF8ED] text-[#1A1613] focus:outline-none focus:ring-2 focus:ring-[#E6540B]/40"
-            />
-          </div>
-        </div>
-      </div>
+          {priceError && <p className="text-xs text-red-600">{priceError}</p>}
+          <button
+            type="submit"
+            className="w-full cursor-pointer rounded-lg border border-[#1A1613]/20 px-3 py-2 text-sm font-semibold transition hover:border-[#E6540B] hover:text-[#E6540B]"
+          >
+            Apply price
+          </button>
+        </form>
+      </section>
 
-      <div className="border-t border-[#1A1613]/10" />
-
-      <div className="space-y-2">
-        <h3 className="text-xs font-['IBM_Plex_Mono',monospace] font-bold text-[#1A1613]/50 uppercase tracking-wider">
-          Minimum Rating
-        </h3>
-        <div className="space-y-1.5">
-          {[
-            { label: "Any rating", value: 0 },
-            { label: "2+ Stars", value: 2 },
-            { label: "3+ Stars", value: 3 },
-            { label: "4+ Stars", value: 4 },
-            { label: "5 Stars only", value: 5 },
-          ].map((opt) => (
+      <section className="border-t border-[#1A1613]/10 pt-6">
+        <h3 className={sectionTitle}>Customer rating</h3>
+        <div className="space-y-1">
+          {RATING_OPTIONS.map((stars) => (
             <label
-              key={opt.value}
-              className="flex items-center gap-2.5 cursor-pointer group"
+              key={stars}
+              className="flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-1.5 text-sm hover:text-[#E6540B]"
             >
               <input
                 type="radio"
-                name="minRating"
-                value={opt.value}
-                checked={
-                  opt.value === 0
-                    ? !localFilters.minRating
-                    : localFilters.minRating === opt.value
-                }
-                onChange={() => {
-                  const updated = {
-                    ...localFilters,
-                    minRating: opt.value === 0 ? undefined : opt.value,
-                  };
-                  setLocalFilters(updated);
-                  onFilterChange(updated);
-                }}
-                className="w-4 h-4 text-[#E6540B] cursor-pointer accent-[#E6540B]"
+                name={`${uid}-rating`}
+                checked={values.minRating === stars}
+                onChange={() => onChange({ minRating: stars })}
+                className="h-4 w-4 cursor-pointer accent-[#E6540B]"
               />
-              <span className="flex items-center gap-1.5 text-sm text-[#1A1613]/80 group-hover:text-[#E6540B] transition-colors">
-                {opt.value > 0 && (
-                  <span className="flex">
-                    {[...Array(opt.value)].map((_, i) => (
-                      <svg
-                        key={i}
-                        className="w-3.5 h-3.5 text-[#E6540B]"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    ))}
-                  </span>
-                )}
-                {opt.label}
+              <span className="flex items-center gap-1">
+                {stars}
+                <Star className="h-3.5 w-3.5 text-amber-400" fill="currentColor" strokeWidth={0} />
+                & up
               </span>
             </label>
           ))}
+          <label className="flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-1.5 text-sm hover:text-[#E6540B]">
+            <input
+              type="radio"
+              name={`${uid}-rating`}
+              checked={!values.minRating}
+              onChange={() => onChange({ minRating: undefined })}
+              className="h-4 w-4 cursor-pointer accent-[#E6540B]"
+            />
+            Any rating
+          </label>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

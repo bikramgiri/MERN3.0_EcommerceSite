@@ -25,30 +25,30 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({
         Array.from({ length: 8 }).map((_, idx) => (
           <div
             key={`grid-skeleton-${idx}`}
-            className="flex flex-col justify-between rounded-xl border border-[#1A1613]/10 bg-[#FFFDF8] overflow-hidden animate-pulse shadow-xs"
+            className="flex flex-col justify-between rounded-xl border border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] overflow-hidden animate-pulse shadow-xs"
           >
             <div>
               {/* Banner Skeleton */}
-              <div className="h-36 w-full bg-[#1A1613]/10" />
+              <div className="h-36 w-full bg-[#1A1613]/10 dark:bg-white/10" />
 
               {/* Body Skeleton */}
               <div className="p-4 space-y-2">
                 <div
-                  className="h-4 rounded bg-[#1A1613]/15"
+                  className="h-4 rounded bg-[#1A1613]/15 dark:bg-white/10"
                   style={{ width: `${110 + (idx % 3) * 30}px` }}
                 />
-                <div className="h-3 w-full rounded bg-[#1A1613]/10" />
-                <div className="h-3 w-3/4 rounded bg-[#1A1613]/10" />
+                <div className="h-3 w-full rounded bg-[#1A1613]/10 dark:bg-white/10" />
+                <div className="h-3 w-3/4 rounded bg-[#1A1613]/10 dark:bg-white/10" />
               </div>
             </div>
 
             {/* Footer Skeleton */}
-            <div className="p-3 border-t border-[#1A1613]/10 bg-[#F4EEDF]/20 flex items-center justify-between">
-              <div className="h-3 w-20 rounded bg-[#1A1613]/10" />
+            <div className="p-3 border-t border-[#1A1613]/10 dark:border-white/10 bg-[#F4EEDF]/20 dark:bg-white/5 flex items-center justify-between">
+              <div className="h-3 w-20 rounded bg-[#1A1613]/10 dark:bg-white/10" />
               <div className="flex gap-1.5">
-                <div className="w-6 h-6 rounded bg-[#1A1613]/10" />
-                <div className="w-6 h-6 rounded bg-[#1A1613]/10" />
-                <div className="w-6 h-6 rounded bg-[#1A1613]/10" />
+                <div className="w-6 h-6 rounded bg-[#1A1613]/10 dark:bg-white/10" />
+                <div className="w-6 h-6 rounded bg-[#1A1613]/10 dark:bg-white/10" />
+                <div className="w-6 h-6 rounded bg-[#1A1613]/10 dark:bg-white/10" />
               </div>
             </div>
           </div>
@@ -57,11 +57,11 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({
         categories.map((category) => (
         <div
           key={category.id}
-          className="group relative flex flex-col justify-between rounded-xl border border-[#1A1613]/10 bg-[#FFFDF8] overflow-hidden shadow-xs hover:shadow-[0_8px_20px_-6px_rgba(26,22,19,0.10)] hover:-translate-y-0.5 transition-all duration-200"
+          className="group relative flex flex-col justify-between rounded-xl border border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] overflow-hidden shadow-xs hover:shadow-[0_8px_20px_-6px_rgba(26,22,19,0.10)] hover:-translate-y-0.5 transition-all duration-200"
         >
           <div>
             {/* Category Image Banner */}
-            <div className="relative h-36 w-full bg-[#FDF8ED] overflow-hidden border-b border-[#1A1613]/10 flex items-center justify-center">
+            <div className="relative h-36 w-full bg-[#FDF8ED] dark:bg-[#2A2420] overflow-hidden border-b border-[#1A1613]/10 dark:border-white/10 flex items-center justify-center">
               {category.categoryImage ? (
                 <img
                   src={category.categoryImage}
@@ -69,7 +69,7 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
               ) : (
-                <ImageIcon className="w-10 h-10 text-[#1A1613]/25" />
+                <ImageIcon className="w-10 h-10 text-[#1A1613]/25 dark:text-[#F5EFE6]/30" />
               )}
               <div className="absolute top-2 right-2">
                 <span className="inline-flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-xs px-2.5 py-0.5 text-[10px] font-semibold text-white">
@@ -86,36 +86,36 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({
 
             {/* Body */}
             <div className="p-4">
-              <h4 className="font-bold text-sm text-[#1A1613] truncate">
+              <h4 className="font-bold text-sm text-[#1A1613] dark:text-[#F5EFE6] truncate">
                 {category.categoryName}
               </h4>
-              <p className="mt-1 text-xs text-[#1A1613]/60 line-clamp-2 leading-relaxed">
+              <p className="mt-1 text-xs text-[#1A1613]/60 dark:text-[#F5EFE6]/50 line-clamp-2 leading-relaxed">
                 {category.categoryDescription || "No description provided."}
               </p>
             </div>
           </div>
 
           {/* Footer Actions */}
-          <div className="p-3 border-t border-[#1A1613]/10 bg-[#F4EEDF]/20 flex items-center justify-between text-xs text-[#1A1613]/55">
+          <div className="p-3 border-t border-[#1A1613]/10 dark:border-white/10 bg-[#F4EEDF]/20 dark:bg-white/5 flex items-center justify-between text-xs text-[#1A1613]/55 dark:text-[#F5EFE6]/50">
             <span>{formatDate(category.createdAt)}</span>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => onView(category)}
-                className="p-1 rounded-md hover:bg-[#F4EEDF] text-[#1A1613]/60 hover:text-[#1A1613]"
+                className="p-1 rounded-md hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] text-[#1A1613]/60 dark:text-[#F5EFE6]/50 hover:text-[#1A1613] dark:hover:text-[#F5EFE6]"
                 title="View Details"
               >
                 <Eye className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => onEdit(category)}
-                className="p-1 rounded-md hover:bg-[#F4EEDF] text-[#1A1613]/60 hover:text-[#E6540B]"
+                className="p-1 rounded-md hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] text-[#1A1613]/60 dark:text-[#F5EFE6]/50 hover:text-[#E6540B]"
                 title="Edit Category"
               >
                 <Edit className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => onDelete(category)}
-                className="p-1 rounded-md hover:bg-rose-50 text-rose-500 hover:text-rose-700"
+                className="p-1 rounded-md hover:bg-rose-50 dark:hover:bg-rose-500/15 text-rose-500 hover:text-rose-700 dark:hover:text-rose-300"
                 title="Delete Category"
               >
                 <Trash2 className="w-3.5 h-3.5" />

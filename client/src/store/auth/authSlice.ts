@@ -246,14 +246,13 @@ export function logoutUser() {
   return async function logoutUserThunk(dispatch: AppDispatch) {
     dispatch(setStatus(Status.LOADING));
     try {
-      const response = await API.post("/auth/logout");
-      if (response.status === 200) {
-        dispatch(logout());
-        dispatch(setStatus(Status.SUCCESS));
-      }
+      await API.post("/auth/logout");
     } catch (error) {
       console.error("Failed to log out on the server:", error);
-      dispatch(setStatus(Status.ERROR));
+    } finally {
+      // Always end the session on this device, even if the server is unreachable
+      dispatch(logout());
+      dispatch(setStatus(Status.SUCCESS));
     }
   };
 }

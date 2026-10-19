@@ -16,11 +16,40 @@ import Breadcrumb from "../../../global/Breadcrumb";
 import { getAverageRatingNumber } from "../../../utils/helpers";
 import { toast } from "react-toastify";
 import { addToCart } from "../../../store/customer/cartSlice";
+import { Status } from "../../../global/statuses";
+import { Skeleton, SkeletonContainer } from "../../../global/Skeleton";
+
+function WishlistSkeleton() {
+  return (
+    <SkeletonContainer
+      label="Loading wishlist"
+      className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+    >
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div
+          key={i}
+          className="overflow-hidden rounded-xl border border-[#1A1613]/10 bg-[#FDF8ED] shadow-sm"
+        >
+          <Skeleton className="h-56 w-full rounded-none" />
+          <div className="p-5">
+            <Skeleton className="h-7 w-3/4 mb-2" />
+            <Skeleton className="h-5 w-28 mb-2" />
+            <Skeleton className="h-7 w-24" />
+          </div>
+          <div className="p-5 border-t border-[#1A1613]/10 flex gap-2">
+            <Skeleton className="h-13 flex-1 rounded-xl" />
+            <Skeleton className="h-13 w-23 rounded-xl" />
+          </div>
+        </div>
+      ))}
+    </SkeletonContainer>
+  );
+}
 
 const ProductWishlist = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { wishlist } = useAppSelector((state) => state.wishlist);
+  const { wishlist, status } = useAppSelector((state) => state.wishlist);
   const [addingIds, setAddingIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -40,6 +69,11 @@ const ProductWishlist = () => {
     currentPage * itemsPerPage,
   );
 
+  // IDLE means the fetch effect hasn't run yet
+  const isInitialLoad =
+    wishlist.length === 0 &&
+    (status === Status.LOADING || status === Status.IDLE);
+
   // if (status === Status.LOADING) {
   //   return (
   //     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#FDF8ED] to-[#FAF3E4]">
@@ -53,7 +87,7 @@ const ProductWishlist = () => {
 
   return (
     <section className="py-8 md:py-12 bg-[#FDF8ED] pb-16 mt-9 md:pt-18 font-['Inter',sans-serif] text-[#1A1613]">
-      <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mt-1 mb-1 ">
           <Breadcrumb items={[{ label: "Wishlist" }]} />
         </div>
@@ -61,7 +95,9 @@ const ProductWishlist = () => {
           My Wishlist
         </h1>
 
-        {wishlist.length === 0 ? (
+        {isInitialLoad ? (
+          <WishlistSkeleton />
+        ) : wishlist.length === 0 ? (
           <div className="text-center py-20">
             <Heart className="w-20 h-20 mx-auto text-[#E6540B] mb-6" />
             <h2 className="text-2xl font-['Fraunces',serif] font-medium text-[#1A1613] mb-3">

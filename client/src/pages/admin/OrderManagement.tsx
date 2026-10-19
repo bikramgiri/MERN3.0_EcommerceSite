@@ -20,6 +20,7 @@ import {
 import { fetchDatas as syncDashboardStats } from "../../store/admin/datasSlice";
 import { AdminOrder, AdminOrderStatus } from "../../types/admin/orderTypes";
 import { Status } from "../../global/statuses";
+import { Skeleton } from "../../global/Skeleton";
 import OrderTable from "../../components/admin/Orders/OrderTable";
 import OrderViewModal from "../../components/admin/Orders/OrderViewModal";
 import OrderStatusModal from "../../components/admin/Orders/OrderStatusModal";
@@ -314,6 +315,9 @@ const OrderManagement: React.FC = () => {
   );
 
   const loading = status === Status.LOADING;
+  // Skeletons only until the first response; refreshes keep the loaded rows visible
+  const initialLoading =
+    (status === Status.IDLE || status === Status.LOADING) && orders.length === 0;
 
   return (
     <div className="space-y-6">
@@ -321,14 +325,14 @@ const OrderManagement: React.FC = () => {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-[#E6540B]/10 text-[#E6540B] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-[#E6540B]/10 dark:bg-[#E6540B]/15 text-[#E6540B] flex items-center justify-center">
               <ShoppingBag className="w-5 h-5" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-[#1A1613] sm:text-3xl">
+            <h1 className="text-2xl font-bold tracking-tight text-[#1A1613] dark:text-[#F5EFE6] sm:text-3xl">
               Order Management
             </h1>
           </div>
-          <p className="mt-1 text-xs text-[#1A1613]/60 sm:text-sm">
+          <p className="mt-1 text-xs text-[#1A1613]/60 dark:text-[#F5EFE6]/50 sm:text-sm">
             Track customer orders, manage fulfilment statuses, and inspect payment transactions.
           </p>
         </div>
@@ -337,7 +341,7 @@ const OrderManagement: React.FC = () => {
           <button
             onClick={handleRefresh}
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-xl border border-[#1A1613]/15 bg-[#FFFDF8] px-4 py-2 text-xs font-semibold text-[#1A1613] shadow-xs hover:bg-[#F4EEDF] transition-all active:scale-95 disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl border border-[#1A1613]/15 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] px-4 py-2 text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] shadow-xs hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] transition-all active:scale-95 disabled:opacity-50"
           >
             <RefreshCw
               className={`w-3.5 h-3.5 ${
@@ -356,24 +360,28 @@ const OrderManagement: React.FC = () => {
           onClick={handleResetFilters}
           className={`p-4 rounded-2xl border transition-all cursor-pointer select-none active:scale-[0.98] ${
             !isFiltered
-              ? "border-[#E6540B]/40 bg-[#FFFDF8] shadow-xs"
-              : "border-[#1A1613]/10 bg-[#FFFDF8] shadow-xs hover:border-[#E6540B]/40"
+              ? "border-[#E6540B]/40 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs"
+              : "border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs hover:border-[#E6540B]/40"
           }`}
           title="Click to reset filters and view all orders"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#1A1613]/60">
+            <span className="text-xs font-medium text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
               Total Orders
             </span>
-            <div className="w-8 h-8 rounded-lg bg-[#E6540B]/10 text-[#E6540B] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-[#E6540B]/10 dark:bg-[#E6540B]/15 text-[#E6540B] flex items-center justify-center">
               <ShoppingBag className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-[#1A1613]">
-              {loading ? "..." : totalOrdersCount}
-            </span>
-            <span className="text-[11px] text-[#1A1613]/40">lifetime</span>
+            {initialLoading ? (
+              <Skeleton className="h-8 w-14" />
+            ) : (
+              <span className="text-2xl font-bold text-[#1A1613] dark:text-[#F5EFE6]">
+                {totalOrdersCount}
+              </span>
+            )}
+            <span className="text-[11px] text-[#1A1613]/40 dark:text-[#F5EFE6]/50">lifetime</span>
           </div>
         </div>
 
@@ -389,31 +397,35 @@ const OrderManagement: React.FC = () => {
           }}
           className={`p-4 rounded-2xl border transition-all cursor-pointer select-none active:scale-[0.98] ${
             dateFilter === "TODAY"
-              ? "border-blue-500 bg-blue-50/50 shadow-sm ring-2 ring-blue-500/20"
-              : "border-[#1A1613]/10 bg-[#FFFDF8] shadow-xs hover:border-blue-400 hover:shadow-xs"
+              ? "border-blue-500 bg-blue-50/50 dark:bg-blue-500/10 shadow-sm ring-2 ring-blue-500/20"
+              : "border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs hover:border-blue-400 hover:shadow-xs"
           }`}
           title="Click to filter orders placed today"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#1A1613]/60">
+            <span className="text-xs font-medium text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
               Today's Orders
             </span>
             <div className="flex items-center gap-1.5">
               {dateFilter === "TODAY" && (
-                <span className="text-[10px] font-semibold text-blue-700 bg-blue-100/90 px-1.5 py-0.5 rounded-md">
+                <span className="text-[10px] font-semibold text-blue-700 dark:text-blue-400 bg-blue-100/90 dark:bg-blue-500/15 px-1.5 py-0.5 rounded-md">
                   Filtered
                 </span>
               )}
-              <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center">
                 <Calendar className="w-4 h-4" />
               </div>
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-blue-700">
-              {loading ? "..." : todayOrdersCount}
-            </span>
-            <span className="text-[11px] text-[#1A1613]/40">
+            {initialLoading ? (
+              <Skeleton className="h-8 w-14" />
+            ) : (
+              <span className="text-2xl font-bold text-blue-700 dark:text-blue-400">
+                {todayOrdersCount}
+              </span>
+            )}
+            <span className="text-[11px] text-[#1A1613]/40 dark:text-[#F5EFE6]/50">
               {todayRevenue > 0 ? `Rs. ${todayRevenue.toLocaleString()}` : "today"}
             </span>
           </div>
@@ -431,31 +443,35 @@ const OrderManagement: React.FC = () => {
           }}
           className={`p-4 rounded-2xl border transition-all cursor-pointer select-none active:scale-[0.98] ${
             selectedStatus === "ACTION_REQUIRED"
-              ? "border-amber-500 bg-amber-50/50 shadow-sm ring-2 ring-amber-500/20"
-              : "border-[#1A1613]/10 bg-[#FFFDF8] shadow-xs hover:border-amber-400 hover:shadow-xs"
+              ? "border-amber-500 bg-amber-50/50 dark:bg-amber-500/10 shadow-sm ring-2 ring-amber-500/20"
+              : "border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs hover:border-amber-400 hover:shadow-xs"
           }`}
           title="Click to filter pending and in-preparation orders"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#1A1613]/60">
+            <span className="text-xs font-medium text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
               Action Required
             </span>
             <div className="flex items-center gap-1.5">
               {selectedStatus === "ACTION_REQUIRED" && (
-                <span className="text-[10px] font-semibold text-amber-700 bg-amber-100/90 px-1.5 py-0.5 rounded-md">
+                <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-100/90 dark:bg-amber-500/15 px-1.5 py-0.5 rounded-md">
                   Filtered
                 </span>
               )}
-              <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center">
                 <Clock className="w-4 h-4" />
               </div>
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-amber-700">
-              {loading ? "..." : pendingOrdersCount}
-            </span>
-            <span className="text-[11px] text-[#1A1613]/40">
+            {initialLoading ? (
+              <Skeleton className="h-8 w-14" />
+            ) : (
+              <span className="text-2xl font-bold text-amber-700 dark:text-amber-400">
+                {pendingOrdersCount}
+              </span>
+            )}
+            <span className="text-[11px] text-[#1A1613]/40 dark:text-[#F5EFE6]/50">
               pending / prep
             </span>
           </div>
@@ -473,60 +489,68 @@ const OrderManagement: React.FC = () => {
           }}
           className={`p-4 rounded-2xl border transition-all cursor-pointer select-none active:scale-[0.98] ${
             selectedStatus === "Delivered"
-              ? "border-emerald-500 bg-emerald-50/50 shadow-sm ring-2 ring-emerald-500/20"
-              : "border-[#1A1613]/10 bg-[#FFFDF8] shadow-xs hover:border-emerald-400 hover:shadow-xs"
+              ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-500/10 shadow-sm ring-2 ring-emerald-500/20"
+              : "border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs hover:border-emerald-400 hover:shadow-xs"
           }`}
           title="Click to filter delivered orders"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#1A1613]/60">
+            <span className="text-xs font-medium text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
               Delivered Orders
             </span>
             <div className="flex items-center gap-1.5">
               {selectedStatus === "Delivered" && (
-                <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-100/90 px-1.5 py-0.5 rounded-md">
+                <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-100/90 dark:bg-emerald-500/15 px-1.5 py-0.5 rounded-md">
                   Filtered
                 </span>
               )}
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                 <CheckCircle2 className="w-4 h-4" />
               </div>
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-emerald-700">
-              {loading ? "..." : deliveredOrdersCount}
-            </span>
-            <span className="text-[11px] text-[#1A1613]/40">completed</span>
+            {initialLoading ? (
+              <Skeleton className="h-8 w-14" />
+            ) : (
+              <span className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
+                {deliveredOrdersCount}
+              </span>
+            )}
+            <span className="text-[11px] text-[#1A1613]/40 dark:text-[#F5EFE6]/50">completed</span>
           </div>
         </div>
 
         {/* Total Revenue */}
-        <div className="p-4 rounded-2xl border border-[#1A1613]/10 bg-[#FFFDF8] shadow-xs col-span-2 sm:col-span-1">
+        <div className="p-4 rounded-2xl border border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs col-span-2 sm:col-span-1">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#1A1613]/60">
+            <span className="text-xs font-medium text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
               Total Order Volume
             </span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-xl sm:text-2xl font-bold text-[#E6540B] truncate">
-              {loading ? "..." : `Rs. ${totalRevenue.toLocaleString()}`}
-            </span>
+            {initialLoading ? (
+              <Skeleton className="h-7 sm:h-8 w-28" />
+            ) : (
+              <span className="text-xl sm:text-2xl font-bold text-[#E6540B] truncate">
+                {`Rs. ${totalRevenue.toLocaleString()}`}
+              </span>
+            )}
           </div>
         </div>
       </div>
 
       {/* 3. Orders Container & Filter Bar */}
-      <div className="rounded-xl border border-[#1A1613]/10 bg-[#FFFDF8] shadow-xs overflow-hidden">
+      <div className="rounded-xl border border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs overflow-hidden">
         {/* Filter Controls */}
-        <div className="p-4 sm:p-5 border-b border-[#1A1613]/10 space-y-3">
+        <div className="p-4 sm:p-5 border-b border-[#1A1613]/10 dark:border-white/10 space-y-3">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             {/* Search Input */}
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#1A1613]/40 w-4 h-4" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#1A1613]/40 dark:text-[#F5EFE6]/50 w-4 h-4" />
               <input
                 type="text"
                 placeholder="Search by ID, customer, product, email, address..."
@@ -535,12 +559,12 @@ const OrderManagement: React.FC = () => {
                   setSearchTerm(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full h-10 pl-10 pr-9 rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] text-xs text-[#1A1613] placeholder:text-[#1A1613]/40 focus:outline-none focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
+                className="w-full h-10 pl-10 pr-9 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] text-xs text-[#1A1613] dark:text-[#F5EFE6] placeholder:text-[#1A1613]/40 dark:placeholder:text-[#F5EFE6]/40 focus:outline-none focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
               />
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1A1613]/40 hover:text-[#1A1613]"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1A1613]/40 dark:text-[#F5EFE6]/50 hover:text-[#1A1613] dark:hover:text-[#F5EFE6]"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -556,7 +580,7 @@ const OrderManagement: React.FC = () => {
                   setSelectedStatus(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="flex-1 min-w-[125px] sm:flex-initial sm:min-w-0 h-9 rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] px-3 text-xs font-medium text-[#1A1613] focus:outline-none focus:border-[#E6540B]"
+                className="flex-1 min-w-[125px] sm:flex-initial sm:min-w-0 h-9 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] px-3 text-xs font-medium text-[#1A1613] dark:text-[#F5EFE6] focus:outline-none focus:border-[#E6540B]"
               >
                 <option value="ALL">All Statuses</option>
                 <option value="ACTION_REQUIRED">Action Required (Pending/Prep)</option>
@@ -574,7 +598,7 @@ const OrderManagement: React.FC = () => {
                   setSelectedPayment(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="flex-1 min-w-[125px] sm:flex-initial sm:min-w-0 h-9 rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] px-3 text-xs font-medium text-[#1A1613] focus:outline-none focus:border-[#E6540B]"
+                className="flex-1 min-w-[125px] sm:flex-initial sm:min-w-0 h-9 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] px-3 text-xs font-medium text-[#1A1613] dark:text-[#F5EFE6] focus:outline-none focus:border-[#E6540B]"
               >
                 <option value="ALL">All Payments</option>
                 <option value="Paid">Paid</option>
@@ -589,7 +613,7 @@ const OrderManagement: React.FC = () => {
                   setSelectedMethod(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="flex-1 min-w-[125px] sm:flex-initial sm:min-w-0 h-9 rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] px-3 text-xs font-medium text-[#1A1613] focus:outline-none focus:border-[#E6540B]"
+                className="flex-1 min-w-[125px] sm:flex-initial sm:min-w-0 h-9 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] px-3 text-xs font-medium text-[#1A1613] dark:text-[#F5EFE6] focus:outline-none focus:border-[#E6540B]"
               >
                 <option value="ALL">All Methods</option>
                 <option value="KHALTI">Khalti</option>
@@ -601,7 +625,7 @@ const OrderManagement: React.FC = () => {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                className="flex-1 min-w-[125px] sm:flex-initial sm:min-w-0 h-9 rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] px-3 text-xs font-medium text-[#1A1613] focus:outline-none focus:border-[#E6540B]"
+                className="flex-1 min-w-[125px] sm:flex-initial sm:min-w-0 h-9 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] px-3 text-xs font-medium text-[#1A1613] dark:text-[#F5EFE6] focus:outline-none focus:border-[#E6540B]"
               >
                 <option value="newest">Sort: Newest First</option>
                 <option value="oldest">Sort: Oldest First</option>
@@ -613,7 +637,7 @@ const OrderManagement: React.FC = () => {
               {isFiltered && (
                 <button
                   onClick={handleResetFilters}
-                  className="h-9 px-3 rounded-lg border border-dashed border-[#1A1613]/25 text-xs font-semibold text-[#1A1613]/70 hover:text-[#E6540B] hover:border-[#E6540B] transition-colors"
+                  className="h-9 px-3 rounded-lg border border-dashed border-[#1A1613]/25 dark:border-white/20 text-xs font-semibold text-[#1A1613]/70 dark:text-[#F5EFE6]/70 hover:text-[#E6540B] hover:border-[#E6540B] transition-colors"
                   title="Reset all search & filters"
                 >
                   Reset
@@ -626,7 +650,7 @@ const OrderManagement: React.FC = () => {
         {/* 4. Table */}
         <OrderTable
           orders={paginatedOrders}
-          loading={loading}
+          loading={initialLoading}
           onView={(ord) => setViewingOrder(ord)}
           onOpenStatusModal={(ord) => setStatusOrder(ord)}
           onDelete={(ord) => setDeletingOrder(ord)}
@@ -636,10 +660,10 @@ const OrderManagement: React.FC = () => {
         />
 
         {/* 5. Pagination Footer */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-[#1A1613]/10 text-xs text-[#1A1613]/60 bg-[#FDF8ED]/30">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-[#1A1613]/10 dark:border-white/10 text-xs text-[#1A1613]/60 dark:text-[#F5EFE6]/50 bg-[#FDF8ED]/30 dark:bg-white/5">
           <div>
-            {loading ? (
-              <div className="h-3.5 w-32 rounded bg-[#1A1613]/10 animate-pulse" />
+            {initialLoading ? (
+              <div className="h-3.5 w-32 rounded bg-[#1A1613]/10 dark:bg-white/10 animate-pulse" />
             ) : filteredOrders.length === 0 ? (
               "Showing 0 orders"
             ) : (
@@ -656,7 +680,7 @@ const OrderManagement: React.FC = () => {
             <button
               disabled={loading || currentPage === 1}
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              className="p-1.5 rounded-lg border border-[#1A1613]/15 text-[#1A1613] hover:bg-[#F4EEDF] disabled:opacity-40 transition-colors"
+              className="p-1.5 rounded-lg border border-[#1A1613]/15 dark:border-white/10 text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] disabled:opacity-40 transition-colors"
               title="Previous Page"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -672,7 +696,7 @@ const OrderManagement: React.FC = () => {
               ) {
                 if (Math.abs(pageNum - currentPage) === 2) {
                   return (
-                    <span key={`dots-${pageNum}`} className="px-1 text-[#1A1613]/40">
+                    <span key={`dots-${pageNum}`} className="px-1 text-[#1A1613]/40 dark:text-[#F5EFE6]/50">
                       ...
                     </span>
                   );
@@ -687,7 +711,7 @@ const OrderManagement: React.FC = () => {
                   className={`min-w-[28px] h-7 px-2 rounded-lg text-xs font-semibold transition-all ${
                     currentPage === pageNum
                       ? "bg-[#E6540B] text-white shadow-xs"
-                      : "border border-[#1A1613]/15 text-[#1A1613] hover:bg-[#F4EEDF]"
+                      : "border border-[#1A1613]/15 dark:border-white/10 text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420]"
                   }`}
                 >
                   {pageNum}
@@ -698,7 +722,7 @@ const OrderManagement: React.FC = () => {
             <button
               disabled={loading || currentPage === totalPages}
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              className="p-1.5 rounded-lg border border-[#1A1613]/15 text-[#1A1613] hover:bg-[#F4EEDF] disabled:opacity-40 transition-colors"
+              className="p-1.5 rounded-lg border border-[#1A1613]/15 dark:border-white/10 text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] disabled:opacity-40 transition-colors"
               title="Next Page"
             >
               <ChevronRight className="w-4 h-4" />

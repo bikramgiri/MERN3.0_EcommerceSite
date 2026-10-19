@@ -13,17 +13,144 @@ import Breadcrumb from "../../../global/Breadcrumb";
 import { getAverageRatingNumber } from "../../../utils/helpers";
 import { toast } from "react-toastify";
 import axios from "axios";
+import { Status } from "../../../global/statuses";
+import { Skeleton, SkeletonContainer } from "../../../global/Skeleton";
 
 interface ApiErrorPayload {
   field?: string;
   message?: string;
 }
 
+function MyOrdersDetailsSkeleton({ id }: { id?: string }) {
+  return (
+    <SkeletonContainer
+      label="Loading order details"
+      className="bg-gradient-to-br from-[#FDF8ED] to-[#FAF3E4] min-h-screen py-12 antialiased"
+    >
+      <div className="mt-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mt-10">
+          <Breadcrumb
+            items={[
+              { label: "My Orders", href: "/my-orders" },
+              { label: "Order Details" },
+            ]}
+          />
+        </div>
+
+        <div className="bg-[#FDF8ED] rounded-xl shadow-md overflow-hidden border border-[#1A1613]/10">
+          <div className="bg-gradient-to-r from-[#E6540B] to-[#9B3A2E] p-4 md:p-4">
+            <h2 className="text-3xl md:text-4xl font-['Fraunces',serif] font-bold text-[#FDF8ED] text-center">
+              Order Details
+            </h2>
+            <p className="text-center text-[#FDF8ED]/90 mt-2 text-lg">
+              Order ID: <span className="font-semibold">{id}</span>
+            </p>
+            <div className="mt-1 flex h-6 items-center justify-center">
+              <Skeleton className="h-4 w-64 max-w-full bg-[#FDF8ED]/25!" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-6 lg:p-8">
+            <div className="bg-[#FDF8ED] rounded-xl p-6 md:p-8 border border-[#1A1613]/10 shadow-sm">
+              <h3 className="text-2xl font-['Fraunces',serif] font-bold text-[#1A1613] mb-6">
+                Ordered Products
+              </h3>
+              {Array.from({ length: 2 }, (_, i) => (
+                <div
+                  key={i}
+                  className="flex flex-col sm:flex-row items-start gap-6 bg-[#F4EEDF] rounded-lg p-6 shadow-sm border border-[#1A1613]/10 mb-4"
+                >
+                  <Skeleton className="aspect-square w-full sm:w-32 shrink-0 rounded-lg" />
+                  <div className="flex-1 min-w-0 w-full">
+                    <div className="flex items-center h-7 sm:h-8">
+                      <Skeleton className="h-5 sm:h-6 w-3/4" />
+                    </div>
+                    <div className="flex items-center justify-between gap-2 mt-1 h-6">
+                      <Skeleton className="h-4 w-28" />
+                      <Skeleton className="h-4 w-20" />
+                    </div>
+                    <div className="flex items-center mt-1 h-6 sm:h-7">
+                      <Skeleton className="h-4 sm:h-5 w-24" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-[#FDF8ED] rounded-xl p-6 md:p-8 border border-[#1A1613]/10 shadow-sm">
+              <h3 className="text-2xl font-['Fraunces',serif] font-bold text-[#1A1613] mb-6">
+                Order Summary
+              </h3>
+              <div className="space-y-4">
+                {Array.from({ length: 2 }, (_, i) => (
+                  <div key={i} className="flex items-center justify-between h-7">
+                    <Skeleton className="h-5 w-20" />
+                    <Skeleton className="h-5 w-28" />
+                  </div>
+                ))}
+                <div className="pt-4 border-t border-[#1A1613]/10">
+                  <div className="flex items-center justify-between h-7">
+                    <Skeleton className="h-5 w-28" />
+                    <Skeleton className="h-5 w-32" />
+                  </div>
+                </div>
+
+                <div className="mt-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-7 w-20 rounded-full" />
+                  </div>
+                  {Array.from({ length: 2 }, (_, i) => (
+                    <div key={i} className="flex items-center justify-between h-6">
+                      <Skeleton className="h-4 w-28" />
+                      <Skeleton className="h-4 w-16" />
+                    </div>
+                  ))}
+
+                  <h4 className="border-t border-[#1A1613]/10 pt-4 text-xl font-['Fraunces',serif] font-bold text-[#1A1613]">
+                    Customer Details
+                  </h4>
+
+                  <div className="flex items-center justify-between h-6">
+                    <Skeleton className="h-4 w-14" />
+                    <Skeleton className="h-4 w-28" />
+                  </div>
+                  <div className="flex items-center justify-between h-6">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-4 w-40" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-4 rounded-xl p-4 md:p-4 text-center bg-[#F4EEDF] border border-[#1A1613]/10 shadow-sm mx-6 lg:mx-8">
+            <h3 className="text-xl font-['Fraunces',serif] font-semibold text-[#1A1613]">
+              Scan QR for Admin View
+            </h3>
+            <div className="inline-block p-4 bg-[#FDF8ED] rounded-xl shadow-lg mt-3 border border-[#1A1613]/10">
+              <Skeleton className="h-[180px] w-[180px]" />
+            </div>
+          </div>
+
+          <div className="mb-4 rounded-xl p-4 md:p-4 bg-[#FDF8ED] border-t border-[#1A1613]/10 mx-6 lg:mx-8">
+            <div className="max-w-xl mx-auto flex flex-col sm:flex-row gap-4 justify-center">
+              <Skeleton className="h-12 w-full sm:w-44 rounded-xl" />
+              <Skeleton className="h-12 w-full sm:w-40 rounded-xl" />
+              <Skeleton className="h-12 w-full sm:w-32 rounded-xl" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </SkeletonContainer>
+  );
+}
+
 const MyOrdersDetails = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { id } = useParams<{ id: string }>();
-  const { singleOrder } = useAppSelector((state) => state.checkout);
+  const { singleOrder, status } = useAppSelector((state) => state.checkout);
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
   const [cancelingIds, setCancelingIds] = useState<Set<string>>(new Set());
 
@@ -162,6 +289,19 @@ const MyOrdersDetails = () => {
   //   );
   // }
 
+  // Skeleton until this URL's order is in the store. A stale order from another
+  // id also waits; a null order after SUCCESS (just deleted) or an ERROR falls
+  // through to "Order Not Found".
+  const isInitialLoading =
+    !!id &&
+    singleOrder?.id !== id &&
+    status !== Status.ERROR &&
+    (singleOrder !== null || status !== Status.SUCCESS);
+
+  if (isInitialLoading) {
+    return <MyOrdersDetailsSkeleton id={id} />;
+  }
+
   if (!singleOrder) {
     return (
       <section className="min-h-screen bg-gradient-to-br from-[#FDF8ED] to-[#FAF3E4] py-20">
@@ -185,7 +325,7 @@ const MyOrdersDetails = () => {
 
   return (
     <section className="bg-gradient-to-br from-[#FDF8ED] to-[#FAF3E4] min-h-screen py-12 antialiased">
-      <div className="mt-6 max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="mt-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mt-10">
           <Breadcrumb
             items={[

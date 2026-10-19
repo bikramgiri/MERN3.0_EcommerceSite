@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useSyncExternalStore } from "react";
+import { API, APIAuthenticated } from "../http";
 
 export interface StoreSettings {
   // Store Details
@@ -9,12 +10,24 @@ export interface StoreSettings {
   currency: string;
   orderPrefix: string;
 
+  // Social links (empty = hidden in the footer)
+  facebookUrl: string;
+  instagramUrl: string;
+  xUrl: string;
+  linkedinUrl: string;
+
   // Orders & Shipping
   standardShippingFee: number;
   freeShippingThreshold: number;
   enableCod: boolean;
   enableOnlinePayment: boolean;
   lowStockThreshold: number;
+
+  // Delivery estimates and return window (shown in the FAQ, Terms and About page)
+  localDeliveryArea: string;
+  localDeliveryTime: string;
+  otherDeliveryTime: string;
+  returnWindowDays: number;
 
   // Notifications
   orderNotificationsEmail: boolean;
@@ -35,11 +48,21 @@ export const defaultSettings: StoreSettings = {
   currency: "NPR (Rs.)",
   orderPrefix: "TRV-",
 
+  facebookUrl: "",
+  instagramUrl: "",
+  xUrl: "",
+  linkedinUrl: "",
+
   standardShippingFee: 100,
   freeShippingThreshold: 2000,
   enableCod: true,
   enableOnlinePayment: true,
   lowStockThreshold: 5,
+
+  localDeliveryArea: "Kathmandu Valley",
+  localDeliveryTime: "1–2 business days",
+  otherDeliveryTime: "3–5 business days",
+  returnWindowDays: 7,
 
   orderNotificationsEmail: true,
   lowStockAlertsEmail: true,
@@ -51,32 +74,82 @@ export const defaultSettings: StoreSettings = {
     "We are currently updating our store to serve you better. We'll be back shortly!",
 };
 
-export const STORAGE_KEY = "truvora_admin_settings";
+// Last settings received from the server, so the first render doesn't flash defaults
+export const STORAGE_KEY = "truvora_store_settings";
 
-/**
- * Safely retrieves stored settings or returns defaults
- */
-export const getStoreSettings = (): StoreSettings => {
+const readCachedSettings = (): StoreSettings => {
   if (typeof window === "undefined") return defaultSettings;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return defaultSettings;
-    return { ...defaultSettings, ...JSON.parse(raw) };
-  } catch (e) {
-    console.error("Failed to parse store settings:", e);
+    return raw ? { ...defaultSettings, ...JSON.parse(raw) } : defaultSettings;
+  } catch {
     return defaultSettings;
   }
 };
 
+let currentSettings: StoreSettings = readCachedSettings();
+
 /**
- * Persists settings to localStorage and dispatches a cross-component event
+ * Merges settings from the server into the in-memory copy and notifies
+ * every component using useStoreSettings()
  */
-export const saveStoreSettings = (settings: StoreSettings): void => {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+export const applyStoreSettings = (settings: Partial<StoreSettings>): void => {
+  currentSettings = { ...currentSettings, ...settings };
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(currentSettings));
+  } catch {
+    // Storage can be unavailable (private mode); the in-memory copy still works
+  }
   window.dispatchEvent(
-    new CustomEvent("store_settings_updated", { detail: settings })
+    new CustomEvent("store_settings_updated", { detail: currentSettings })
   );
+};
+
+/** Current settings (synchronous, for non-React code) */
+export const getStoreSettings = (): StoreSettings => currentSettings;
+
+const isAdminSession = (): boolean => {
+  try {
+    const user = JSON.parse(localStorage.getItem("user") || "null");
+    return user?.role === "admin" && !!localStorage.getItem("token");
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Fetches settings from the server. Admins get every setting;
+ * everyone else gets only the public ones.
+ */
+export const loadStoreSettings = async (): Promise<StoreSettings> => {
+  const response = isAdminSession()
+    ? await APIAuthenticated.get("/admin/settings")
+    : await API.get("/settings");
+  applyStoreSettings(response.data.data);
+  return currentSettings;
+};
+
+/** Saves settings on the server (admin only) */
+export const saveStoreSettings = async (
+  settings: StoreSettings
+): Promise<StoreSettings> => {
+  const response = await APIAuthenticated.patch("/admin/settings", settings);
+  applyStoreSettings(response.data.data);
+  return currentSettings;
+};
+
+/**
+ * Customer-facing delivery estimate, e.g. "Orders within Kathmandu Valley usually arrive in
+ * 1–2 business days. Everywhere else, allow 3–5 business days." Empty when no times are set.
+ */
+export const describeDeliveryTime = (settings: StoreSettings): string => {
+  const area = settings.localDeliveryArea?.trim();
+  const local = settings.localDeliveryTime?.trim();
+  const other = settings.otherDeliveryTime?.trim();
+  const parts: string[] = [];
+  if (local) parts.push(area ? `Orders within ${area} usually arrive in ${local}.` : `Orders usually arrive in ${local}.`);
+  if (other) parts.push(local ? `Everywhere else, allow ${other}.` : `Orders usually arrive in ${other}.`);
+  return parts.join(" ");
 };
 
 /**
@@ -138,21 +211,10 @@ export const playNotificationChime = (): void => {
 /**
  * React hook that subscribes to store settings and updates dynamically
  */
-export const useStoreSettings = (): StoreSettings => {
-  const [settings, setSettings] = useState<StoreSettings>(getStoreSettings());
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const customEvent = e as CustomEvent<StoreSettings>;
-      if (customEvent.detail) {
-        setSettings(customEvent.detail);
-      } else {
-        setSettings(getStoreSettings());
-      }
-    };
-    window.addEventListener("store_settings_updated", handler);
-    return () => window.removeEventListener("store_settings_updated", handler);
-  }, []);
-
-  return settings;
+const subscribeToSettings = (onChange: () => void) => {
+  window.addEventListener("store_settings_updated", onChange);
+  return () => window.removeEventListener("store_settings_updated", onChange);
 };
+
+export const useStoreSettings = (): StoreSettings =>
+  useSyncExternalStore(subscribeToSettings, getStoreSettings);

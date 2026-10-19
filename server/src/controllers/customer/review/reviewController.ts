@@ -4,10 +4,11 @@ import { AuthRequest } from "../../../middleware/authMiddleware";
 import Review from "../../../database/models/reviewModel";
 import Product from "../../../database/models/productModel";
 import User from "../../../database/models/userModel";
-import getFullImageUrl from "../../../services/imageHandler";
 import { cloudinary } from "../../../cloudinary";
 import { getPublicIdFromAvatar } from "../../../services/cloudinaryHelper";
 import { emitToAdmin } from "../../../services/socketService";
+import { notifyAdmins } from "../../../services/notificationService";
+import { formatReviewImages } from "../../../services/productPresenter";
 
 class ReviewController {
   // *Add Review
@@ -131,6 +132,12 @@ class ReviewController {
         type: "review-created",
         reviewId: review.id,
       });
+      await notifyAdmins({
+        type: "new-review",
+        title: `New ${review.rating}★ review`,
+        message: `${user.username} reviewed ${product.productName}: "${String(review.message).slice(0, 100)}"`,
+        link: "/admin-dashboard/reviews",
+      });
 
       res.status(200).json({
         message: "Review added successfully.",
@@ -195,13 +202,8 @@ class ReviewController {
         return;
       }
 
-      const reviewsWithImageUrl = reviews.map((review) => {
-        const reviewData = review.toJSON();
-        return {
-          ...reviewData,
-          reviewImage: getFullImageUrl(reviewData.reviewImage),
-        };
-      });
+      // No photo stays null (not a placeholder URL); avatars become full URLs
+      const reviewsWithImageUrl = reviews.map((review) => formatReviewImages(review.toJSON()));
       reviewsWithImageUrl.sort((a, b) => {
         return (
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -223,6 +225,31 @@ class ReviewController {
   }
 
   // *Get User Reviews
+  // *The signed-in customer's own review of one product, including hidden ones
+  // (so they can see why it's hidden and edit it instead of trying to post again)
+  public static async getMyProductReview(req: AuthRequest, res: Response) {
+    const userId = req.user?.id;
+    const { productId } = req.params;
+    if (!userId) {
+      res.status(401).json({ message: "User not authenticated", field: "user" });
+      return;
+    }
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(productId))) {
+      res.status(200).json({ message: "No review found", data: null });
+      return;
+    }
+
+    const review = await Review.findOne({
+      where: { productId, userId },
+      include: [{ model: User, attributes: ["id", "username", "avatar"] }],
+    });
+
+    res.status(200).json({
+      message: review ? "Review fetched successfully" : "No review found",
+      data: review ? formatReviewImages(review.toJSON()) : null,
+    });
+  }
+
   public static async getMyReviews(req: AuthRequest, res: Response) {
     try {
       const userId = req.user?.id;
@@ -263,13 +290,8 @@ class ReviewController {
         return;
       }
 
-      const reviewsWithImageUrl = reviews.map((review) => {
-        const reviewData = review.toJSON();
-        return {
-          ...reviewData,
-          reviewImage: getFullImageUrl(reviewData.reviewImage),
-        };
-      });
+      // No photo stays null (not a placeholder URL); avatars become full URLs
+      const reviewsWithImageUrl = reviews.map((review) => formatReviewImages(review.toJSON()));
       reviewsWithImageUrl.sort((a, b) => {
         return (
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -406,10 +428,14 @@ class ReviewController {
         fileName = "";
       }
 
+      // A hidden review that gets edited goes back to the admins for another look
+      const wasHidden = review.status === "FLAGGED" || review.status === "PENDING";
+
       await review.update({
         rating: rating !== undefined ? parseInt(rating) : review.rating,
         message: message !== undefined ? message : review.message,
-        reviewImage: fileName, 
+        reviewImage: fileName,
+        ...(wasHidden ? { status: "PENDING" } : {}),
       });
 
       const updatedReview = await Review.findByPk(reviewId, {
@@ -425,14 +451,22 @@ class ReviewController {
         ],
       });
 
-      const reviewData = updatedReview!.toJSON(); 
-      const reviewResponse = {
-        ...reviewData,
-        reviewImage: getFullImageUrl(reviewData.reviewImage),
-      };
+      const reviewData = updatedReview!.toJSON();
+      const reviewResponse = formatReviewImages(reviewData);
+
+      if (wasHidden) {
+        await notifyAdmins({
+          type: "new-review",
+          title: "Hidden review edited",
+          message: `${reviewData.User?.username || "A customer"} edited their hidden review of ${reviewData.Product?.productName || "a product"}. Check it and publish it if it now follows the rules.`,
+          link: "/admin-dashboard/reviews",
+        });
+      }
 
       res.status(200).json({
-        message: "Review updated successfully.",
+        message: wasHidden
+          ? "Review updated. Our team will check it before it's shown again."
+          : "Review updated successfully.",
         data: reviewResponse,
       });
     } catch (error: any) {

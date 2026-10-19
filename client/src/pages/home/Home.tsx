@@ -3,16 +3,19 @@ import Categories from "./components/Categories"
 import Hero from "./components/Hero"
 import Testimonials from "./components/Testimonials"
 import Truvora from "./components/Truvora"
+import usePageTitle from "../../hooks/usePageTitle"
 
 const Home = () => {
+  usePageTitle()
+
   return (
-    <>
-    <Hero />
-    <Categories />
-    <Bestsellers />
-    <Truvora />
-    <Testimonials />
-    </>
+    <div className="bg-[#FDF8ED] text-[#1A1613]">
+      <Hero />
+      <Categories />
+      <Bestsellers />
+      <Testimonials />
+      <Truvora />
+    </div>
   )
 }
 

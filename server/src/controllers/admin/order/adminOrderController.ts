@@ -9,7 +9,8 @@ import Product from "../../../database/models/productModel";
 import Payment from "../../../database/models/paymentModel";
 import User from "../../../database/models/userModel";
 import getFullImageUrl from '../../../services/imageHandler';
-import { emitToAdmin } from "../../../services/socketService";
+import { emitToAdmin, emitToUser } from "../../../services/socketService";
+import { notifyCustomer, orderLabel } from "../../../services/notificationService";
 
 // *Note: Difference between findOne and findByPk is that findOne allows you to specify additional options such as where clause, include, etc. while findByPk is a shorthand method for finding a record by its primary key. 
 // In this case, since we want to include related models (OrderDetails, Product, Payment, User), we use findOne with the appropriate include options.
@@ -186,6 +187,7 @@ class AdminOrderController {
         return;
       }
 
+      const statusChanged = order.orderStatus !== orderStatus;
       order.orderStatus = orderStatus;
       await order.save();
 
@@ -227,6 +229,27 @@ class AdminOrderController {
         orderStatus,
       });
 
+      // Live notification for the customer who placed the order
+      emitToUser(order.userId, "customer:order-updated", {
+        orderId: order.id,
+        orderStatus,
+      });
+      if (statusChanged) {
+        const statusText: Record<string, string> = {
+          Pending: "is pending confirmation",
+          Preparation: "is being prepared",
+          "In Transit": "is on its way",
+          Delivered: "has been delivered",
+          Cancelled: "was cancelled by the store",
+        };
+        await notifyCustomer(order.userId, {
+          type: "order-status",
+          title: orderStatus === "In Transit" ? "Order on its way" : `Order ${String(orderStatus).toLowerCase()}`,
+          message: `Your order ${await orderLabel(order.id)} ${statusText[orderStatus] ?? `is now ${orderStatus}`}.`,
+          link: `/my-orders/orderdetails/${order.id}`,
+        });
+      }
+
       res.status(200).json({
         message: "Order status updated successfully",
         data: plainOrder,
@@ -261,6 +284,8 @@ class AdminOrderController {
         return;
       }
 
+      const customerId = order.userId;
+      const label = await orderLabel(order.id);
       await OrderDetails.destroy({ where: { orderId: order.id } });
       if (order.paymentId) {
         await Payment.destroy({ where: { id: order.paymentId } });
@@ -270,6 +295,12 @@ class AdminOrderController {
       emitToAdmin("admin:dashboard-refresh", {
         type: "order-deleted",
         orderId,
+      });
+      await notifyCustomer(customerId, {
+        type: "order-removed",
+        title: "Order removed",
+        message: `Your order ${label} was removed by the store. Contact us if you have any questions.`,
+        link: "/my-orders",
       });
 
       res.status(200).json({

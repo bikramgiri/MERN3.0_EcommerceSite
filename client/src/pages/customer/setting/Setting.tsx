@@ -240,7 +240,7 @@ const Setting = () => {
   return (
     <>
       <div className="bg-[#FDF8ED] py-6 md:py-10">
-        <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mt-10">
             <Breadcrumb items={[{ label: "Setting" }]} />
           </div>

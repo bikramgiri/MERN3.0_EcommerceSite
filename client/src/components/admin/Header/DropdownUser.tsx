@@ -57,7 +57,7 @@ const DropdownUser = () => {
     return (
       <Link
         to="/login"
-        className="cursor-pointer flex rounded-lg px-4 py-2 sm:px-5 text-sm sm:text-base font-medium text-[#E6540B] border-2 border-[#E6540B] hover:bg-[#E6540B]/10 transition-colors"
+        className="cursor-pointer flex rounded-lg px-4 py-2 sm:px-5 text-sm sm:text-base font-medium text-[#E6540B] border-2 border-[#E6540B] hover:bg-[#E6540B]/10 dark:hover:bg-[#E6540B]/15 transition-colors"
       >
         Login
       </Link>
@@ -74,16 +74,16 @@ const DropdownUser = () => {
         <span className="rounded-full">{renderAvatar('small')}</span>
 
         <span className="hidden text-left sm:block">
-          <span className="block max-w-[8rem] truncate text-sm font-medium text-[#1A1613] md:max-w-[12rem]">
+          <span className="block max-w-[8rem] truncate text-sm font-medium text-[#1A1613] dark:text-[#F5EFE6] md:max-w-[12rem]">
             {effectiveUser?.username || 'Admin User'}
           </span>
-          <span className="block max-w-[8rem] truncate text-xs text-[#1A1613]/55 md:max-w-[12rem]">
+          <span className="block max-w-[8rem] truncate text-xs text-[#1A1613]/55 dark:text-[#F5EFE6]/50 md:max-w-[12rem]">
             {effectiveUser?.email || 'admin@gmail.com'}
           </span>
         </span>
 
         <ChevronDown
-          className={`hidden sm:block flex-shrink-0 text-[#1A1613]/60 transition-transform duration-200 ${
+          className={`hidden sm:block flex-shrink-0 text-[#1A1613]/60 dark:text-[#F5EFE6]/50 transition-transform duration-200 ${
             dropdownOpen ? 'rotate-180' : ''
           }`}
           size={20}
@@ -91,15 +91,15 @@ const DropdownUser = () => {
       </Link>
 
       {dropdownOpen && (
-        <div className="absolute right-0 z-50 mt-3 w-[calc(100vw-2rem)] max-w-72 rounded-md border border-[#1A1613]/10 bg-[#FFFDF8] py-2 shadow-xl shadow-[#1A1613]/10 sm:w-72">
-          <div className="border-b border-[#1A1613]/10 px-5 py-4">
+        <div className="absolute right-0 z-50 mt-3 w-[calc(100vw-2rem)] max-w-72 rounded-md border border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] py-2 shadow-xl shadow-[#1A1613]/10 dark:shadow-black/40 sm:w-72">
+          <div className="border-b border-[#1A1613]/10 dark:border-white/10 px-5 py-4">
             <div className="flex items-center gap-3">
               {renderAvatar('large')}
               <div className="min-w-0">
-                <p className="truncate font-medium text-[#1A1613]">
+                <p className="truncate font-medium text-[#1A1613] dark:text-[#F5EFE6]">
                   {effectiveUser?.username || 'Admin User'}
                 </p>
-                <p className="truncate text-sm text-[#1A1613]/55">
+                <p className="truncate text-sm text-[#1A1613]/55 dark:text-[#F5EFE6]/50">
                   {effectiveUser?.email || 'admin@gmail.com'}
                 </p>
               </div>
@@ -109,7 +109,7 @@ const DropdownUser = () => {
           <div className="py-2">
             <Link
               to="/admin-dashboard/profile"
-              className="flex items-center gap-3 px-5 py-2.5 text-[#1A1613] transition-colors hover:bg-[#F4EEDF] hover:text-[#E6540B]"
+              className="flex items-center gap-3 px-5 py-2.5 text-[#1A1613] dark:text-[#F5EFE6] transition-colors hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] hover:text-[#E6540B]"
               onClick={() => setDropdownOpen(false)}
             >
               <CgProfile className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -117,7 +117,7 @@ const DropdownUser = () => {
             </Link>
             <Link
               to="/admin-dashboard/settings"
-              className="flex items-center gap-3 px-5 py-2.5 text-[#1A1613] transition-colors hover:bg-[#F4EEDF] hover:text-[#E6540B]"
+              className="flex items-center gap-3 px-5 py-2.5 text-[#1A1613] dark:text-[#F5EFE6] transition-colors hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] hover:text-[#E6540B]"
               onClick={() => setDropdownOpen(false)}
             >
               <Settings className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -125,10 +125,10 @@ const DropdownUser = () => {
             </Link>
           </div>
 
-          <div className="border-t border-[#1A1613]/10 pt-2">
+          <div className="border-t border-[#1A1613]/10 dark:border-white/10 pt-2">
             <button
               onClick={handleLogOut}
-              className="focus:outline-none focus:ring-0 flex w-full cursor-pointer items-center gap-3 px-5 py-2 text-red-600 transition-colors hover:bg-[#9B3A2E]/10"
+              className="focus:outline-none focus:ring-0 flex w-full cursor-pointer items-center gap-3 px-5 py-2 text-red-600 dark:text-red-400 transition-colors hover:bg-[#9B3A2E]/10 dark:hover:bg-red-500/15"
             >
               <LogOut className="h-5 w-5 sm:h-6 sm:w-6" />
               Log out

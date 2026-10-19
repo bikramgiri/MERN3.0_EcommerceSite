@@ -320,10 +320,10 @@ const UserManagement: React.FC = () => {
       {/* 1. Header Bar matching HamroTask design */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[#1A1613] sm:text-3xl">
+          <h1 className="text-2xl font-bold tracking-tight text-[#1A1613] dark:text-[#F5EFE6] sm:text-3xl">
             User Management
           </h1>
-          <p className="mt-1 text-xs text-[#1A1613]/60 sm:text-sm">
+          <p className="mt-1 text-xs text-[#1A1613]/60 dark:text-[#F5EFE6]/50 sm:text-sm">
             Manage customers, verified accounts, and admin permissions.
           </p>
         </div>
@@ -332,7 +332,7 @@ const UserManagement: React.FC = () => {
           <button
             onClick={handleRefresh}
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-xl border border-[#1A1613]/15 bg-[#FFFDF8] px-4 py-2 text-xs font-semibold text-[#1A1613] shadow-xs hover:bg-[#F4EEDF] transition-all active:scale-95 disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl border border-[#1A1613]/15 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] px-4 py-2 text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] shadow-xs hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] transition-all active:scale-95 disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[#E6540B]" : ""}`} />
             <span>Refresh</span>
@@ -341,13 +341,13 @@ const UserManagement: React.FC = () => {
       </div>
 
       {/* 2. Unified User Management Block: Search + Filters + Batch Actions + Table (Matching HamroTask) */}
-      <div className="rounded-xl border border-[#1A1613]/10 bg-[#FFFDF8] shadow-xs overflow-hidden">
+      <div className="rounded-xl border border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs overflow-hidden">
         {/* Search & Filter Top Bar */}
-        <div className="p-4 sm:p-5 border-b border-[#1A1613]/10">
+        <div className="p-4 sm:p-5 border-b border-[#1A1613]/10 dark:border-white/10">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             {/* Search Box */}
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#1A1613]/40 w-4 h-4" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#1A1613]/40 dark:text-[#F5EFE6]/50 w-4 h-4" />
               <input
                 type="text"
                 placeholder="Search users by name or email..."
@@ -356,12 +356,12 @@ const UserManagement: React.FC = () => {
                   setSearchTerm(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full h-10 pl-10 pr-9 rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] text-xs text-[#1A1613] placeholder:text-[#1A1613]/40 focus:outline-none focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
+                className="w-full h-10 pl-10 pr-9 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] text-xs text-[#1A1613] dark:text-[#F5EFE6] placeholder:text-[#1A1613]/40 dark:placeholder:text-[#F5EFE6]/40 focus:outline-none focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
               />
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1A1613]/40 hover:text-[#1A1613]"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1A1613]/40 dark:text-[#F5EFE6]/50 hover:text-[#1A1613] dark:hover:text-[#F5EFE6]"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -378,11 +378,11 @@ const UserManagement: React.FC = () => {
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
                   roleFilter === "ALL"
                     ? "bg-[#E6540B] text-white shadow-xs"
-                    : "bg-[#F4EEDF] text-[#1A1613]/70 hover:bg-[#EDE5D0]"
+                    : "bg-[#F4EEDF] dark:bg-[#2A2420] text-[#1A1613]/70 dark:text-[#F5EFE6]/70 hover:bg-[#EDE5D0] dark:hover:bg-white/10"
                 }`}
               >
                 <span>All</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${roleFilter === "ALL" ? "bg-white/25 text-white" : "bg-[#1A1613]/10"}`}>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${roleFilter === "ALL" ? "bg-white/25 text-white" : "bg-[#1A1613]/10 dark:bg-white/10"}`}>
                   {initialLoading ? (
                     <span className="inline-block w-2.5 h-2 rounded bg-current opacity-30 animate-pulse" />
                   ) : (
@@ -399,11 +399,11 @@ const UserManagement: React.FC = () => {
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
                   roleFilter === "customer"
                     ? "bg-[#E6540B] text-white shadow-xs"
-                    : "bg-[#F4EEDF] text-[#1A1613]/70 hover:bg-[#EDE5D0]"
+                    : "bg-[#F4EEDF] dark:bg-[#2A2420] text-[#1A1613]/70 dark:text-[#F5EFE6]/70 hover:bg-[#EDE5D0] dark:hover:bg-white/10"
                 }`}
               >
                 <span>Customer</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${roleFilter === "customer" ? "bg-white/25 text-white" : "bg-[#1A1613]/10"}`}>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${roleFilter === "customer" ? "bg-white/25 text-white" : "bg-[#1A1613]/10 dark:bg-white/10"}`}>
                   {initialLoading ? (
                     <span className="inline-block w-2.5 h-2 rounded bg-current opacity-30 animate-pulse" />
                   ) : (
@@ -420,11 +420,11 @@ const UserManagement: React.FC = () => {
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
                   roleFilter === "admin"
                     ? "bg-[#E6540B] text-white shadow-xs"
-                    : "bg-[#F4EEDF] text-[#1A1613]/70 hover:bg-[#EDE5D0]"
+                    : "bg-[#F4EEDF] dark:bg-[#2A2420] text-[#1A1613]/70 dark:text-[#F5EFE6]/70 hover:bg-[#EDE5D0] dark:hover:bg-white/10"
                 }`}
               >
                 <span>Admin</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${roleFilter === "admin" ? "bg-white/25 text-white" : "bg-[#1A1613]/10"}`}>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${roleFilter === "admin" ? "bg-white/25 text-white" : "bg-[#1A1613]/10 dark:bg-white/10"}`}>
                   {initialLoading ? (
                     <span className="inline-block w-2.5 h-2 rounded bg-current opacity-30 animate-pulse" />
                   ) : (
@@ -437,7 +437,7 @@ const UserManagement: React.FC = () => {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                className="h-8 rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] px-2.5 text-xs font-medium text-[#1A1613] focus:outline-none focus:border-[#E6540B]"
+                className="h-8 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] px-2.5 text-xs font-medium text-[#1A1613] dark:text-[#F5EFE6] focus:outline-none focus:border-[#E6540B]"
               >
                 <option value="newest">Newest</option>
                 <option value="oldest">Oldest</option>
@@ -450,18 +450,18 @@ const UserManagement: React.FC = () => {
 
         {/* Batch Action Bar inside the unified block when users are selected */}
         {selectedIds.length > 0 && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-red-200 bg-red-50/95 px-4 py-3 text-xs shadow-inner animate-fade-in">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-red-200 dark:border-red-500/30 bg-red-50/95 dark:bg-red-500/15 px-4 py-3 text-xs shadow-inner animate-fade-in">
             <div className="flex items-center gap-3">
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-white font-bold text-xs shadow-xs">
                 {selectedIds.length}
               </span>
-              <span className="font-semibold text-red-950">
+              <span className="font-semibold text-red-950 dark:text-red-300">
                 {selectedIds.length} customer{selectedIds.length > 1 ? "s" : ""} selected
               </span>
               <span className="text-red-300">|</span>
               <button
                 onClick={() => setSelectedIds([])}
-                className="font-medium text-red-700 underline hover:text-red-900 transition-colors"
+                className="font-medium text-red-700 dark:text-red-400 underline hover:text-red-900 dark:hover:text-red-300 transition-colors"
               >
                 Deselect all
               </button>
@@ -480,8 +480,8 @@ const UserManagement: React.FC = () => {
         )}
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-[#1A1613]">
-            <thead className="bg-[#F4EEDF]/80 text-[11px] uppercase tracking-wider text-[#1A1613]/65 font-bold border-b border-[#1A1613]/10">
+          <table className="w-full text-left text-xs text-[#1A1613] dark:text-[#F5EFE6]">
+            <thead className="bg-[#F4EEDF]/80 dark:bg-[#2A2420] text-[11px] uppercase tracking-wider text-[#1A1613]/65 dark:text-[#F5EFE6]/70 font-bold border-b border-[#1A1613]/10 dark:border-white/10">
               <tr>
                 <th className="py-3 px-4 w-10">
                   <input
@@ -489,7 +489,7 @@ const UserManagement: React.FC = () => {
                     checked={isAllSelected}
                     disabled={initialLoading || selectableUsers.length === 0}
                     onChange={handleSelectAll}
-                    className="rounded border-[#1A1613]/20 accent-[#E6540B] cursor-pointer disabled:opacity-40"
+                    className="rounded border-[#1A1613]/20 dark:border-white/15 accent-[#E6540B] cursor-pointer disabled:opacity-40"
                     title={selectableUsers.length === 0 ? "No selectable customers" : "Select all customers"}
                   />
                 </th>
@@ -503,26 +503,26 @@ const UserManagement: React.FC = () => {
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-[#1A1613]/10">
+            <tbody className="divide-y divide-[#1A1613]/10 dark:divide-white/10">
               {initialLoading ? (
                 Array.from({ length: pageSize }).map((_, idx) => (
                   <tr key={`skeleton-${idx}`} className="animate-pulse">
                     {/* Checkbox */}
                     <td className="py-3.5 px-4">
-                      <div className="w-4 h-4 rounded border border-[#1A1613]/10 bg-[#1A1613]/5" />
+                      <div className="w-4 h-4 rounded border border-[#1A1613]/10 dark:border-white/10 bg-[#1A1613]/5 dark:bg-[#2A2420]" />
                     </td>
 
                     {/* Name & Avatar */}
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-[#1A1613]/10 shrink-0" />
+                        <div className="w-8 h-8 rounded-full bg-[#1A1613]/10 dark:bg-white/10 shrink-0" />
                         <div className="space-y-1.5 flex-1 min-w-0">
                           <div
-                            className="h-3.5 rounded bg-[#1A1613]/15"
+                            className="h-3.5 rounded bg-[#1A1613]/15 dark:bg-white/10"
                             style={{ width: `${80 + (idx % 4) * 20}px` }}
                           />
                           {idx === 0 && (
-                            <div className="h-2 rounded bg-purple-200/70 w-16" />
+                            <div className="h-2 rounded bg-purple-200/70 dark:bg-purple-500/25 w-16" />
                           )}
                         </div>
                       </div>
@@ -531,44 +531,44 @@ const UserManagement: React.FC = () => {
                     {/* Email */}
                     <td className="py-3.5 px-4">
                       <div
-                        className="h-3.5 rounded bg-[#1A1613]/10"
+                        className="h-3.5 rounded bg-[#1A1613]/10 dark:bg-white/10"
                         style={{ width: `${140 + (idx % 3) * 25}px` }}
                       />
                     </td>
 
                     {/* Role */}
                     <td className="py-3.5 px-4">
-                      <div className="h-5 w-16 rounded-md bg-[#1A1613]/10" />
+                      <div className="h-5 w-16 rounded-md bg-[#1A1613]/10 dark:bg-white/10" />
                     </td>
 
                     {/* Status */}
                     <td className="py-3.5 px-4">
-                      <div className="h-5 w-14 rounded-full bg-emerald-100/60" />
+                      <div className="h-5 w-14 rounded-full bg-emerald-100/60 dark:bg-emerald-500/10" />
                     </td>
 
                     {/* Email Verified */}
                     <td className="py-3.5 px-4">
-                      <div className="h-4 w-16 rounded bg-[#1A1613]/10" />
+                      <div className="h-4 w-16 rounded bg-[#1A1613]/10 dark:bg-white/10" />
                     </td>
 
                     {/* Registered */}
                     <td className="py-3.5 px-4">
-                      <div className="h-3.5 w-20 rounded bg-[#1A1613]/10" />
+                      <div className="h-3.5 w-20 rounded bg-[#1A1613]/10 dark:bg-white/10" />
                     </td>
 
                     {/* Actions */}
                     <td className="py-3.5 px-4 text-right pr-6">
                       <div className="flex items-center justify-end gap-2 pr-1">
-                        <div className="w-6 h-6 rounded-md bg-[#1A1613]/10" />
-                        <div className="w-6 h-6 rounded-md bg-[#1A1613]/10" />
-                        <div className="w-6 h-6 rounded-md bg-[#1A1613]/10" />
+                        <div className="w-6 h-6 rounded-md bg-[#1A1613]/10 dark:bg-white/10" />
+                        <div className="w-6 h-6 rounded-md bg-[#1A1613]/10 dark:bg-white/10" />
+                        <div className="w-6 h-6 rounded-md bg-[#1A1613]/10 dark:bg-white/10" />
                       </div>
                     </td>
                   </tr>
                 ))
               ) : paginatedUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-[#1A1613]/50">
+                  <td colSpan={8} className="py-12 text-center text-[#1A1613]/50 dark:text-[#F5EFE6]/50">
                     <p className="font-semibold text-sm">No users found</p>
                     <p className="text-xs mt-1">Try modifying your search or filter options.</p>
                   </td>
@@ -582,8 +582,8 @@ const UserManagement: React.FC = () => {
                     <tr
                       key={user.id}
                       onClick={() => setSelectedUser(user)}
-                      className={`group cursor-pointer hover:bg-[#F4EEDF]/50 transition-colors ${
-                        isSelected ? "bg-[#E6540B]/5" : ""
+                      className={`group cursor-pointer hover:bg-[#F4EEDF]/50 dark:hover:bg-white/5 transition-colors ${
+                        isSelected ? "bg-[#E6540B]/5 dark:bg-[#E6540B]/10" : ""
                       }`}
                     >
                       {/* Checkbox */}
@@ -599,14 +599,14 @@ const UserManagement: React.FC = () => {
                       >
                         {isAdmin ? (
                           <div title="Admin accounts cannot be deleted" className="cursor-not-allowed">
-                            <ShieldCheck className="w-4 h-4 text-purple-600 opacity-60" />
+                            <ShieldCheck className="w-4 h-4 text-purple-600 dark:text-purple-400 opacity-60" />
                           </div>
                         ) : (
                           <input
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => {}}
-                            className="rounded border-[#1A1613]/20 accent-[#E6540B] cursor-pointer"
+                            className="rounded border-[#1A1613]/20 dark:border-white/15 accent-[#E6540B] cursor-pointer"
                           />
                         )}
                       </td>
@@ -618,7 +618,7 @@ const UserManagement: React.FC = () => {
                             <img
                               src={user.avatar}
                               alt=""
-                              className="w-8 h-8 rounded-full object-cover border border-[#1A1613]/10 flex-shrink-0"
+                              className="w-8 h-8 rounded-full object-cover border border-[#1A1613]/10 dark:border-white/10 flex-shrink-0"
                             />
                           ) : (
                             <div
@@ -630,11 +630,11 @@ const UserManagement: React.FC = () => {
                             </div>
                           )}
                           <div className="min-w-0">
-                            <p className="font-semibold text-xs text-[#1A1613] truncate max-w-[150px]">
+                            <p className="font-semibold text-xs text-[#1A1613] dark:text-[#F5EFE6] truncate max-w-[150px]">
                               {user.username}
                             </p>
                             {isAdmin && (
-                              <span className="inline-block text-[10px] text-purple-700 font-bold">
+                              <span className="inline-block text-[10px] text-purple-700 dark:text-purple-400 font-bold">
                                 Administrator
                               </span>
                             )}
@@ -643,16 +643,16 @@ const UserManagement: React.FC = () => {
                       </td>
 
                       {/* Email */}
-                      <td className="py-3.5 px-4 text-[#1A1613]/75 font-medium">
+                      <td className="py-3.5 px-4 text-[#1A1613]/75 dark:text-[#F5EFE6]/70 font-medium">
                         <div className="flex items-center gap-1.5">
                           <span className="truncate max-w-[180px]">{user.email}</span>
                           <button
                             onClick={(e) => handleCopy(user.email, e)}
-                            className="text-[#1A1613]/30 hover:text-[#E6540B] p-0.5 rounded transition-colors"
+                            className="text-[#1A1613]/30 dark:text-[#F5EFE6]/40 hover:text-[#E6540B] p-0.5 rounded transition-colors"
                             title="Copy email"
                           >
                             {copiedId === user.email ? (
-                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                              <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                             ) : (
                               <Copy className="w-3 h-3" />
                             )}
@@ -665,8 +665,8 @@ const UserManagement: React.FC = () => {
                         <span
                           className={`inline-flex items-center rounded-md px-2.5 py-0.5 text-[11px] font-semibold ${
                             isAdmin
-                              ? "bg-purple-50 text-purple-700 border border-purple-200"
-                              : "bg-blue-50 text-blue-700 border border-blue-200"
+                              ? "bg-purple-50 dark:bg-purple-500/15 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-500/30"
+                              : "bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30"
                           }`}
                         >
                           {isAdmin ? "Admin" : "Customer"}
@@ -675,7 +675,7 @@ const UserManagement: React.FC = () => {
 
                       {/* Status */}
                       <td className="py-3.5 px-4">
-                        <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 border border-emerald-200">
+                        <span className="inline-flex items-center rounded-full bg-emerald-50 dark:bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30">
                           Active
                         </span>
                       </td>
@@ -683,12 +683,12 @@ const UserManagement: React.FC = () => {
                       {/* Email Verified */}
                       <td className="py-3.5 px-4">
                         {user.isVerified !== false ? (
-                          <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold text-[11px]">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-semibold text-[11px]">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                             Verified
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-amber-700 font-medium text-[11px]">
+                          <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400 font-medium text-[11px]">
                             <Clock className="w-3.5 h-3.5 text-amber-500" />
                             Pending
                           </span>
@@ -696,7 +696,7 @@ const UserManagement: React.FC = () => {
                       </td>
 
                       {/* Created Date */}
-                      <td className="py-3.5 px-4 text-[#1A1613]/60 font-medium">
+                      <td className="py-3.5 px-4 text-[#1A1613]/60 dark:text-[#F5EFE6]/50 font-medium">
                         {formatDate(user.createdAt)}
                       </td>
 
@@ -709,7 +709,7 @@ const UserManagement: React.FC = () => {
                           {/* View details */}
                           <button
                             onClick={() => setSelectedUser(user)}
-                            className="p-1.5 rounded-md hover:bg-[#F4EEDF] text-[#1A1613]/60 hover:text-[#1A1613] transition-colors"
+                            className="p-1.5 rounded-md hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] text-[#1A1613]/60 dark:text-[#F5EFE6]/50 hover:text-[#1A1613] dark:hover:text-[#F5EFE6] transition-colors"
                             title="View user details"
                           >
                             <Eye className="w-4 h-4" />
@@ -718,7 +718,7 @@ const UserManagement: React.FC = () => {
                           {/* Mail user */}
                           <a
                             href={`mailto:${user.email}`}
-                            className="p-1.5 rounded-md hover:bg-[#F4EEDF] text-[#1A1613]/60 hover:text-[#E6540B] transition-colors"
+                            className="p-1.5 rounded-md hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] text-[#1A1613]/60 dark:text-[#F5EFE6]/50 hover:text-[#E6540B] transition-colors"
                             title="Send email"
                           >
                             <Mail className="w-4 h-4" />
@@ -728,7 +728,7 @@ const UserManagement: React.FC = () => {
                           {!isAdmin && (
                             <button
                               onClick={() => setUserToDelete(user)}
-                              className="p-1.5 rounded-md hover:bg-red-50 text-red-500 hover:text-red-700 transition-colors"
+                              className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-500/15 text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors"
                               title="Delete customer"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -745,10 +745,10 @@ const UserManagement: React.FC = () => {
         </div>
 
         {/* Pagination Footer */}
-        <div className="flex items-center justify-between p-4 border-t border-[#1A1613]/10 text-xs text-[#1A1613]/60 bg-[#FDF8ED]/30">
+        <div className="flex items-center justify-between p-4 border-t border-[#1A1613]/10 dark:border-white/10 text-xs text-[#1A1613]/60 dark:text-[#F5EFE6]/50 bg-[#FDF8ED]/30 dark:bg-white/5">
           <div>
             {initialLoading ? (
-              <div className="h-3.5 w-24 rounded bg-[#1A1613]/10 animate-pulse" />
+              <div className="h-3.5 w-24 rounded bg-[#1A1613]/10 dark:bg-white/10 animate-pulse" />
             ) : (
               `Page ${currentPage} of ${totalPages}`
             )}
@@ -758,14 +758,14 @@ const UserManagement: React.FC = () => {
             <button
               disabled={initialLoading || currentPage === 1}
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              className="px-3.5 py-1.5 rounded-lg border border-[#1A1613]/15 text-xs font-semibold text-[#1A1613] hover:bg-[#F4EEDF] disabled:opacity-40 transition-colors"
+              className="px-3.5 py-1.5 rounded-lg border border-[#1A1613]/15 dark:border-white/10 text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] disabled:opacity-40 transition-colors"
             >
               Previous
             </button>
             <button
               disabled={initialLoading || currentPage === totalPages}
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              className="px-3.5 py-1.5 rounded-lg border border-[#1A1613]/15 text-xs font-semibold text-[#1A1613] hover:bg-[#F4EEDF] disabled:opacity-40 transition-colors"
+              className="px-3.5 py-1.5 rounded-lg border border-[#1A1613]/15 dark:border-white/10 text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] disabled:opacity-40 transition-colors"
             >
               Next
             </button>
@@ -776,13 +776,13 @@ const UserManagement: React.FC = () => {
       {/* 5. User Details Modal */}
       {selectedUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in">
-          <div className="relative w-full max-w-md rounded-2xl border border-[#1A1613]/10 bg-[#FFFDF8] p-6 shadow-2xl">
+          <div className="relative w-full max-w-md rounded-2xl border border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] p-6 shadow-2xl">
             {/* Modal Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-[#1A1613]/10">
-              <h3 className="text-base font-bold text-[#1A1613]">User Profile</h3>
+            <div className="flex items-center justify-between pb-4 border-b border-[#1A1613]/10 dark:border-white/10">
+              <h3 className="text-base font-bold text-[#1A1613] dark:text-[#F5EFE6]">User Profile</h3>
               <button
                 onClick={() => setSelectedUser(null)}
-                className="p-1 rounded-full hover:bg-[#F4EEDF] text-[#1A1613]/60 transition-colors"
+                className="p-1 rounded-full hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] text-[#1A1613]/60 dark:text-[#F5EFE6]/50 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -806,23 +806,23 @@ const UserManagement: React.FC = () => {
                 </div>
               )}
 
-              <h4 className="mt-3 text-lg font-bold text-[#1A1613]">
+              <h4 className="mt-3 text-lg font-bold text-[#1A1613] dark:text-[#F5EFE6]">
                 {selectedUser.username}
               </h4>
-              <p className="text-xs text-[#1A1613]/60">{selectedUser.email}</p>
+              <p className="text-xs text-[#1A1613]/60 dark:text-[#F5EFE6]/50">{selectedUser.email}</p>
 
               <div className="mt-3 flex items-center gap-2">
                 <span
                   className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                     selectedUser.role === "admin"
-                      ? "bg-purple-50 text-purple-700 border border-purple-200"
-                      : "bg-blue-50 text-blue-700 border border-blue-200"
+                      ? "bg-purple-50 dark:bg-purple-500/15 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-500/30"
+                      : "bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30"
                   }`}
                 >
                   {selectedUser.role === "admin" ? "Administrator" : "Customer"}
                 </span>
 
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 text-xs font-semibold">
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 px-2.5 py-0.5 text-xs font-semibold">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   Verified
                 </span>
@@ -830,21 +830,21 @@ const UserManagement: React.FC = () => {
             </div>
 
             {/* Detailed Metadata */}
-            <div className="mt-6 space-y-2.5 bg-[#FDF8ED] p-4 rounded-xl border border-[#1A1613]/10 text-xs">
+            <div className="mt-6 space-y-2.5 bg-[#FDF8ED] dark:bg-[#1E1A17] p-4 rounded-xl border border-[#1A1613]/10 dark:border-white/10 text-xs">
               <div className="flex justify-between">
-                <span className="text-[#1A1613]/60">User ID:</span>
-                <span className="font-mono font-medium text-[#1A1613] truncate max-w-[180px]">
+                <span className="text-[#1A1613]/60 dark:text-[#F5EFE6]/50">User ID:</span>
+                <span className="font-mono font-medium text-[#1A1613] dark:text-[#F5EFE6] truncate max-w-[180px]">
                   #{selectedUser.id}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#1A1613]/60">Registered on:</span>
-                <span className="font-medium text-[#1A1613]">
+                <span className="text-[#1A1613]/60 dark:text-[#F5EFE6]/50">Registered on:</span>
+                <span className="font-medium text-[#1A1613] dark:text-[#F5EFE6]">
                   {formatDate(selectedUser.createdAt)}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-[#1A1613]/60">Total Orders:</span>
+                <span className="text-[#1A1613]/60 dark:text-[#F5EFE6]/50">Total Orders:</span>
                 <span className="font-bold text-[#E6540B] inline-flex items-center gap-1">
                   <span>
                     {selectedUser.orderCount !== undefined
@@ -855,7 +855,7 @@ const UserManagement: React.FC = () => {
                             o.User?.email === selectedUser.email
                         ).length}
                   </span>
-                  <span className="font-normal text-[#1A1613]/60">
+                  <span className="font-normal text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
                     {(selectedUser.orderCount ??
                       recentOrders.filter(
                         (o) =>
@@ -870,7 +870,7 @@ const UserManagement: React.FC = () => {
             </div>
 
             {/* Modal Actions */}
-            <div className="mt-6 flex justify-end gap-2 pt-3 border-t border-[#1A1613]/10">
+            <div className="mt-6 flex justify-end gap-2 pt-3 border-t border-[#1A1613]/10 dark:border-white/10">
               <a
                 href={`mailto:${selectedUser.email}`}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#E6540B] text-white text-xs font-semibold hover:bg-[#d44c0a] transition-colors"
@@ -880,7 +880,7 @@ const UserManagement: React.FC = () => {
               </a>
               <button
                 onClick={() => setSelectedUser(null)}
-                className="px-4 py-2 rounded-lg bg-[#F4EEDF] text-xs font-semibold text-[#1A1613] hover:bg-[#EDE5D0] transition-colors"
+                className="px-4 py-2 rounded-lg bg-[#F4EEDF] dark:bg-[#2A2420] text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#EDE5D0] dark:hover:bg-white/10 transition-colors"
               >
                 Close
               </button>
@@ -892,17 +892,17 @@ const UserManagement: React.FC = () => {
       {/* 6. Delete Confirmation Modal */}
       {userToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in">
-          <div className="relative w-full max-w-sm rounded-2xl border border-[#1A1613]/10 bg-[#FFFDF8] p-6 shadow-2xl text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600">
+          <div className="relative w-full max-w-sm rounded-2xl border border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] p-6 shadow-2xl text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-500/15 text-red-600 dark:text-red-400">
               <AlertTriangle className="w-6 h-6" />
             </div>
 
-            <h3 className="mt-3 text-base font-bold text-[#1A1613]">
+            <h3 className="mt-3 text-base font-bold text-[#1A1613] dark:text-[#F5EFE6]">
               Delete Customer?
             </h3>
-            <p className="mt-2 text-xs text-[#1A1613]/65 leading-relaxed">
+            <p className="mt-2 text-xs text-[#1A1613]/65 dark:text-[#F5EFE6]/70 leading-relaxed">
               Are you sure you want to delete{" "}
-              <span className="font-bold text-[#1A1613]">{userToDelete.username}</span>?
+              <span className="font-bold text-[#1A1613] dark:text-[#F5EFE6]">{userToDelete.username}</span>?
               This will remove their profile and Cloudinary avatar permanently.
             </p>
 
@@ -910,7 +910,7 @@ const UserManagement: React.FC = () => {
               <button
                 onClick={() => setUserToDelete(null)}
                 disabled={deleting}
-                className="px-4 py-2 rounded-lg bg-[#F4EEDF] text-xs font-semibold text-[#1A1613] hover:bg-[#EDE5D0] transition-colors"
+                className="px-4 py-2 rounded-lg bg-[#F4EEDF] dark:bg-[#2A2420] text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#EDE5D0] dark:hover:bg-white/10 transition-colors"
               >
                 Cancel
               </button>
@@ -929,23 +929,23 @@ const UserManagement: React.FC = () => {
       {/* 7. Batch Delete Confirmation Modal */}
       {batchDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in">
-          <div className="relative w-full max-w-md rounded-2xl border border-[#1A1613]/10 bg-[#FFFDF8] p-6 shadow-2xl">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600">
+          <div className="relative w-full max-w-md rounded-2xl border border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] p-6 shadow-2xl">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-500/15 text-red-600 dark:text-red-400">
               <Trash2 className="w-6 h-6" />
             </div>
 
             <div className="mt-3 text-center">
-              <h3 className="text-base font-bold text-[#1A1613]">
+              <h3 className="text-base font-bold text-[#1A1613] dark:text-[#F5EFE6]">
                 Delete {selectedIds.length} Selected Customer{selectedIds.length > 1 ? "s" : ""}?
               </h3>
-              <p className="mt-2 text-xs text-[#1A1613]/65 leading-relaxed">
+              <p className="mt-2 text-xs text-[#1A1613]/65 dark:text-[#F5EFE6]/70 leading-relaxed">
                 Are you sure you want to permanently delete these{" "}
-                <span className="font-bold text-[#1A1613]">{selectedIds.length}</span> customer accounts? This action cannot be undone.
+                <span className="font-bold text-[#1A1613] dark:text-[#F5EFE6]">{selectedIds.length}</span> customer accounts? This action cannot be undone.
               </p>
             </div>
 
             {/* List preview of users to be deleted */}
-            <div className="mt-4 max-h-44 overflow-y-auto rounded-xl border border-[#1A1613]/10 bg-[#FDF8ED] p-3 space-y-2">
+            <div className="mt-4 max-h-44 overflow-y-auto rounded-xl border border-[#1A1613]/10 dark:border-white/10 bg-[#FDF8ED] dark:bg-[#1E1A17] p-3 space-y-2">
               {users
                 .filter((u) => selectedIds.includes(u.id))
                 .map((u) => (
@@ -954,10 +954,10 @@ const UserManagement: React.FC = () => {
                       <div className="w-6 h-6 rounded-full bg-[#E6540B] text-white flex items-center justify-center text-[10px] font-bold shrink-0">
                         {initials(u.username)}
                       </div>
-                      <span className="font-semibold text-[#1A1613] truncate">{u.username}</span>
-                      <span className="text-[#1A1613]/50 truncate text-[11px]">({u.email})</span>
+                      <span className="font-semibold text-[#1A1613] dark:text-[#F5EFE6] truncate">{u.username}</span>
+                      <span className="text-[#1A1613]/50 dark:text-[#F5EFE6]/50 truncate text-[11px]">({u.email})</span>
                     </div>
-                    <span className="text-[10px] font-semibold text-red-600 shrink-0">Delete</span>
+                    <span className="text-[10px] font-semibold text-red-600 dark:text-red-400 shrink-0">Delete</span>
                   </div>
                 ))}
             </div>
@@ -966,7 +966,7 @@ const UserManagement: React.FC = () => {
               <button
                 onClick={() => setBatchDeleteModal(false)}
                 disabled={batchDeleting}
-                className="px-4 py-2 rounded-lg bg-[#F4EEDF] text-xs font-semibold text-[#1A1613] hover:bg-[#EDE5D0] transition-colors"
+                className="px-4 py-2 rounded-lg bg-[#F4EEDF] dark:bg-[#2A2420] text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#EDE5D0] dark:hover:bg-white/10 transition-colors"
               >
                 Cancel
               </button>

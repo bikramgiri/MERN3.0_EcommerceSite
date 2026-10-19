@@ -17,12 +17,12 @@ const AdminHeader: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-[#FFFDF8] border-b border-[#1A1613]/10 shadow-xs transition-colors">
+    <header className="sticky top-0 z-40 w-full bg-[#FFFDF8] dark:bg-[#1E1A17] border-b border-[#1A1613]/10 dark:border-white/10 shadow-xs transition-colors">
       <div className="flex items-center justify-between h-19 px-4 sm:px-6">
         {/* Left: Hamburger + Global Search */}
         <div className="flex items-center gap-2 sm:gap-4 flex-1 max-w-2xl">
           <button
-            className="cursor-pointer focus:outline-none focus:ring-0 items-center justify-center w-10 h-10 text-[#1A1613] hover:bg-[#F4EEDF] border-[#1A1613]/10 rounded-lg lg:flex lg:h-11 lg:w-11 lg:border transition-colors shrink-0"
+            className="cursor-pointer focus:outline-none focus:ring-0 items-center justify-center w-10 h-10 text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] border-[#1A1613]/10 dark:border-white/10 rounded-lg lg:flex lg:h-11 lg:w-11 lg:border transition-colors shrink-0"
             onClick={handleToggleSidebar}
             aria-label="Toggle Sidebar"
           >

@@ -31,6 +31,21 @@ export const sendMail = async (options: MailOptions) => {
       }
 }
 
+// Sends an HTML email (with plain-text fallback); throws if sending fails
+export const sendHtmlMail = async (options: {
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+  headers?: Record<string, string>;
+}) => {
+  const transporter = createMailTransporter();
+  await transporter.sendMail({
+    from: `Truvora <${envConfig.email}>`,
+    ...options,
+  });
+};
+
 // Function to send verification email with a link
 export const sendVerificationEmailLink = async (options: { email: string; subject?: string; verificationLink: string }) => {
   try {

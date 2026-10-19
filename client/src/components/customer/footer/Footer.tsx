@@ -1,160 +1,239 @@
-import { Mail, Send, Phone, MapPin } from "lucide-react";
-import { FaFacebook, FaInstagram, FaTwitter, FaLinkedin } from "react-icons/fa";
+import { useState, type FormEvent } from "react";
+import { Loader2, Mail, MapPin, Phone, Send } from "lucide-react";
+import { FaFacebook, FaInstagram, FaLinkedin, FaXTwitter } from "react-icons/fa6";
 import { Link } from "react-router-dom";
+import axios from "axios";
+import { toast } from "react-toastify";
+import { API } from "../../../http";
 import { useStoreSettings } from "../../../services/storeSettingsService";
+import useIsAdmin from "../../../hooks/useIsAdmin";
+
+const shopLinks = [
+  { name: "Home", path: "/" },
+  { name: "All products", path: "/products" },
+  { name: "About us", path: "/about" },
+];
+
+const helpLinks = [
+  { name: "FAQ", path: "/faq" },
+  { name: "Privacy Policy", path: "/privacy-policy" },
+  { name: "Terms of Service", path: "/terms" },
+];
+
+const accountLinks = [
+  { name: "My orders", path: "/my-orders" },
+  { name: "Wishlist", path: "/wishlist" },
+  { name: "Cart", path: "/cart" },
+  { name: "Profile", path: "/profile" },
+];
+
+const linkClass =
+  "text-sm text-[#1A1613]/70 transition-colors hover:text-[#E6540B]";
 
 const Footer = () => {
   const storeSettings = useStoreSettings();
-  const quickLinks = [
-    { name: "Home", path: "/" },
-    { name: "Shop", path: "/products" },
-    { name: "About Us", path: "/about" },
-    { name: "Contact", path: "/#" },
-  ];
+  const [email, setEmail] = useState("");
+
+  // Customer-only pages show "403" to admins, so point admins to their dashboard instead
+  const isAdmin = useIsAdmin();
+  const myAccountLinks = isAdmin
+    ? [{ name: "Admin dashboard", path: "/admin-dashboard" }]
+    : accountLinks;
+  const [isSubscribing, setIsSubscribing] = useState(false);
+
+  const socialLinks = [
+    { label: "Facebook", url: storeSettings.facebookUrl, Icon: FaFacebook },
+    { label: "Instagram", url: storeSettings.instagramUrl, Icon: FaInstagram },
+    { label: "X (Twitter)", url: storeSettings.xUrl, Icon: FaXTwitter },
+    { label: "LinkedIn", url: storeSettings.linkedinUrl, Icon: FaLinkedin },
+  ].filter((social) => social.url);
+
+  const handleSubscribe = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (isSubscribing) return;
+
+    setIsSubscribing(true);
+    try {
+      const response = await API.post("/customer/newsletter", { email });
+      toast.success(response.data.message);
+      setEmail("");
+    } catch (error) {
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.message
+        : undefined;
+      toast.error(message || "Couldn't subscribe right now. Please try again.");
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
 
   return (
-    <footer className="bg-[#FDF8ED] border-t border-gray-200">
-      <div className="max-w-[1500px] mx-auto px-5 sm:px-6 lg:px-8 py-8 lg:py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
-          <div className="text-center md:text-left">
-            <Link to="/" className="inline-block mb-2 font-['Fraunces',serif] text-2xl italic font-semibold">
-              {storeSettings.storeName}<span className="text-[#E6540B]">.</span>
-            </Link>
-
-            <p className="text-[#1A1613]/60 leading-relaxed max-w-md mx-auto md:mx-0">
-              Discover quality products with fast delivery and exceptional service.  
-              Your one-stop shop for everything you need.
+    <footer className="border-t border-[#1A1613]/10 bg-[#FDF8ED] text-[#1A1613]">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Newsletter */}
+        <div className="flex flex-col gap-5 border-b border-[#1A1613]/10 py-8 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">Get offers and new arrivals first</h2>
+            <p className="mt-1 text-sm text-[#1A1613]/60">
+              Subscribe to our newsletter. No spam, unsubscribe any time.
             </p>
-
-            <div className="flex justify-center md:justify-start gap-5 mt-6">
-              <a href="#" className="text-[#E6540B] hover:text-[#D44A00] transition-colors" aria-label="Facebook">
-                <FaFacebook className="h-6 w-6" />
-              </a>
-              <a href="#" className="text-[#E6540B] hover:text-[#D44A00] transition-colors" aria-label="Instagram">
-                <FaInstagram className="h-6 w-6" />
-              </a>
-              <a href="#" className="text-[#E6540B] hover:text-[#D44A00] transition-colors" aria-label="Twitter">
-                <FaTwitter className="h-6 w-6" />
-              </a>
-              <a href="#" className="text-[#E6540B] hover:text-[#D44A00] transition-colors" aria-label="LinkedIn">
-                <FaLinkedin className="h-6 w-6" />
-              </a>
-            </div>
           </div>
 
-          <div className="text-center md:text-left">
-            <h4 className="text-lg font-semibold text-[#1A1613] mb-4">
-              Quick Links
-            </h4>
-            <ul className="space-y-2">
-              {quickLinks.map((link) => (
-                <li key={link.name}>
-                  <Link
-                    to={link.path}
-                    className="text-[#1A1613]/80 hover:text-[#E6540B] transition-colors duration-200 text-base block"
+          <form
+            onSubmit={handleSubscribe}
+            className="flex w-full flex-col gap-3 sm:flex-row md:max-w-md"
+          >
+            <label htmlFor="newsletter-email" className="sr-only">
+              Email address
+            </label>
+            <div className="relative flex-1">
+              <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1A1613]/50" />
+              <input
+                id="newsletter-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Your email address"
+                autoComplete="email"
+                required
+                className="w-full rounded-lg border border-[#1A1613]/20 bg-white py-2.5 pl-10 pr-4 text-sm placeholder:text-[#1A1613]/50 focus:border-[#E6540B] focus:outline-none focus:ring-1 focus:ring-[#E6540B]"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={isSubscribing}
+              className="flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#E6540B] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#c94806] disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {isSubscribing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+              {isSubscribing ? "Subscribing..." : "Subscribe"}
+            </button>
+          </form>
+        </div>
+
+        {/* Links */}
+        <div className="grid grid-cols-2 gap-x-6 gap-y-8 py-10 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="col-span-2 sm:col-span-3 lg:col-span-1">
+            <Link
+              to="/"
+              className="font-['Fraunces',serif] text-2xl font-semibold italic"
+            >
+              {storeSettings.storeName}
+              <span className="text-[#E6540B]">.</span>
+            </Link>
+            <p className="mt-3 max-w-xs text-sm leading-relaxed text-[#1A1613]/60">
+              Everyday essentials and trending favourites, delivered to your
+              door.
+            </p>
+
+            {socialLinks.length > 0 && (
+              <div className="mt-5 flex gap-4">
+                {socialLinks.map(({ label, url, Icon }) => (
+                  <a
+                    key={label}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={label}
+                    className="text-[#1A1613]/60 transition-colors hover:text-[#E6540B]"
                   >
+                    <Icon className="h-5 w-5" />
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <nav aria-label="Shop">
+            <h3 className="mb-4 text-sm font-semibold">Shop</h3>
+            <ul className="space-y-2.5">
+              {shopLinks.map((link) => (
+                <li key={link.path}>
+                  <Link to={link.path} className={linkClass}>
                     {link.name}
                   </Link>
                 </li>
               ))}
             </ul>
-          </div>
+          </nav>
 
-          <div className="text-center md:text-left">
-            <h4 className="text-lg font-semibold text-[#1A1613] mb-4">
-              Support
-            </h4>
-            <ul className="space-y-2">
-              {[
-                { name: "FAQ", path: "/#" },
-                { name: "Shipping Info", path: "/#" },
-                { name: "Returns & Refunds", path: "/#" },
-                { name: "Privacy Policy", path: "/#" },
-              ].map((item) => (
-                <li key={item.name}>
-                  <Link
-                    to={item.path}
-                    className="text-[#1A1613]/80 hover:text-[#E6540B] transition-colors duration-200 text-base block"
-                  >
-                    {item.name}
+          <nav aria-label="My account">
+            <h3 className="mb-4 text-sm font-semibold">My account</h3>
+            <ul className="space-y-2.5">
+              {myAccountLinks.map((link) => (
+                <li key={link.path}>
+                  <Link to={link.path} className={linkClass}>
+                    {link.name}
                   </Link>
                 </li>
               ))}
+            </ul>
+          </nav>
+
+          <nav aria-label="Help">
+            <h3 className="mb-4 text-sm font-semibold">Help</h3>
+            <ul className="space-y-2.5">
+              {helpLinks.map((link) => (
+                <li key={link.path}>
+                  <Link to={link.path} className={linkClass}>
+                    {link.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          <div className="sm:col-span-3 lg:col-span-1">
+            <h3 className="mb-4 text-sm font-semibold">Contact us</h3>
+            <ul className="space-y-3 text-sm text-[#1A1613]/70">
               {storeSettings.supportEmail && (
-                <li className="pt-2 text-xs text-[#1A1613]/70 space-y-1">
-                  <span className="font-semibold block text-[#1A1613]">Get in Touch</span>
+                <li>
                   <a
                     href={`mailto:${storeSettings.supportEmail}`}
-                    className="hover:text-[#E6540B] transition-colors flex items-center justify-center md:justify-start gap-1.5"
+                    className="flex items-start gap-2.5 break-all transition-colors hover:text-[#E6540B]"
                   >
-                    <Mail className="w-3.5 h-3.5 text-[#E6540B] shrink-0" />
-                    <span>{storeSettings.supportEmail}</span>
+                    <Mail className="mt-0.5 h-4 w-4 shrink-0 text-[#E6540B]" />
+                    {storeSettings.supportEmail}
                   </a>
-                  {storeSettings.supportPhone && (
-                    <a
-                      href={`tel:${storeSettings.supportPhone}`}
-                      className="hover:text-[#E6540B] transition-colors flex items-center justify-center md:justify-start gap-1.5"
-                    >
-                      <Phone className="w-3.5 h-3.5 text-[#E6540B] shrink-0" />
-                      <span>{storeSettings.supportPhone}</span>
-                    </a>
-                  )}
-                  {storeSettings.address && (
-                    <span className="text-[#1A1613]/60 text-[11px] flex items-center justify-center md:justify-start gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-[#E6540B] shrink-0" />
-                      <span>{storeSettings.address}</span>
-                    </span>
-                  )}
+                </li>
+              )}
+              {storeSettings.supportPhone && (
+                <li>
+                  <a
+                    href={`tel:${storeSettings.supportPhone.replace(/\s+/g, "")}`}
+                    className="flex items-start gap-2.5 transition-colors hover:text-[#E6540B]"
+                  >
+                    <Phone className="mt-0.5 h-4 w-4 shrink-0 text-[#E6540B]" />
+                    {storeSettings.supportPhone}
+                  </a>
+                </li>
+              )}
+              {storeSettings.address && (
+                <li className="flex items-start gap-2.5">
+                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#E6540B]" />
+                  {storeSettings.address}
                 </li>
               )}
             </ul>
           </div>
-
-          <div className="text-center md:text-left">
-            <h4 className="text-lg font-semibold text-[#1A1613] mb-4">
-              Newsletter
-            </h4>
-
-            <p className="text-[#1A1613]/60 mb-5">
-              Subscribe to get latest updates, offers and news.
-            </p>
-
-            <form className="flex flex-col gap-4 max-w-md mx-auto md:mx-0">
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#1A1613]/60" />
-                <input
-                  type="email"
-                  placeholder="Your email address"
-                  className="w-full pl-12 pr-4 py-3 rounded-lg border border-[#1A1613]/30 focus:outline-none focus:ring-1 focus:ring-[#E6540B] focus:border-transparent text-[#1A1613] placeholder:text-[#1A1613]/60"
-                  required
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="flex items-center justify-center gap-2 px-6 py-3 bg-[#E6540B] text-white font-medium rounded-lg hover:bg-[#D44A00] transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
-              >
-                <Send className="h-5 w-5" />
-                Subscribe
-              </button>
-            </form>
-          </div>
         </div>
 
-        <div className="mt-8 pt-8 border-t border-[#1A1613]/30">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-[#1A1613]/60">
-            <p>
-              © {new Date().getFullYear()} {storeSettings.storeName}. All rights reserved.
-            </p>
-
-            <div className="flex gap-6">
-              <Link to="/#" className="hover:text-[#E6540B] transition-colors">
-                Privacy Policy
-              </Link>
-              <Link to="/#" className="hover:text-[#E6540B] transition-colors">
-                Terms of Service
-              </Link>
-            </div>
+        {/* Bottom bar */}
+        <div className="flex flex-col gap-3 border-t border-[#1A1613]/10 py-6 text-sm text-[#1A1613]/60 sm:flex-row sm:items-center sm:justify-between">
+          <p>
+            © {new Date().getFullYear()} {storeSettings.storeName}. All rights
+            reserved.
+          </p>
+          <div className="flex gap-4">
+            <Link to="/privacy-policy" className="hover:text-[#E6540B]">
+              Privacy
+            </Link>
+            <Link to="/terms" className="hover:text-[#E6540B]">
+              Terms
+            </Link>
           </div>
         </div>
       </div>

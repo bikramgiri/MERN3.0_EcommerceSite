@@ -1,30 +1,29 @@
 @import "tailwindcss";
 
+/* dark: styles follow the theme toggle (the "dark" class on <html>), not the OS setting */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
-  --font-sans: "Pretendard", "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-heading: "Bricolage Grotesque", "Plus Jakarta Sans", sans-serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-heading: "Plus Jakarta Sans", "Inter", sans-serif;
   --font-mono: "Plus Jakarta Sans", system-ui, sans-serif;
 }
 
-/* Global typography matching HamroTask */
+/* Global typography: Inter for body text */
 html,
 body,
 #root {
-  font-family: "Pretendard", "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Override Fraunces serif font with HamroTask modern text font */
+/* Older Fraunces / IBM Plex Mono classes are shown in Plus Jakarta Sans (those fonts aren't loaded) */
 [class*="Fraunces"],
-[class*="fraunces"] {
-  font-family: "Plus Jakarta Sans", "Pretendard", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-}
-
-/* Override IBM Plex Mono font with HamroTask modern text font */
+[class*="fraunces"],
 [class*="IBM_Plex_Mono"],
 [class*="ibm_plex_mono"] {
-  font-family: "Plus Jakarta Sans", "Pretendard", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-family: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
 
 /* Hide scrollbar for Chrome, Safari, Edge and Firefox */

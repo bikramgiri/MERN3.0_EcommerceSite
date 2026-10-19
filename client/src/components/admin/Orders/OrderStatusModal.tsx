@@ -31,35 +31,35 @@ const statusOptions: {
     label: "Pending",
     description: "Order placed by customer, awaiting store confirmation.",
     icon: Clock,
-    iconColor: "text-amber-600",
+    iconColor: "text-amber-600 dark:text-amber-400",
   },
   {
     value: "Preparation",
     label: "Preparation",
     description: "Items are being picked, packed, and boxed in warehouse.",
     icon: Package,
-    iconColor: "text-blue-600",
+    iconColor: "text-blue-600 dark:text-blue-400",
   },
   {
     value: "In Transit",
     label: "In Transit",
     description: "Handed over to delivery courier and on the way.",
     icon: Truck,
-    iconColor: "text-indigo-600",
+    iconColor: "text-indigo-600 dark:text-indigo-400",
   },
   {
     value: "Delivered",
     label: "Delivered",
     description: "Package successfully handed to recipient.",
     icon: CheckCircle2,
-    iconColor: "text-emerald-600",
+    iconColor: "text-emerald-600 dark:text-emerald-400",
   },
   {
     value: "Cancelled",
     label: "Cancelled",
     description: "Order cancelled by customer or rejected by store.",
     icon: XCircle,
-    iconColor: "text-rose-600",
+    iconColor: "text-rose-600 dark:text-rose-400",
   },
 ];
 
@@ -94,18 +94,18 @@ const OrderStatusModal: React.FC<OrderStatusModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="w-full max-w-md rounded-2xl border border-[#1A1613]/15 bg-[#FFFDF8] p-5 sm:p-6 shadow-xl space-y-4">
+      <div className="w-full max-w-md rounded-2xl border border-[#1A1613]/15 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] p-5 sm:p-6 shadow-xl space-y-4">
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-[#1A1613]/10">
+        <div className="flex items-center justify-between pb-3 border-b border-[#1A1613]/10 dark:border-white/10">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#E6540B]/10 text-[#E6540B] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-[#E6540B]/10 dark:bg-[#E6540B]/15 text-[#E6540B] flex items-center justify-center">
               <SlidersHorizontal className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-[#1A1613]">
+              <h3 className="text-base font-bold text-[#1A1613] dark:text-[#F5EFE6]">
                 Update Order Status
               </h3>
-              <p className="text-xs text-[#1A1613]/55">
+              <p className="text-xs text-[#1A1613]/55 dark:text-[#F5EFE6]/50">
                 Order #{order.id.slice(0, 8)} • {order.User?.username || "Customer"}
               </p>
             </div>
@@ -113,7 +113,7 @@ const OrderStatusModal: React.FC<OrderStatusModalProps> = ({
           <button
             onClick={onClose}
             disabled={loading}
-            className="p-1.5 rounded-lg text-[#1A1613]/40 hover:text-[#1A1613] hover:bg-[#F4EEDF] transition-all"
+            className="p-1.5 rounded-lg text-[#1A1613]/40 dark:text-[#F5EFE6]/50 hover:text-[#1A1613] dark:hover:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] transition-all"
           >
             <X className="w-4 h-4" />
           </button>
@@ -133,8 +133,8 @@ const OrderStatusModal: React.FC<OrderStatusModalProps> = ({
                   onClick={() => setSelectedStatus(opt.value)}
                   className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
                     isSelected
-                      ? "border-[#E6540B] bg-[#E6540B]/5 shadow-xs"
-                      : "border-[#1A1613]/10 bg-[#FFFDF8] hover:bg-[#FDF8ED]/50"
+                      ? "border-[#E6540B] bg-[#E6540B]/5 dark:bg-[#E6540B]/10 shadow-xs"
+                      : "border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] hover:bg-[#FDF8ED]/50 dark:hover:bg-[#2A2420]"
                   }`}
                 >
                   <input
@@ -149,16 +149,16 @@ const OrderStatusModal: React.FC<OrderStatusModalProps> = ({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <Icon className={`w-3.5 h-3.5 ${opt.iconColor}`} />
-                      <span className="text-xs font-bold text-[#1A1613]">
+                      <span className="text-xs font-bold text-[#1A1613] dark:text-[#F5EFE6]">
                         {opt.label}
                       </span>
                       {isCurrent && (
-                        <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[#1A1613]/8 text-[#1A1613]/60 font-semibold">
+                        <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[#1A1613]/8 dark:bg-white/10 text-[#1A1613]/60 dark:text-[#F5EFE6]/50 font-semibold">
                           Current
                         </span>
                       )}
                     </div>
-                    <p className="text-[11px] text-[#1A1613]/60 mt-0.5 leading-relaxed">
+                    <p className="text-[11px] text-[#1A1613]/60 dark:text-[#F5EFE6]/50 mt-0.5 leading-relaxed">
                       {opt.description}
                     </p>
                   </div>
@@ -168,12 +168,12 @@ const OrderStatusModal: React.FC<OrderStatusModalProps> = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#1A1613]/10">
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#1A1613]/10 dark:border-white/10">
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2 rounded-xl border border-[#1A1613]/15 text-xs font-semibold text-[#1A1613] hover:bg-[#F4EEDF] transition-all disabled:opacity-50"
+              className="px-4 py-2 rounded-xl border border-[#1A1613]/15 dark:border-white/10 text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] transition-all disabled:opacity-50"
             >
               Cancel
             </button>

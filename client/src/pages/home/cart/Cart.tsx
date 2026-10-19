@@ -14,16 +14,84 @@ import {
   useStoreSettings,
   calculateShipping,
 } from "../../../services/storeSettingsService";
+import { Status } from "../../../global/statuses";
+import { Skeleton, SkeletonContainer } from "../../../global/Skeleton";
 
 interface ApiErrorPayload {
   field?: string;
   message?: string;
 }
 
+function CartSkeleton() {
+  return (
+    <section className="py-6 sm:py-8 md:py-12 bg-[#FDF8ED] pb-16 mt-10 md:pt-18 font-['Inter',sans-serif] text-[#1A1613] antialiased">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mt-1 mb-4">
+          <Breadcrumb items={[{ label: "Cart" }]} />
+          <h1 className=" text-xl sm:text-2xl md:text-3xl font-['Fraunces',serif] font-bold text-[#1A1613]">
+            Cart Products
+          </h1>
+        </div>
+
+        <SkeletonContainer
+          label="Loading cart"
+          className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8"
+        >
+          <div className="lg:col-span-2 space-y-3 sm:space-y-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className="border border-[#1A1613]/10 rounded-2xl px-4 py-3 sm:px-6 sm:py-5 flex items-center gap-4"
+              >
+                <Skeleton className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl flex-shrink-0" />
+                <div className="flex-1 min-w-0 space-y-2">
+                  <Skeleton className="h-6 sm:h-7 w-3/4 max-w-xs" />
+                  <Skeleton className="h-4 sm:h-5 w-28" />
+                  <Skeleton className="h-5 sm:h-6 w-20" />
+                </div>
+                <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                  <Skeleton className="h-9 w-23 sm:h-10 sm:w-27 rounded-full" />
+                  <Skeleton className="w-9 h-9 sm:w-10 sm:h-10 rounded-full" />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="lg:col-span-1">
+            <div className="border border-[#1A1613]/10 rounded-xl p-5 sm:p-8 lg:sticky lg:top-20">
+              <Skeleton className="h-7 sm:h-8 w-44 mb-4 sm:mb-6" />
+              <div className="space-y-3 sm:space-y-4">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex justify-between">
+                    <Skeleton className="h-5 w-24" />
+                    <Skeleton className="h-5 w-20" />
+                  </div>
+                ))}
+                <div className="border-t border-[#1A1613]/10 pt-4 flex justify-between">
+                  <Skeleton className="h-7 w-16" />
+                  <Skeleton className="h-7 w-28" />
+                </div>
+              </div>
+              <Skeleton className="h-13 sm:h-15 w-full mt-6 sm:mt-8 rounded-xl" />
+              <div className="mt-6 sm:mt-8">
+                <Skeleton className="h-4 w-40 mb-2" />
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Skeleton className="h-12 flex-1 rounded-xl" />
+                  <Skeleton className="h-12 w-full sm:w-20 rounded-xl" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </SkeletonContainer>
+      </div>
+    </section>
+  );
+}
+
 const Cart = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { cart } = useAppSelector((state) => state.cart);
+  const { cart, status } = useAppSelector((state) => state.cart);
 
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -109,11 +177,20 @@ const Cart = () => {
   );
   const total = subtotal + shipping;
 
+  // IDLE means the header hasn't dispatched its cart fetch yet
+  const isInitialLoad =
+    (!cart || cart.length === 0) &&
+    (status === Status.LOADING || status === Status.IDLE);
+
+  if (isInitialLoad) {
+    return <CartSkeleton />;
+  }
+
   return (
     <>
       {!cart || cart?.length === 0 ? (
         <section className="py-16 sm:py-20 bg-[#FDF8ED] font-['Inter',sans-serif]">
-          <div className="max-w-[1500px] mx-auto px-4 text-center">
+          <div className="max-w-7xl mx-auto px-4 text-center">
             <Breadcrumb items={[{ label: "Cart" }]} />
             <h1 className="text-3xl sm:text-4xl font-['Fraunces',serif] font-bold text-[#1A1613] mb-4 sm:mb-6">
               Your Cart is Empty
@@ -131,7 +208,7 @@ const Cart = () => {
         </section>
       ) : (
         <section className="py-6 sm:py-8 md:py-12 bg-[#FDF8ED] pb-16 mt-10 md:pt-18 font-['Inter',sans-serif] text-[#1A1613] antialiased">
-          <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="mt-1 mb-4">
               <Breadcrumb items={[{ label: "Cart" }]} />
               <h1 className=" text-xl sm:text-2xl md:text-3xl font-['Fraunces',serif] font-bold text-[#1A1613]">

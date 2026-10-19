@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Home from "./pages/home/Home";
@@ -11,7 +11,6 @@ import VerifyOTP from "./pages/auth/VerifyOTP.js";
 import ResetPassword from "./pages/auth/ResetPassword.js";
 import ProductsWishlist from "./pages/customer/wishlist/ProductWishlist.js";
 import ProductDetails from "./pages/home/productDetails/ProductDetails.js";
-import CategoryProducts from "./pages/home/category/Categoryproducts .js";
 import Products from "./pages/home/products/Products.js";
 import Cart from "./pages/home/cart/Cart.js";
 import CheckOut from "./pages/home/checkout/CheckOut.js";
@@ -25,25 +24,66 @@ import Profile from "./pages/customer/profile/Profile.js";
 import Setting from "./pages/customer/setting/Setting.js";
 import Layout from "./layout/customer/Layout.js";
 import About from "./pages/home/about/About.js";
+import FAQ from "./pages/home/faq/FAQ";
+import PrivacyPolicy from "./pages/home/legal/PrivacyPolicy";
+import Terms from "./pages/home/legal/Terms";
+import ScrollToTop from "./global/ScrollToTop";
+import {
+  NewsletterConfirm,
+  NewsletterUnsubscribe,
+} from "./pages/home/newsletter/NewsletterPages";
 import { useAppDispatch } from "./hooks/hooks.js";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { handleGoogleLogin, logout } from "./store/auth/authSlice.js";
 import { isTokenExpired, getTokenRemainingMs } from "./utils/token.js";
 import { handleSessionExpiry } from "./http/index.js";
-import AdminDashboard from "./pages/admin/adminDashboard.js";
-import UserManagement from "./pages/admin/UserManagement.js";
-import CategoryManagement from "./pages/admin/CategoryManagement";
-import ProductManagement from "./pages/admin/ProductManagement";
-import OrderManagement from "./pages/admin/OrderManagement";
-import ReviewManagement from "./pages/admin/ReviewManagement";
-import AdminProfile from "./pages/admin/Profile.js";
-import AdminSettings from "./pages/admin/Settings";
 import ProtectedRoute from "./global/ProjectedRoute.js";
 import { UserRole } from "./types/customer/authTypes.js";
-import AdminLayout from "./layout/admin/AdminLayout.js";
-import { ThemeProvider } from "./context/ThemeContext.js";
+import { ThemeProvider, useTheme } from "./context/ThemeContext.js";
 import NotExists from "./components/admin/NotExists.js";
 import { connectSocket } from "./services/socket.js";
+import AdminPageSkeleton from "./layout/admin/AdminPageSkeleton";
+import {
+  applyStoreSettings,
+  loadStoreSettings,
+} from "./services/storeSettingsService";
+
+// Admin pages are loaded on demand so shoppers don't download the dashboard code
+const AdminLayout = lazy(() => import("./layout/admin/AdminLayout.js"));
+const AdminDashboard = lazy(() => import("./pages/admin/adminDashboard.js"));
+const UserManagement = lazy(() => import("./pages/admin/UserManagement.js"));
+const CategoryManagement = lazy(() => import("./pages/admin/CategoryManagement"));
+const ProductManagement = lazy(() => import("./pages/admin/ProductManagement"));
+const OrderManagement = lazy(() => import("./pages/admin/OrderManagement"));
+const ReviewManagement = lazy(() => import("./pages/admin/ReviewManagement"));
+const NewsletterSubscribers = lazy(() => import("./pages/admin/NewsletterSubscribers"));
+const AdminProfile = lazy(() => import("./pages/admin/Profile.js"));
+const AdminSettings = lazy(() => import("./pages/admin/Settings"));
+
+// Old /category/:id links now open the products page with that category selected
+function CategoryRedirect() {
+  const { categoryId } = useParams();
+  return <Navigate to={`/products?category=${encodeURIComponent(categoryId ?? "")}`} replace />;
+}
+
+// Toasts follow the admin theme inside the admin area; the storefront is always light
+function ThemedToastContainer() {
+  const { pathname } = useLocation();
+  const { theme } = useTheme();
+  const isAdminArea = pathname.startsWith("/admin-dashboard");
+
+  return (
+    <ToastContainer
+      position="top-right"
+      autoClose={3000}
+      hideProgressBar={false}
+      newestOnTop
+      closeOnClick
+      pauseOnHover
+      theme={isAdminArea && theme === "dark" ? "dark" : "light"}
+    />
+  );
+}
 
 function App() {
   const dispatch = useAppDispatch();
@@ -51,8 +91,13 @@ function App() {
   useEffect(() => {
     dispatch(handleGoogleLogin());
 
-    // Connect socket so live storefront visitors are counted in real-time
-    connectSocket();
+    // Store settings (shipping, payments, maintenance) come from the server
+    loadStoreSettings().catch(() => {});
+
+    // Connect socket so live storefront visitors are counted in real-time,
+    // and settings changes by the admin show up without a refresh
+    const socket = connectSocket();
+    socket.on("store:settings-updated", applyStoreSettings);
 
     const checkTokenStatus = () => {
       const token = localStorage.getItem("token");
@@ -96,20 +141,15 @@ function App() {
       window.removeEventListener("focus", checkTokenStatus);
       document.removeEventListener("visibilitychange", handleVisibility);
       window.removeEventListener("auth:session-expired", handleSessionExpiredEvent);
+      socket.off("store:settings-updated", applyStoreSettings);
     };
   }, [dispatch]);
   return (
     <ThemeProvider>
     <BrowserRouter>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        pauseOnHover
-        theme="light"
-      />
+      <ScrollToTop />
+      <ThemedToastContainer />
+      <Suspense fallback={null}>
       <Routes>
         <Route path="/register" element={<Register />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
@@ -121,7 +161,12 @@ function App() {
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
-          <Route path="/category/:categoryId" element={<CategoryProducts />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/newsletter/confirm" element={<NewsletterConfirm />} />
+          <Route path="/newsletter/unsubscribe" element={<NewsletterUnsubscribe />} />
+          <Route path="/category/:categoryId" element={<CategoryRedirect />} />
           <Route path="/products" element={<Products />} />
           <Route path="/productdetails/:id" element={<ProductDetails />} />
           
@@ -198,7 +243,14 @@ function App() {
           } />
         </Route>
 
-        <Route path="/admin-dashboard" element={<AdminLayout />}>
+        <Route
+          path="/admin-dashboard"
+          element={
+            <Suspense fallback={<AdminPageSkeleton />}>
+              <AdminLayout />
+            </Suspense>
+          }
+        >
           <Route
             index
             element={
@@ -248,6 +300,14 @@ function App() {
             }
           />
           <Route
+            path="subscribers"
+            element={
+              <ProtectedRoute allowedRoles={[UserRole.Admin]}>
+                <NewsletterSubscribers />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="profile"
             element={
               <ProtectedRoute allowedRoles={[UserRole.Admin]}>
@@ -271,6 +331,7 @@ function App() {
         </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>
+      </Suspense>
     </BrowserRouter>
     </ThemeProvider>
   );

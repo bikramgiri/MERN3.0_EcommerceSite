@@ -10,10 +10,95 @@ import { OrderStatus } from "../../../types/customer/checkoutTypes";
 import { toast } from "react-toastify";
 import axios from "axios";
 import { Status } from "../../../global/statuses";
+import { Skeleton, SkeletonContainer } from "../../../global/Skeleton";
 
 interface ApiErrorPayload {
   field?: string;
   message?: string;
+}
+
+const ORDER_TABLE_HEADINGS = [
+  "Order ID",
+  "Date",
+  "Total Amount",
+  "Order Status",
+  "Payment Method",
+  "Payment Status",
+  "Action",
+];
+
+function MyOrdersSkeleton() {
+  return (
+    <SkeletonContainer
+      label="Loading your orders"
+      className="bg-gradient-to-br from-[#FDF8ED] to-[#FAF3E4] min-h-screen py-12 antialiased font-['Inter',sans-serif]"
+    >
+      <div className="mt-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-[#FDF8ED] rounded-xl shadow-md border border-[#1A1613]/10 p-6 overflow-hidden">
+          <div className="border-b border-[#1A1613]/10 bg-[#F4EEDF] p-6 md:p-8">
+            <h2 className="font-['Fraunces',serif] text-3xl md:text-4xl font-semibold text-[#1A1613] justify-center flex items-center">
+              My Orders
+            </h2>
+          </div>
+
+          <div className="p-6 border-b border-[#1A1613]/10">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {Array.from({ length: 4 }, (_, i) => (
+                <Skeleton key={i} className="h-[50px] rounded-xl" />
+              ))}
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-[#F4EEDF] border-b border-[#1A1613]/10">
+                <tr className="text-[#1A1613]/60 uppercase tracking-wider text-xs font-['IBM_Plex_Mono',monospace] font-semibold">
+                  {ORDER_TABLE_HEADINGS.map((heading) => (
+                    <th key={heading} className="py-4 px-4 text-center">
+                      {heading}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 5 }, (_, i) => (
+                  <tr
+                    key={i}
+                    className="bg-[#FDF8ED] border-b border-[#1A1613]/10"
+                  >
+                    <td className="py-4 px-4">
+                      <Skeleton className="h-4 w-60 mx-auto" />
+                    </td>
+                    <td className="py-4 px-4">
+                      <Skeleton className="h-4 w-40 mx-auto" />
+                    </td>
+                    <td className="py-4 px-4">
+                      <Skeleton className="h-4 w-24 mx-auto" />
+                    </td>
+                    <td className="py-4 px-4">
+                      <Skeleton className="h-6 w-20 mx-auto rounded-full" />
+                    </td>
+                    <td className="py-4 px-4">
+                      <Skeleton className="h-4 w-14 mx-auto" />
+                    </td>
+                    <td className="py-4 px-4">
+                      <Skeleton className="h-4 w-16 mx-auto" />
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="flex justify-center space-x-2">
+                        <Skeleton className="h-9 w-[118px]" />
+                        <Skeleton className="h-9 w-[110px]" />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </SkeletonContainer>
+  );
 }
 
 const MyOrders = () => {
@@ -161,22 +246,20 @@ const MyOrders = () => {
     }
   };
 
-  if (!orders || status === Status.LOADING) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#FDF8ED] to-[#FAF3E4]">
-        <div className="text-center">
-          <Loader2 className="w-16 h-16 animate-spin text-[#E6540B] mx-auto mb-4" />
-          <p className="text-xl text-[#1A1613]/70">Loading my orders.....</p>
-        </div>
-      </div>
-    );
+  // Skeleton only while nothing has loaded yet; an empty result or an error falls through to the empty state.
+  const isInitialLoading =
+    (!orders || orders.length === 0) &&
+    (status === Status.IDLE || status === Status.LOADING);
+
+  if (isInitialLoading) {
+    return <MyOrdersSkeleton />;
   }
 
   return (
     <>
       {!orders || orders.length === 0 ? (
         <section className="py-30 bg-[#FDF8ED]">
-          <div className="max-w-[1500px] mx-auto px-4 text-center">
+          <div className="max-w-7xl mx-auto px-4 text-center">
             <h1 className="font-['Fraunces',serif] text-4xl font-semibold text-[#1A1613] mb-6">
               Your Orders are Empty
             </h1>
@@ -187,7 +270,7 @@ const MyOrders = () => {
         </section>
       ) : (
         <section className="bg-gradient-to-br from-[#FDF8ED] to-[#FAF3E4] min-h-screen py-12 antialiased font-['Inter',sans-serif]">
-          <div className="mt-8 max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mt-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="bg-[#FDF8ED] rounded-xl shadow-md border border-[#1A1613]/10 p-6 overflow-hidden">
               <div className="border-b border-[#1A1613]/10 bg-[#F4EEDF] p-6 md:p-8">
                 <h2 className="font-['Fraunces',serif] text-3xl md:text-4xl font-semibold text-[#1A1613] justify-center flex items-center">

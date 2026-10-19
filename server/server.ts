@@ -1,6 +1,7 @@
-import { initApp } from "./src/app";
+import { initApp, allowedOrigins } from "./src/app";
 import { envConfig } from "./src/config/config";
 import adminSeeder from "./src/adminseeder";
+import { ensureStoreSettings } from "./src/services/storeSettingsService";
 import CategoryController from "./src/controllers/admin/category/categoryController";
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
@@ -25,6 +26,7 @@ async function startServer() {
   });
 
   await adminSeeder();
+  await ensureStoreSettings();
   await CategoryController.seedCategory();
 
   // *Socket.io server (Method 1)
@@ -86,11 +88,7 @@ async function startServer() {
   // *Socket.io server (Method 2)
   const io = new Server(server, {
     cors: {
-      origin: [
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://localhost:5175",
-      ],
+      origin: allowedOrigins,
       credentials: true,
     },
   });
@@ -146,6 +144,11 @@ async function startServer() {
     registerConnectedSocket(socket.id, userId, role);
     console.log(`Socket connected: ${socket.id} (user: ${userId || "guest"}, role: ${role})`);
 
+    // Each signed-in user gets a private room for personal updates (e.g. their order status)
+    if (userId) {
+      socket.join(`user:${userId}`);
+    }
+
     // Join admin socket into admin-room
     if (role === "admin") {
       socket.join("admin-room");
@@ -170,6 +173,11 @@ async function startServer() {
 
     // *Update Order status
     socket.on("orderStatusUpdated", async (data) => {
+      // Only admins may change order status (any visitor could call this before)
+      if (role !== "admin") {
+        socket.emit("appError", "Forbidden");
+        return;
+      }
       try {
         console.log("Received orderStatusUpdated:", data); 
         const { orderId, userId, status } = data;

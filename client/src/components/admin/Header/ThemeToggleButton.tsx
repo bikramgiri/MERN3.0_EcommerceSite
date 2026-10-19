@@ -2,16 +2,17 @@ import { Moon, Sun } from "lucide-react";
 import { useTheme } from "../../../context/ThemeContext";
 
 export const ThemeToggleButton: React.FC = () => {
-  const { toggleTheme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <button
       onClick={toggleTheme}
-      className="relative cursor-pointer focus:outline-none focus:ring-0 h-10 w-10 sm:h-11 sm:w-11 flex items-center justify-center text-[#1A1613]/70 hover:text-[#1A1613] transition-colors bg-[#F4EEDF]/70 border border-[#1A1613]/10 rounded-full hover:bg-[#F4EEDF]"
-      aria-label="Toggle theme"
+      className="relative cursor-pointer focus:outline-none focus:ring-0 h-10 w-10 sm:h-11 sm:w-11 flex items-center justify-center text-[#1A1613]/70 dark:text-[#F5EFE6]/70 hover:text-[#1A1613] dark:hover:text-[#F5EFE6] transition-colors bg-[#F4EEDF]/70 dark:bg-white/5 border border-[#1A1613]/10 dark:border-white/10 rounded-full hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420]"
+      aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
     >
-      <Sun className="h-5 w-5 hidden dark:block text-[#1A1613]" />
-      <Moon className="h-5 w-5 dark:hidden text-[#1A1613]" />
+      <Sun className="h-5 w-5 hidden dark:block text-[#1A1613] dark:text-[#F5EFE6]" aria-hidden="true" />
+      <Moon className="h-5 w-5 dark:hidden text-[#1A1613]" aria-hidden="true" />
       {/* <svg
         className="hidden dark:block"
         width="20"

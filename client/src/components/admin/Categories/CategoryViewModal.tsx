@@ -26,22 +26,22 @@ const CategoryViewModal: React.FC<CategoryViewModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="w-full max-w-md rounded-2xl border border-[#1A1613]/15 bg-[#FFFDF8] p-6 shadow-xl space-y-4">
+      <div className="w-full max-w-md rounded-2xl border border-[#1A1613]/15 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] p-6 shadow-xl space-y-4">
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-[#1A1613]/10">
-          <h3 className="text-base font-bold text-[#1A1613]">
+        <div className="flex items-center justify-between pb-3 border-b border-[#1A1613]/10 dark:border-white/10">
+          <h3 className="text-base font-bold text-[#1A1613] dark:text-[#F5EFE6]">
             Category Details
           </h3>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#1A1613]/40 hover:text-[#1A1613] hover:bg-[#F4EEDF]"
+            className="p-1.5 rounded-lg text-[#1A1613]/40 dark:text-[#F5EFE6]/50 hover:text-[#1A1613] dark:hover:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420]"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Banner Image */}
-        <div className="h-44 w-full rounded-xl overflow-hidden border border-[#1A1613]/10 bg-[#FDF8ED] relative flex items-center justify-center">
+        <div className="h-44 w-full rounded-xl overflow-hidden border border-[#1A1613]/10 dark:border-white/10 bg-[#FDF8ED] dark:bg-[#2A2420] relative flex items-center justify-center">
           {category.categoryImage ? (
             <img
               src={category.categoryImage}
@@ -49,7 +49,7 @@ const CategoryViewModal: React.FC<CategoryViewModalProps> = ({
               className="w-full h-full object-cover"
             />
           ) : (
-            <ImageIcon className="w-12 h-12 text-[#1A1613]/25" />
+            <ImageIcon className="w-12 h-12 text-[#1A1613]/25 dark:text-[#F5EFE6]/30" />
           )}
           <div className="absolute top-2 right-2">
             <button
@@ -84,34 +84,34 @@ const CategoryViewModal: React.FC<CategoryViewModalProps> = ({
         {/* Info Details */}
         <div className="space-y-3">
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#1A1613]/40">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#1A1613]/40 dark:text-[#F5EFE6]/50">
               Category Name
             </span>
-            <p className="text-base font-bold text-[#1A1613]">
+            <p className="text-base font-bold text-[#1A1613] dark:text-[#F5EFE6]">
               {category.categoryName}
             </p>
           </div>
 
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#1A1613]/40">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#1A1613]/40 dark:text-[#F5EFE6]/50">
               Description
             </span>
-            <p className="text-xs text-[#1A1613]/70 leading-relaxed mt-0.5">
+            <p className="text-xs text-[#1A1613]/70 dark:text-[#F5EFE6]/70 leading-relaxed mt-0.5">
               {category.categoryDescription || "No description provided."}
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#1A1613]/10">
+          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#1A1613]/10 dark:border-white/10">
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#1A1613]/40">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#1A1613]/40 dark:text-[#F5EFE6]/50">
                 Created Date
               </span>
-              <p className="text-xs font-semibold text-[#1A1613] mt-0.5">
+              <p className="text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] mt-0.5">
                 {formatDate(category.createdAt)}
               </p>
             </div>
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#1A1613]/40">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#1A1613]/40 dark:text-[#F5EFE6]/50">
                 Catalog Total
               </span>
               <div className="mt-0.5">
@@ -142,11 +142,11 @@ const CategoryViewModal: React.FC<CategoryViewModalProps> = ({
           </div>
 
           {category.id && (
-            <div className="pt-2 border-t border-[#1A1613]/10">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#1A1613]/40">
+            <div className="pt-2 border-t border-[#1A1613]/10 dark:border-white/10">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#1A1613]/40 dark:text-[#F5EFE6]/50">
                 Category ID
               </span>
-              <div className="flex items-center justify-between mt-1 p-2 rounded-lg bg-[#FDF8ED] border border-[#1A1613]/10 text-xs font-mono text-[#1A1613]/70">
+              <div className="flex items-center justify-between mt-1 p-2 rounded-lg bg-[#FDF8ED] dark:bg-[#1E1A17] border border-[#1A1613]/10 dark:border-white/10 text-xs font-mono text-[#1A1613]/70 dark:text-[#F5EFE6]/70">
                 <span className="truncate">{category.id}</span>
                 <button
                   onClick={(e) => onCopyId(category.id, e)}
@@ -154,7 +154,7 @@ const CategoryViewModal: React.FC<CategoryViewModalProps> = ({
                   title="Copy ID"
                 >
                   {copiedId === category.id ? (
-                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   ) : (
                     <Copy className="w-3.5 h-3.5" />
                   )}
@@ -165,7 +165,7 @@ const CategoryViewModal: React.FC<CategoryViewModalProps> = ({
         </div>
 
         {/* Actions */}
-        <div className="pt-3 border-t border-[#1A1613]/10 flex flex-wrap items-center justify-between gap-2">
+        <div className="pt-3 border-t border-[#1A1613]/10 dark:border-white/10 flex flex-wrap items-center justify-between gap-2">
           {category.id && (
             <button
               onClick={() => {
@@ -182,19 +182,19 @@ const CategoryViewModal: React.FC<CategoryViewModalProps> = ({
                   }
                 );
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#1A1613]/15 text-xs font-semibold text-[#1A1613] hover:bg-[#F4EEDF] transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#1A1613]/15 dark:border-white/10 text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] transition-all cursor-pointer"
               title={`View ${category.totalProducts || 0} products in ${category.categoryName}`}
             >
               <Package className="w-3.5 h-3.5 text-[#E6540B]" />
               <span>View Products ({category.totalProducts || 0})</span>
-              <ExternalLink className="w-3 h-3 text-[#1A1613]/40" />
+              <ExternalLink className="w-3 h-3 text-[#1A1613]/40 dark:text-[#F5EFE6]/50" />
             </button>
           )}
 
           <div className="flex items-center gap-2 ml-auto">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-[#1A1613]/15 text-xs font-semibold text-[#1A1613] hover:bg-[#F4EEDF] cursor-pointer"
+              className="px-4 py-2 rounded-xl border border-[#1A1613]/15 dark:border-white/10 text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] cursor-pointer"
             >
               Close
             </button>

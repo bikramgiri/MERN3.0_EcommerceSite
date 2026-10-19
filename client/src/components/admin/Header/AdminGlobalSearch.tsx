@@ -19,6 +19,7 @@ import {
   AlertCircle,
   DollarSign,
   CheckCircle2,
+  Mail,
 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "../../../hooks/hooks";
 import { fetchAdminProducts } from "../../../store/admin/productSlice";
@@ -257,9 +258,9 @@ export const AdminGlobalSearch: React.FC = () => {
         title: "Pending Orders",
         subtitle: "Review orders awaiting admin confirmation or packing",
         badge: `${pendingOrdersCount} pending`,
-        badgeColor: "bg-amber-50 text-amber-800 border-amber-200",
+        badgeColor: "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30",
         path: "/admin-dashboard/orders?status=Pending",
-        icon: <Clock className="w-4 h-4 text-amber-600" />,
+        icon: <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />,
         keywords: ["pending", "pending orders", "new orders", "unprocessed", "approval"],
       },
       {
@@ -267,9 +268,9 @@ export const AdminGlobalSearch: React.FC = () => {
         title: "Low Stock Alert",
         subtitle: `Catalogue items with ≤ ${lowStockThreshold} units left`,
         badge: `${lowStockCount} items`,
-        badgeColor: "bg-amber-50 text-amber-800 border-amber-200",
+        badgeColor: "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30",
         path: "/admin-dashboard/products?stock=LOW_STOCK",
-        icon: <AlertTriangle className="w-4 h-4 text-amber-600" />,
+        icon: <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />,
         keywords: ["low stock", "stock", "restock", "inventory alert", "running low"],
       },
       {
@@ -277,9 +278,9 @@ export const AdminGlobalSearch: React.FC = () => {
         title: "Out of Stock Items",
         subtitle: "Sold out products currently unavailable for checkout",
         badge: `${outOfStockCount} sold out`,
-        badgeColor: "bg-red-50 text-red-700 border-red-200",
+        badgeColor: "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/15 dark:text-red-400 dark:border-red-500/30",
         path: "/admin-dashboard/products?stock=OUT_OF_STOCK",
-        icon: <AlertCircle className="w-4 h-4 text-red-600" />,
+        icon: <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400" />,
         keywords: ["out of stock", "sold out", "0 stock", "unavailable", "empty"],
       },
       {
@@ -287,9 +288,9 @@ export const AdminGlobalSearch: React.FC = () => {
         title: "In-Transit Shipments",
         subtitle: "Parcels actively dispatched and en route with courier",
         badge: `${inTransitOrdersCount} active`,
-        badgeColor: "bg-blue-50 text-blue-700 border-blue-200",
+        badgeColor: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-400 dark:border-blue-500/30",
         path: "/admin-dashboard/orders?status=InTransit",
-        icon: <Truck className="w-4 h-4 text-blue-600" />,
+        icon: <Truck className="w-4 h-4 text-blue-600 dark:text-blue-400" />,
         keywords: ["in transit", "transit", "shipped", "shipping", "courier", "dispatched"],
       },
       {
@@ -297,9 +298,9 @@ export const AdminGlobalSearch: React.FC = () => {
         title: "Cash on Delivery Orders",
         subtitle: "Orders requiring cash collection on customer delivery",
         badge: `${codOrdersCount} orders`,
-        badgeColor: "bg-emerald-50 text-emerald-800 border-emerald-200",
+        badgeColor: "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30",
         path: "/admin-dashboard/orders?method=COD",
-        icon: <DollarSign className="w-4 h-4 text-emerald-600" />,
+        icon: <DollarSign className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />,
         keywords: ["cod", "cash on delivery", "cash", "cash payment"],
       },
       {
@@ -307,9 +308,9 @@ export const AdminGlobalSearch: React.FC = () => {
         title: "Delivered Orders",
         subtitle: "Completed and fulfilled orders successfully delivered",
         badge: `${deliveredOrdersCount} delivered`,
-        badgeColor: "bg-emerald-50 text-emerald-800 border-emerald-200",
+        badgeColor: "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30",
         path: "/admin-dashboard/orders?status=Delivered",
-        icon: <CheckCircle2 className="w-4 h-4 text-emerald-600" />,
+        icon: <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />,
         keywords: ["delivered", "completed", "fulfilled", "delivered orders"],
       },
       {
@@ -317,9 +318,9 @@ export const AdminGlobalSearch: React.FC = () => {
         title: "Registered Customers",
         subtitle: "Buyer accounts, verified profiles and order histories",
         badge: `${totalCustomersCount} users`,
-        badgeColor: "bg-purple-50 text-purple-700 border-purple-200",
+        badgeColor: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/15 dark:text-purple-400 dark:border-purple-500/30",
         path: "/admin-dashboard/users?role=customer",
-        icon: <Users className="w-4 h-4 text-purple-600" />,
+        icon: <Users className="w-4 h-4 text-purple-600 dark:text-purple-400" />,
         keywords: ["customers", "users", "buyer", "shoppers", "profiles", "accounts"],
       },
       {
@@ -327,9 +328,9 @@ export const AdminGlobalSearch: React.FC = () => {
         title: "Shipping & Delivery Settings",
         subtitle: `Rs. ${storeSettings.standardShippingFee} std fee • Free above Rs. ${storeSettings.freeShippingThreshold}`,
         badge: "Delivery Rules",
-        badgeColor: "bg-sky-50 text-sky-700 border-sky-200",
+        badgeColor: "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-500/15 dark:text-sky-400 dark:border-sky-500/30",
         path: "/admin-dashboard/settings?tab=orders",
-        icon: <Truck className="w-4 h-4 text-sky-600" />,
+        icon: <Truck className="w-4 h-4 text-sky-600 dark:text-sky-400" />,
         keywords: ["shipping", "delivery", "shipping fee", "delivery fee", "free shipping", "logistics"],
       },
       {
@@ -340,10 +341,10 @@ export const AdminGlobalSearch: React.FC = () => {
           : "Storefront is LIVE and operational",
         badge: storeSettings.maintenanceMode ? "Maintenance Active" : "Store Live",
         badgeColor: storeSettings.maintenanceMode
-          ? "bg-red-50 text-red-700 border-red-200"
-          : "bg-emerald-50 text-emerald-700 border-emerald-200",
+          ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/15 dark:text-red-400 dark:border-red-500/30"
+          : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30",
         path: "/admin-dashboard/settings?tab=maintenance",
-        icon: <Sliders className="w-4 h-4 text-rose-600" />,
+        icon: <Sliders className="w-4 h-4 text-rose-600 dark:text-rose-400" />,
         keywords: ["maintenance", "maintenance mode", "store status", "pause store", "announcement"],
       },
     ],
@@ -369,9 +370,9 @@ export const AdminGlobalSearch: React.FC = () => {
         title: "Dashboard & Analytics",
         subtitle: "Overview, real-time sales & platform analytics",
         badge: "Overview",
-        badgeColor: "bg-blue-50 text-blue-700 border-blue-200",
+        badgeColor: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-400 dark:border-blue-500/30",
         path: "/admin-dashboard",
-        icon: <LayoutDashboard className="w-4 h-4 text-blue-600" />,
+        icon: <LayoutDashboard className="w-4 h-4 text-blue-600 dark:text-blue-400" />,
       },
       {
         id: "page-products",
@@ -379,9 +380,9 @@ export const AdminGlobalSearch: React.FC = () => {
         title: "Product Management",
         subtitle: "Catalogue items, stock inventory, prices and SKU",
         badge: "Catalogue",
-        badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30",
         path: "/admin-dashboard/products",
-        icon: <Package className="w-4 h-4 text-emerald-600" />,
+        icon: <Package className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />,
       },
       {
         id: "page-orders",
@@ -389,9 +390,9 @@ export const AdminGlobalSearch: React.FC = () => {
         title: "Order Management",
         subtitle: "Customer shipments, invoices and order statuses",
         badge: "Sales",
-        badgeColor: "bg-amber-50 text-amber-700 border-amber-200",
+        badgeColor: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30",
         path: "/admin-dashboard/orders",
-        icon: <ShoppingBag className="w-4 h-4 text-amber-600" />,
+        icon: <ShoppingBag className="w-4 h-4 text-amber-600 dark:text-amber-400" />,
       },
       {
         id: "page-users",
@@ -399,9 +400,9 @@ export const AdminGlobalSearch: React.FC = () => {
         title: "User Management",
         subtitle: "Verified buyers, customer accounts and roles",
         badge: "Accounts",
-        badgeColor: "bg-purple-50 text-purple-700 border-purple-200",
+        badgeColor: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/15 dark:text-purple-400 dark:border-purple-500/30",
         path: "/admin-dashboard/users",
-        icon: <Users className="w-4 h-4 text-purple-600" />,
+        icon: <Users className="w-4 h-4 text-purple-600 dark:text-purple-400" />,
       },
       {
         id: "page-categories",
@@ -409,9 +410,9 @@ export const AdminGlobalSearch: React.FC = () => {
         title: "Category Management",
         subtitle: "Organize storefront departments and taxonomy",
         badge: "Taxonomy",
-        badgeColor: "bg-teal-50 text-teal-700 border-teal-200",
+        badgeColor: "bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-500/15 dark:text-teal-400 dark:border-teal-500/30",
         path: "/admin-dashboard/categories",
-        icon: <Layers className="w-4 h-4 text-teal-600" />,
+        icon: <Layers className="w-4 h-4 text-teal-600 dark:text-teal-400" />,
       },
       {
         id: "page-reviews",
@@ -419,9 +420,19 @@ export const AdminGlobalSearch: React.FC = () => {
         title: "Review Management",
         subtitle: "Moderate customer testimonials and star ratings",
         badge: "Feedback",
-        badgeColor: "bg-yellow-50 text-yellow-800 border-yellow-200",
+        badgeColor: "bg-yellow-50 text-yellow-800 border-yellow-200 dark:bg-yellow-500/15 dark:text-yellow-400 dark:border-yellow-500/30",
         path: "/admin-dashboard/reviews",
-        icon: <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />,
+        icon: <Star className="w-4 h-4 text-yellow-500 dark:text-yellow-400 fill-yellow-500" />,
+      },
+      {
+        id: "page-subscribers",
+        type: "page",
+        title: "Newsletter Subscribers",
+        subtitle: "Mailing list emails, CSV export and unsubscribes",
+        badge: "Marketing",
+        badgeColor: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30",
+        path: "/admin-dashboard/subscribers",
+        icon: <Mail className="w-4 h-4 text-rose-600 dark:text-rose-400" />,
       },
       {
         id: "page-settings",
@@ -429,7 +440,7 @@ export const AdminGlobalSearch: React.FC = () => {
         title: "Store Settings",
         subtitle: "General profile, delivery rules & maintenance",
         badge: "Settings",
-        badgeColor: "bg-orange-50 text-[#E6540B] border-orange-200",
+        badgeColor: "bg-orange-50 text-[#E6540B] border-orange-200 dark:bg-[#E6540B]/15 dark:border-[#E6540B]/30",
         path: "/admin-dashboard/settings",
         icon: <Sliders className="w-4 h-4 text-[#E6540B]" />,
       },
@@ -439,9 +450,9 @@ export const AdminGlobalSearch: React.FC = () => {
         title: "Admin Profile",
         subtitle: "Account details, avatar image and password",
         badge: "Security",
-        badgeColor: "bg-gray-100 text-gray-700 border-gray-200",
+        badgeColor: "bg-gray-100 text-gray-700 border-gray-200 dark:bg-white/10 dark:text-[#F5EFE6]/70 dark:border-white/10",
         path: "/admin-dashboard/profile",
-        icon: <User className="w-4 h-4 text-gray-600" />,
+        icon: <User className="w-4 h-4 text-gray-600 dark:text-[#F5EFE6]/70" />,
       },
     ],
     []
@@ -496,15 +507,15 @@ export const AdminGlobalSearch: React.FC = () => {
         method.toLowerCase().includes(q) ||
         address.toLowerCase().includes(q)
       ) {
-        let statusBadgeColor = "bg-gray-100 text-gray-700 border-gray-200";
+        let statusBadgeColor = "bg-gray-100 text-gray-700 border-gray-200 dark:bg-white/10 dark:text-[#F5EFE6]/70 dark:border-white/10";
         if (status === "Delivered")
-          statusBadgeColor = "bg-emerald-50 text-emerald-800 border-emerald-200";
+          statusBadgeColor = "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30";
         else if (status === "Cancelled")
-          statusBadgeColor = "bg-red-50 text-red-700 border-red-200";
+          statusBadgeColor = "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/15 dark:text-red-400 dark:border-red-500/30";
         else if (status === "Pending")
-          statusBadgeColor = "bg-amber-50 text-amber-800 border-amber-200";
+          statusBadgeColor = "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30";
         else if (status === "InTransit")
-          statusBadgeColor = "bg-blue-50 text-blue-700 border-blue-200";
+          statusBadgeColor = "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-400 dark:border-blue-500/30";
 
         items.push({
           id: `order-${o.id}`,
@@ -538,14 +549,14 @@ export const AdminGlobalSearch: React.FC = () => {
       ) {
         const stock = p.productStock || 0;
         let stockBadge = "In Stock";
-        let stockBadgeColor = "bg-emerald-50 text-emerald-800 border-emerald-200";
+        let stockBadgeColor = "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30";
 
         if (stock === 0) {
           stockBadge = "Out of Stock";
-          stockBadgeColor = "bg-red-50 text-red-700 border-red-200";
+          stockBadgeColor = "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/15 dark:text-red-400 dark:border-red-500/30";
         } else if (stock <= lowStockThreshold) {
           stockBadge = `Low: ${stock} left`;
-          stockBadgeColor = "bg-amber-50 text-amber-800 border-amber-200";
+          stockBadgeColor = "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30";
         }
 
         items.push({
@@ -558,7 +569,7 @@ export const AdminGlobalSearch: React.FC = () => {
           meta: `Rs. ${Number(price).toLocaleString()}`,
           image: p.productImage,
           path: `/admin-dashboard/products?search=${encodeURIComponent(name)}`,
-          icon: <Package className="w-4 h-4 text-emerald-600" />,
+          icon: <Package className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />,
         });
       }
     });
@@ -582,11 +593,11 @@ export const AdminGlobalSearch: React.FC = () => {
           badge: role === "admin" ? "Admin" : "Customer",
           badgeColor:
             role === "admin"
-              ? "bg-purple-50 text-purple-700 border-purple-200"
-              : "bg-blue-50 text-blue-700 border-blue-200",
+              ? "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/15 dark:text-purple-400 dark:border-purple-500/30"
+              : "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-400 dark:border-blue-500/30",
           image: u.avatar,
           path: `/admin-dashboard/users?search=${encodeURIComponent(email || username)}`,
-          icon: <Users className="w-4 h-4 text-purple-600" />,
+          icon: <Users className="w-4 h-4 text-purple-600 dark:text-purple-400" />,
         });
       }
     });
@@ -603,9 +614,9 @@ export const AdminGlobalSearch: React.FC = () => {
           title: name,
           subtitle: desc ? desc.slice(0, 60) : "Category Department",
           badge: "Category",
-          badgeColor: "bg-teal-50 text-teal-700 border-teal-200",
+          badgeColor: "bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-500/15 dark:text-teal-400 dark:border-teal-500/30",
           path: `/admin-dashboard/categories?search=${encodeURIComponent(name)}`,
-          icon: <Layers className="w-4 h-4 text-teal-600" />,
+          icon: <Layers className="w-4 h-4 text-teal-600 dark:text-teal-400" />,
         });
       }
     });
@@ -719,17 +730,17 @@ export const AdminGlobalSearch: React.FC = () => {
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="group relative flex items-center h-10 w-64 md:w-80 lg:w-[360px] xl:w-[420px] pl-10 pr-3.5 rounded-xl border border-[#1A1613]/15 bg-[#F4EEDF]/50 hover:bg-[#F4EEDF]/80 hover:border-[#1A1613]/25 text-sm text-[#1A1613] transition-all text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#E6540B]/20"
+          className="group relative flex items-center h-10 w-64 md:w-80 lg:w-[360px] xl:w-[420px] pl-10 pr-3.5 rounded-xl border border-[#1A1613]/15 dark:border-white/15 bg-[#F4EEDF]/50 dark:bg-[#14110F] hover:bg-[#F4EEDF]/80 dark:hover:bg-[#2A2420] hover:border-[#1A1613]/25 dark:hover:border-white/25 text-sm text-[#1A1613] dark:text-[#F5EFE6] transition-all text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#E6540B]/20"
           aria-label="Open search command palette"
         >
           <Search
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#1A1613]/40 group-hover:text-[#E6540B] transition-colors"
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#1A1613]/40 dark:text-[#F5EFE6]/40 group-hover:text-[#E6540B] transition-colors"
             size={16}
           />
-          <span className="truncate text-xs sm:text-sm text-[#1A1613]/55 group-hover:text-[#1A1613]">
+          <span className="truncate text-xs sm:text-sm text-[#1A1613]/55 dark:text-[#F5EFE6]/50 group-hover:text-[#1A1613] dark:group-hover:text-[#F5EFE6]">
             Search products, orders, customers...
           </span>
-          <kbd className="ml-auto hidden lg:inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium text-[#1A1613]/60 bg-[#FFFDF8] border border-[#1A1613]/15 rounded shadow-2xs font-mono">
+          <kbd className="ml-auto hidden lg:inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium text-[#1A1613]/60 dark:text-[#F5EFE6]/50 bg-[#FFFDF8] dark:bg-[#2A2420] border border-[#1A1613]/15 dark:border-white/15 rounded shadow-2xs font-mono">
             Ctrl K
           </kbd>
         </button>
@@ -739,7 +750,7 @@ export const AdminGlobalSearch: React.FC = () => {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="p-2.5 rounded-lg text-[#1A1613]/70 hover:bg-[#F4EEDF] hover:text-[#1A1613] transition-colors md:hidden focus:outline-none"
+        className="p-2.5 rounded-lg text-[#1A1613]/70 dark:text-[#F5EFE6]/70 hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] hover:text-[#1A1613] dark:hover:text-[#F5EFE6] transition-colors md:hidden focus:outline-none"
         aria-label="Search"
       >
         <Search size={20} />
@@ -748,17 +759,17 @@ export const AdminGlobalSearch: React.FC = () => {
       {/* 3. SEARCH MODAL / PALETTE OVERLAY */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-99999 flex flex-col items-center justify-start p-3 sm:p-6 md:pt-16 bg-[#1A1613]/45 backdrop-blur-xs animate-in fade-in duration-150"
+          className="fixed inset-0 z-99999 flex flex-col items-center justify-start p-3 sm:p-6 md:pt-16 bg-[#1A1613]/45 dark:bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
           onClick={() => setIsOpen(false)}
         >
           <div
             ref={modalRef}
-            className="relative w-full max-w-2xl bg-[#FFFDF8] rounded-2xl border border-[#1A1613]/15 shadow-2xl shadow-[#1A1613]/20 flex flex-col overflow-hidden text-[#1A1613]"
+            className="relative w-full max-w-2xl bg-[#FFFDF8] dark:bg-[#1E1A17] rounded-2xl border border-[#1A1613]/15 dark:border-white/10 shadow-2xl shadow-[#1A1613]/20 dark:shadow-black/40 flex flex-col overflow-hidden text-[#1A1613] dark:text-[#F5EFE6]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Input Header */}
-            <div className="flex items-center px-4 py-3.5 border-b border-[#1A1613]/10 gap-3 bg-[#FFFDF8]">
-              <Search className="w-5 h-5 text-[#1A1613]/40 shrink-0" />
+            <div className="flex items-center px-4 py-3.5 border-b border-[#1A1613]/10 dark:border-white/10 gap-3 bg-[#FFFDF8] dark:bg-[#1E1A17]">
+              <Search className="w-5 h-5 text-[#1A1613]/40 dark:text-[#F5EFE6]/40 shrink-0" />
               <input
                 ref={inputRef}
                 type="text"
@@ -766,13 +777,13 @@ export const AdminGlobalSearch: React.FC = () => {
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Search products, orders, customers, settings..."
-                className="w-full bg-transparent text-sm sm:text-base text-[#1A1613] placeholder:text-[#1A1613]/40 focus:outline-none"
+                className="w-full bg-transparent text-sm sm:text-base text-[#1A1613] dark:text-[#F5EFE6] placeholder:text-[#1A1613]/40 dark:placeholder:text-[#F5EFE6]/40 focus:outline-none"
               />
               {query && (
                 <button
                   type="button"
                   onClick={() => setQuery("")}
-                  className="p-1 text-[#1A1613]/40 hover:text-[#E6540B] rounded-md cursor-pointer transition-colors"
+                  className="p-1 text-[#1A1613]/40 dark:text-[#F5EFE6]/40 hover:text-[#E6540B] rounded-md cursor-pointer transition-colors"
                   aria-label="Clear query"
                 >
                   <X className="w-4 h-4" />
@@ -781,7 +792,7 @@ export const AdminGlobalSearch: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="px-2 py-0.5 text-xs font-medium text-[#1A1613]/60 hover:text-[#1A1613] bg-[#F4EEDF] hover:bg-[#EDE5D0] border border-[#1A1613]/10 rounded-md transition-colors shrink-0 cursor-pointer"
+                className="px-2 py-0.5 text-xs font-medium text-[#1A1613]/60 dark:text-[#F5EFE6]/50 hover:text-[#1A1613] dark:hover:text-[#F5EFE6] bg-[#F4EEDF] dark:bg-[#2A2420] hover:bg-[#EDE5D0] dark:hover:bg-white/10 border border-[#1A1613]/10 dark:border-white/10 rounded-md transition-colors shrink-0 cursor-pointer"
               >
                 Esc
               </button>
@@ -789,7 +800,7 @@ export const AdminGlobalSearch: React.FC = () => {
 
             {/* Category Filter Pills (When query is active) */}
             {query.trim() && searchResults.length > 0 && (
-              <div className="flex items-center gap-1.5 px-4 py-2 border-b border-[#1A1613]/10 overflow-x-auto bg-[#FBF9F4] no-scrollbar">
+              <div className="flex items-center gap-1.5 px-4 py-2 border-b border-[#1A1613]/10 dark:border-white/10 overflow-x-auto bg-[#FBF9F4] dark:bg-[#2A2420] no-scrollbar">
                 {[
                   { key: "all", label: "All", count: categoryCounts.all },
                   { key: "orders", label: "Orders", count: categoryCounts.orders },
@@ -807,7 +818,7 @@ export const AdminGlobalSearch: React.FC = () => {
                       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium shrink-0 transition-colors cursor-pointer ${
                         activeCategory === tab.key
                           ? "bg-[#E6540B] text-white shadow-2xs font-semibold"
-                          : "text-[#1A1613]/70 hover:text-[#1A1613] hover:bg-[#F4EEDF]"
+                          : "text-[#1A1613]/70 dark:text-[#F5EFE6]/70 hover:text-[#1A1613] dark:hover:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-white/5"
                       }`}
                     >
                       <span>{tab.label}</span>
@@ -815,7 +826,7 @@ export const AdminGlobalSearch: React.FC = () => {
                         className={`text-[10px] px-1.5 py-0.2 rounded-full ${
                           activeCategory === tab.key
                             ? "bg-white/20 text-white"
-                            : "bg-[#1A1613]/8 text-[#1A1613]/70"
+                            : "bg-[#1A1613]/8 dark:bg-white/10 text-[#1A1613]/70 dark:text-[#F5EFE6]/70"
                         }`}
                       >
                         {tab.count}
@@ -836,7 +847,7 @@ export const AdminGlobalSearch: React.FC = () => {
                   {/* Recent Searches */}
                   {recentSearches.length > 0 && (
                     <div className="space-y-1.5">
-                      <div className="flex items-center justify-between px-2 text-[11px] font-semibold text-[#1A1613]/45 uppercase tracking-wider">
+                      <div className="flex items-center justify-between px-2 text-[11px] font-semibold text-[#1A1613]/45 dark:text-[#F5EFE6]/50 uppercase tracking-wider">
                         <span>Recent Searches</span>
                         <button
                           type="button"
@@ -844,7 +855,7 @@ export const AdminGlobalSearch: React.FC = () => {
                             setRecentSearches([]);
                             localStorage.removeItem(RECENT_SEARCHES_KEY);
                           }}
-                          className="hover:text-red-600 transition-colors cursor-pointer text-[10px] lowercase"
+                          className="hover:text-red-600 dark:hover:text-red-400 transition-colors cursor-pointer text-[10px] lowercase"
                         >
                           clear all
                         </button>
@@ -854,11 +865,11 @@ export const AdminGlobalSearch: React.FC = () => {
                           <span
                             key={term}
                             onClick={() => setQuery(term)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs bg-[#F4EEDF] hover:bg-[#EDE5D0] text-[#1A1613] border border-[#1A1613]/10 transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs bg-[#F4EEDF] dark:bg-[#2A2420] hover:bg-[#EDE5D0] dark:hover:bg-white/10 text-[#1A1613] dark:text-[#F5EFE6] border border-[#1A1613]/10 dark:border-white/10 transition-colors cursor-pointer"
                           >
                             <span>{term}</span>
                             <X
-                              className="w-3 h-3 text-[#1A1613]/40 hover:text-red-500"
+                              className="w-3 h-3 text-[#1A1613]/40 dark:text-[#F5EFE6]/40 hover:text-red-500"
                               onClick={(e) => removeRecentSearch(e, term)}
                             />
                           </span>
@@ -869,7 +880,7 @@ export const AdminGlobalSearch: React.FC = () => {
 
                   {/* Recommended Quick Actions (Clean Linear / Raycast Style Command List) */}
                   <div className="space-y-1">
-                    <div className="px-2 text-[11px] font-semibold text-[#1A1613]/45 uppercase tracking-wider">
+                    <div className="px-2 text-[11px] font-semibold text-[#1A1613]/45 dark:text-[#F5EFE6]/50 uppercase tracking-wider">
                       Recommended Actions
                     </div>
 
@@ -878,17 +889,17 @@ export const AdminGlobalSearch: React.FC = () => {
                         <div
                           key={action.id}
                           onClick={() => handleSelectResult(action)}
-                          className="group flex items-center justify-between p-2 rounded-xl hover:bg-[#F4EEDF]/60 cursor-pointer transition-colors"
+                          className="group flex items-center justify-between p-2 rounded-xl hover:bg-[#F4EEDF]/60 dark:hover:bg-[#2A2420] cursor-pointer transition-colors"
                         >
                           <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <div className="w-8 h-8 rounded-lg bg-[#F4EEDF] border border-[#1A1613]/10 flex items-center justify-center shrink-0 group-hover:bg-[#E6540B]/10 group-hover:border-[#E6540B]/20 transition-colors">
+                            <div className="w-8 h-8 rounded-lg bg-[#F4EEDF] dark:bg-[#2A2420] border border-[#1A1613]/10 dark:border-white/10 flex items-center justify-center shrink-0 group-hover:bg-[#E6540B]/10 dark:group-hover:bg-[#E6540B]/15 group-hover:border-[#E6540B]/20 transition-colors">
                               {action.icon}
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="text-xs sm:text-sm font-semibold text-[#1A1613] group-hover:text-[#E6540B] transition-colors truncate">
+                              <p className="text-xs sm:text-sm font-semibold text-[#1A1613] dark:text-[#F5EFE6] group-hover:text-[#E6540B] transition-colors truncate">
                                 {action.title}
                               </p>
-                              <p className="text-[11px] text-[#1A1613]/55 truncate">
+                              <p className="text-[11px] text-[#1A1613]/55 dark:text-[#F5EFE6]/50 truncate">
                                 {action.subtitle}
                               </p>
                             </div>
@@ -902,7 +913,7 @@ export const AdminGlobalSearch: React.FC = () => {
                                 {action.badge}
                               </span>
                             )}
-                            <ArrowRight className="w-3.5 h-3.5 text-[#1A1613]/25 group-hover:text-[#E6540B] group-hover:translate-x-0.5 transition-all" />
+                            <ArrowRight className="w-3.5 h-3.5 text-[#1A1613]/25 dark:text-[#F5EFE6]/30 group-hover:text-[#E6540B] group-hover:translate-x-0.5 transition-all" />
                           </div>
                         </div>
                       ))}
@@ -910,8 +921,8 @@ export const AdminGlobalSearch: React.FC = () => {
                   </div>
 
                   {/* Quick Admin Navigation */}
-                  <div className="space-y-1 pt-1 border-t border-[#1A1613]/10">
-                    <div className="px-2 pt-2 text-[11px] font-semibold text-[#1A1613]/45 uppercase tracking-wider">
+                  <div className="space-y-1 pt-1 border-t border-[#1A1613]/10 dark:border-white/10">
+                    <div className="px-2 pt-2 text-[11px] font-semibold text-[#1A1613]/45 dark:text-[#F5EFE6]/50 uppercase tracking-wider">
                       Quick Links
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 px-1 pt-0.5">
@@ -920,12 +931,12 @@ export const AdminGlobalSearch: React.FC = () => {
                           key={page.id}
                           type="button"
                           onClick={() => handleSelectResult(page)}
-                          className="flex items-center gap-2 p-2 rounded-lg text-left hover:bg-[#F4EEDF]/70 border border-transparent hover:border-[#1A1613]/10 transition-all cursor-pointer group"
+                          className="flex items-center gap-2 p-2 rounded-lg text-left hover:bg-[#F4EEDF]/70 dark:hover:bg-[#2A2420] border border-transparent hover:border-[#1A1613]/10 dark:hover:border-white/10 transition-all cursor-pointer group"
                         >
-                          <div className="w-7 h-7 rounded-md bg-[#F4EEDF] flex items-center justify-center shrink-0">
+                          <div className="w-7 h-7 rounded-md bg-[#F4EEDF] dark:bg-[#2A2420] flex items-center justify-center shrink-0">
                             {page.icon}
                           </div>
-                          <span className="text-xs font-medium text-[#1A1613] truncate group-hover:text-[#E6540B]">
+                          <span className="text-xs font-medium text-[#1A1613] dark:text-[#F5EFE6] truncate group-hover:text-[#E6540B]">
                             {page.title.split(" ")[0]}
                           </span>
                         </button>
@@ -948,8 +959,8 @@ export const AdminGlobalSearch: React.FC = () => {
                         onMouseEnter={() => setSelectedIndex(idx)}
                         className={`flex items-center justify-between p-2.5 rounded-xl cursor-pointer transition-all ${
                           isSelected
-                            ? "bg-[#E6540B]/10 border border-[#E6540B]/25"
-                            : "hover:bg-[#F4EEDF]/50 border border-transparent"
+                            ? "bg-[#E6540B]/10 dark:bg-[#E6540B]/15 border border-[#E6540B]/25"
+                            : "hover:bg-[#F4EEDF]/50 dark:hover:bg-[#2A2420] border border-transparent"
                         }`}
                       >
                         <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -957,26 +968,26 @@ export const AdminGlobalSearch: React.FC = () => {
                             <img
                               src={item.image}
                               alt={item.title}
-                              className="w-9 h-9 rounded-lg object-cover bg-gray-100 shrink-0 border border-[#1A1613]/10"
+                              className="w-9 h-9 rounded-lg object-cover bg-gray-100 dark:bg-[#2A2420] shrink-0 border border-[#1A1613]/10 dark:border-white/10"
                               onError={(e) => {
                                 (e.target as HTMLElement).style.display = "none";
                               }}
                             />
                           ) : (
-                            <div className="w-9 h-9 rounded-lg bg-[#F4EEDF] border border-[#1A1613]/10 flex items-center justify-center shrink-0">
-                              {item.icon || <Search className="w-4 h-4 text-[#1A1613]/40" />}
+                            <div className="w-9 h-9 rounded-lg bg-[#F4EEDF] dark:bg-[#2A2420] border border-[#1A1613]/10 dark:border-white/10 flex items-center justify-center shrink-0">
+                              {item.icon || <Search className="w-4 h-4 text-[#1A1613]/40 dark:text-[#F5EFE6]/40" />}
                             </div>
                           )}
 
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <p className="text-xs sm:text-sm font-semibold text-[#1A1613] truncate">
+                              <p className="text-xs sm:text-sm font-semibold text-[#1A1613] dark:text-[#F5EFE6] truncate">
                                 {item.title}
                               </p>
                               {item.badge && (
                                 <span
                                   className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${
-                                    item.badgeColor || "bg-[#F4EEDF] text-[#1A1613] border-[#1A1613]/15"
+                                    item.badgeColor || "bg-[#F4EEDF] dark:bg-[#2A2420] text-[#1A1613] dark:text-[#F5EFE6] border-[#1A1613]/15 dark:border-white/10"
                                   }`}
                                 >
                                   {item.badge}
@@ -984,7 +995,7 @@ export const AdminGlobalSearch: React.FC = () => {
                               )}
                             </div>
                             {item.subtitle && (
-                              <p className="text-[11px] text-[#1A1613]/55 truncate mt-0.5">
+                              <p className="text-[11px] text-[#1A1613]/55 dark:text-[#F5EFE6]/50 truncate mt-0.5">
                                 {item.subtitle}
                               </p>
                             )}
@@ -993,7 +1004,7 @@ export const AdminGlobalSearch: React.FC = () => {
 
                         <div className="flex items-center gap-2 shrink-0 ml-3">
                           {item.meta && (
-                            <span className="text-xs font-semibold text-[#1A1613] font-mono">
+                            <span className="text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] font-mono">
                               {item.meta}
                             </span>
                           )}
@@ -1013,13 +1024,13 @@ export const AdminGlobalSearch: React.FC = () => {
               {/* STATE 3: Active Query with No Matches */}
               {query.trim() && filteredResults.length === 0 && (
                 <div className="py-10 text-center space-y-2.5">
-                  <div className="w-10 h-10 rounded-full bg-[#F4EEDF] text-[#1A1613]/40 mx-auto flex items-center justify-center border border-[#1A1613]/10">
+                  <div className="w-10 h-10 rounded-full bg-[#F4EEDF] dark:bg-[#2A2420] text-[#1A1613]/40 dark:text-[#F5EFE6]/40 mx-auto flex items-center justify-center border border-[#1A1613]/10 dark:border-white/10">
                     <Search className="w-5 h-5" />
                   </div>
-                  <h4 className="text-sm font-semibold text-[#1A1613]">
+                  <h4 className="text-sm font-semibold text-[#1A1613] dark:text-[#F5EFE6]">
                     No matches found for "{query}"
                   </h4>
-                  <p className="text-xs text-[#1A1613]/55 max-w-sm mx-auto">
+                  <p className="text-xs text-[#1A1613]/55 dark:text-[#F5EFE6]/50 max-w-sm mx-auto">
                     Try searching by order ID, product name, or customer email.
                   </p>
 
@@ -1040,7 +1051,7 @@ export const AdminGlobalSearch: React.FC = () => {
                         setQuery("");
                         setActiveCategory("all");
                       }}
-                      className="px-3 py-1.5 text-xs font-medium rounded-lg border border-[#1A1613]/15 bg-[#FFFDF8] hover:bg-[#F4EEDF] text-[#1A1613] cursor-pointer"
+                      className="px-3 py-1.5 text-xs font-medium rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FFFDF8] dark:bg-[#1E1A17] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] text-[#1A1613] dark:text-[#F5EFE6] cursor-pointer"
                     >
                       Clear Search
                     </button>
@@ -1050,32 +1061,32 @@ export const AdminGlobalSearch: React.FC = () => {
             </div>
 
             {/* Modal Footer Controls */}
-            <div className="px-4 py-2.5 bg-[#FBF9F4] border-t border-[#1A1613]/10 text-[11px] text-[#1A1613]/55 flex items-center justify-between">
+            <div className="px-4 py-2.5 bg-[#FBF9F4] dark:bg-[#2A2420] border-t border-[#1A1613]/10 dark:border-white/10 text-[11px] text-[#1A1613]/55 dark:text-[#F5EFE6]/50 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <span className="flex items-center gap-1">
-                  <kbd className="px-1 py-0.5 text-[10px] bg-[#FFFDF8] border border-[#1A1613]/15 rounded font-mono text-[#1A1613] shadow-2xs">
+                  <kbd className="px-1 py-0.5 text-[10px] bg-[#FFFDF8] dark:bg-[#1E1A17] border border-[#1A1613]/15 dark:border-white/15 rounded font-mono text-[#1A1613] dark:text-[#F5EFE6] shadow-2xs">
                     ↑
                   </kbd>
-                  <kbd className="px-1 py-0.5 text-[10px] bg-[#FFFDF8] border border-[#1A1613]/15 rounded font-mono text-[#1A1613] shadow-2xs">
+                  <kbd className="px-1 py-0.5 text-[10px] bg-[#FFFDF8] dark:bg-[#1E1A17] border border-[#1A1613]/15 dark:border-white/15 rounded font-mono text-[#1A1613] dark:text-[#F5EFE6] shadow-2xs">
                     ↓
                   </kbd>
                   <span className="ml-0.5">navigate</span>
                 </span>
                 <span className="flex items-center gap-1">
-                  <kbd className="px-1 py-0.5 text-[10px] bg-[#FFFDF8] border border-[#1A1613]/15 rounded font-mono text-[#1A1613] shadow-2xs">
+                  <kbd className="px-1 py-0.5 text-[10px] bg-[#FFFDF8] dark:bg-[#1E1A17] border border-[#1A1613]/15 dark:border-white/15 rounded font-mono text-[#1A1613] dark:text-[#F5EFE6] shadow-2xs">
                     ↵
                   </kbd>
                   <span className="ml-0.5">select</span>
                 </span>
                 <span className="flex items-center gap-1">
-                  <kbd className="px-1 py-0.5 text-[10px] bg-[#FFFDF8] border border-[#1A1613]/15 rounded font-mono text-[#1A1613] shadow-2xs">
+                  <kbd className="px-1 py-0.5 text-[10px] bg-[#FFFDF8] dark:bg-[#1E1A17] border border-[#1A1613]/15 dark:border-white/15 rounded font-mono text-[#1A1613] dark:text-[#F5EFE6] shadow-2xs">
                     esc
                   </kbd>
                   <span className="ml-0.5">close</span>
                 </span>
               </div>
 
-              <span className="text-[10px] text-[#1A1613]/45">
+              <span className="text-[10px] text-[#1A1613]/45 dark:text-[#F5EFE6]/50">
                 {filteredResults.length} {filteredResults.length === 1 ? "result" : "results"}
               </span>
             </div>

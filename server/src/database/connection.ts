@@ -125,6 +125,48 @@ const connectDB = async () => {
       console.warn("Reviews column migration notice:", migError);
     }
 
+    // Safe column migration for store settings added after the table was first created
+    try {
+      await sequelize.query(`
+        ALTER TABLE IF EXISTS "store_settings"
+          ADD COLUMN IF NOT EXISTS "facebookUrl" VARCHAR(255) NOT NULL DEFAULT '',
+          ADD COLUMN IF NOT EXISTS "instagramUrl" VARCHAR(255) NOT NULL DEFAULT '',
+          ADD COLUMN IF NOT EXISTS "xUrl" VARCHAR(255) NOT NULL DEFAULT '',
+          ADD COLUMN IF NOT EXISTS "linkedinUrl" VARCHAR(255) NOT NULL DEFAULT '',
+          ADD COLUMN IF NOT EXISTS "localDeliveryArea" VARCHAR(255) NOT NULL DEFAULT 'Kathmandu Valley',
+          ADD COLUMN IF NOT EXISTS "localDeliveryTime" VARCHAR(255) NOT NULL DEFAULT '1–2 business days',
+          ADD COLUMN IF NOT EXISTS "otherDeliveryTime" VARCHAR(255) NOT NULL DEFAULT '3–5 business days',
+          ADD COLUMN IF NOT EXISTS "returnWindowDays" INTEGER NOT NULL DEFAULT 7;
+      `);
+    } catch (migError) {
+      console.warn("Store settings column migration notice:", migError);
+    }
+
+    // Safe column migration for newsletter double opt-in (table created before these columns existed).
+    // Existing rows become CONFIRMED so nobody who already signed up is dropped.
+    try {
+      await sequelize.query(`
+        DO $$
+        BEGIN
+          IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'newsletter_subscribers')
+             AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'newsletter_subscribers' AND column_name = 'status') THEN
+            ALTER TABLE "newsletter_subscribers"
+              ADD COLUMN "status" VARCHAR(255) NOT NULL DEFAULT 'CONFIRMED',
+              ADD COLUMN "confirmTokenHash" VARCHAR(255) DEFAULT NULL,
+              ADD COLUMN "confirmTokenExpiresAt" TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+              ADD COLUMN "unsubscribeToken" VARCHAR(255) UNIQUE DEFAULT NULL,
+              ADD COLUMN "confirmedAt" TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+              ADD COLUMN "unsubscribedAt" TIMESTAMP WITH TIME ZONE DEFAULT NULL;
+            ALTER TABLE "newsletter_subscribers" ALTER COLUMN "status" SET DEFAULT 'PENDING';
+            UPDATE "newsletter_subscribers"
+              SET "confirmedAt" = "createdAt", "unsubscribeToken" = md5(random()::text || id::text);
+          END IF;
+        END $$;
+      `);
+    } catch (migError) {
+      console.warn("Newsletter column migration notice:", migError);
+    }
+
     await sequelize.sync({ force: false, alter: false }); // Set force to true to drop and recreate tables, alter to true to update tables
     console.log("Database Synced!");
   } catch (error) {

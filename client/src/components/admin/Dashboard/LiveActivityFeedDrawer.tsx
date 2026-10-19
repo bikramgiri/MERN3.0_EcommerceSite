@@ -65,49 +65,49 @@ const LiveActivityFeedDrawer: React.FC<LiveActivityFeedDrawerProps> = ({
   const getEventIcon = (type: ActivityEvent["type"]) => {
     switch (type) {
       case "high-value":
-        return <Gem className="w-4 h-4 text-purple-600" />;
+        return <Gem className="w-4 h-4 text-purple-600 dark:text-purple-400" />;
       case "order":
         return <ShoppingCart className="w-4 h-4 text-[#E6540B]" />;
       case "review":
         return <Star className="w-4 h-4 text-amber-500 fill-amber-500" />;
       case "low-stock":
-        return <AlertTriangle className="w-4 h-4 text-amber-600" />;
+        return <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />;
       case "out-of-stock":
-        return <AlertCircle className="w-4 h-4 text-red-600" />;
+        return <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400" />;
       case "user":
-        return <UserPlus className="w-4 h-4 text-blue-600" />;
+        return <UserPlus className="w-4 h-4 text-blue-600 dark:text-blue-400" />;
       case "payment-verified":
-        return <CheckCircle2 className="w-4 h-4 text-emerald-600" />;
+        return <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />;
       case "payment-failed":
-        return <AlertCircle className="w-4 h-4 text-rose-600" />;
+        return <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400" />;
       case "cancelled":
-        return <XCircle className="w-4 h-4 text-rose-600" />;
+        return <XCircle className="w-4 h-4 text-rose-600 dark:text-rose-400" />;
       default:
-        return <Clock className="w-4 h-4 text-[#1A1613]/60" />;
+        return <Clock className="w-4 h-4 text-[#1A1613]/60 dark:text-[#F5EFE6]/50" />;
     }
   };
 
   const getEventBadgeBg = (type: ActivityEvent["type"]) => {
     switch (type) {
       case "high-value":
-        return "bg-purple-50 border-purple-200 text-purple-700";
+        return "bg-purple-50 border-purple-200 text-purple-700 dark:bg-purple-500/15 dark:border-purple-500/30 dark:text-purple-400";
       case "order":
-        return "bg-orange-50 border-orange-200 text-orange-700";
+        return "bg-orange-50 border-orange-200 text-orange-700 dark:bg-orange-500/15 dark:border-orange-500/30 dark:text-orange-400";
       case "review":
-        return "bg-amber-50 border-amber-200 text-amber-700";
+        return "bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-500/15 dark:border-amber-500/30 dark:text-amber-400";
       case "low-stock":
-        return "bg-amber-50 border-amber-200 text-amber-700";
+        return "bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-500/15 dark:border-amber-500/30 dark:text-amber-400";
       case "out-of-stock":
-        return "bg-red-50 border-red-200 text-red-700";
+        return "bg-red-50 border-red-200 text-red-700 dark:bg-red-500/15 dark:border-red-500/30 dark:text-red-400";
       case "user":
-        return "bg-blue-50 border-blue-200 text-blue-700";
+        return "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-500/15 dark:border-blue-500/30 dark:text-blue-400";
       case "payment-verified":
-        return "bg-emerald-50 border-emerald-200 text-emerald-700";
+        return "bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-500/15 dark:border-emerald-500/30 dark:text-emerald-400";
       case "payment-failed":
       case "cancelled":
-        return "bg-rose-50 border-rose-200 text-rose-700";
+        return "bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-500/15 dark:border-rose-500/30 dark:text-rose-400";
       default:
-        return "bg-stone-50 border-stone-200 text-stone-700";
+        return "bg-stone-50 border-stone-200 text-stone-700 dark:bg-[#2A2420] dark:border-white/10 dark:text-[#F5EFE6]/70";
     }
   };
 
@@ -130,17 +130,17 @@ const LiveActivityFeedDrawer: React.FC<LiveActivityFeedDrawerProps> = ({
       />
 
       <div className="fixed inset-y-0 right-0 flex max-w-full pl-10">
-        <div className="w-screen max-w-md bg-[#FFFDF8] border-l border-[#1A1613]/10 shadow-2xl flex flex-col">
+        <div className="w-screen max-w-md bg-[#FFFDF8] border-l border-[#1A1613]/10 shadow-2xl flex flex-col dark:bg-[#1E1A17] dark:border-white/10">
           {/* Header */}
-          <div className="p-5 border-b border-[#1A1613]/10 bg-gradient-to-r from-[#FFFDF8] to-[#FDF8ED] flex items-center justify-between">
+          <div className="p-5 border-b border-[#1A1613]/10 bg-gradient-to-r from-[#FFFDF8] to-[#FDF8ED] flex items-center justify-between dark:border-white/10 dark:from-[#2A2420] dark:to-[#1E1A17]">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                <h3 className="text-base font-bold text-[#1A1613] font-heading">
+                <h3 className="text-base font-bold text-[#1A1613] dark:text-[#F5EFE6] font-heading">
                   Live Activity Stream
                 </h3>
               </div>
-              <p className="text-xs text-[#1A1613]/60">
+              <p className="text-xs text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
                 Real-time feed of store events ({activities.length} recorded)
               </p>
             </div>
@@ -148,7 +148,7 @@ const LiveActivityFeedDrawer: React.FC<LiveActivityFeedDrawerProps> = ({
               {activities.length > 0 && (
                 <button
                   onClick={onClearActivities}
-                  className="p-1.5 rounded-lg text-[#1A1613]/50 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                  className="p-1.5 rounded-lg text-[#1A1613]/50 hover:text-rose-600 hover:bg-rose-50 transition-colors dark:text-[#F5EFE6]/50 dark:hover:text-rose-400 dark:hover:bg-rose-500/15"
                   title="Clear activity log"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -156,7 +156,7 @@ const LiveActivityFeedDrawer: React.FC<LiveActivityFeedDrawerProps> = ({
               )}
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-lg text-[#1A1613]/60 hover:text-[#1A1613] hover:bg-[#1A1613]/5 transition-colors"
+                className="p-1.5 rounded-lg text-[#1A1613]/60 hover:text-[#1A1613] hover:bg-[#1A1613]/5 transition-colors dark:text-[#F5EFE6]/50 dark:hover:text-[#F5EFE6] dark:hover:bg-white/5"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -164,7 +164,7 @@ const LiveActivityFeedDrawer: React.FC<LiveActivityFeedDrawerProps> = ({
           </div>
 
           {/* Filter Bar */}
-          <div className="p-3 border-b border-[#1A1613]/10 bg-[#FAF5E6]/40 flex items-center gap-1.5 overflow-x-auto text-xs font-semibold">
+          <div className="p-3 border-b border-[#1A1613]/10 bg-[#FAF5E6]/40 flex items-center gap-1.5 overflow-x-auto text-xs font-semibold dark:border-white/10 dark:bg-[#2A2420]">
             {[
               { id: "ALL", label: "All" },
               { id: "ORDERS", label: "Orders" },
@@ -179,7 +179,7 @@ const LiveActivityFeedDrawer: React.FC<LiveActivityFeedDrawerProps> = ({
                 className={`px-2.5 py-1 rounded-lg transition-all whitespace-nowrap ${
                   filter === tab.id
                     ? "bg-[#E6540B] text-white shadow-xs"
-                    : "text-[#1A1613]/70 hover:bg-[#1A1613]/5"
+                    : "text-[#1A1613]/70 hover:bg-[#1A1613]/5 dark:text-[#F5EFE6]/70 dark:hover:bg-white/5"
                 }`}
               >
                 {tab.label}
@@ -190,13 +190,13 @@ const LiveActivityFeedDrawer: React.FC<LiveActivityFeedDrawerProps> = ({
           {/* Activity Stream List */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {filteredActivities.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-3 text-[#1A1613]/40">
-                <div className="p-3 rounded-full bg-[#1A1613]/5">
+              <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-3 text-[#1A1613]/40 dark:text-[#F5EFE6]/50">
+                <div className="p-3 rounded-full bg-[#1A1613]/5 dark:bg-[#2A2420]">
                   <Clock className="w-8 h-8 stroke-[1.5]" />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm font-semibold text-[#1A1613]/70">No activity yet</p>
-                  <p className="text-xs text-[#1A1613]/50 max-w-xs">
+                  <p className="text-sm font-semibold text-[#1A1613]/70 dark:text-[#F5EFE6]/70">No activity yet</p>
+                  <p className="text-xs text-[#1A1613]/50 dark:text-[#F5EFE6]/50 max-w-xs">
                     New orders, customer reviews, inventory alerts, and payment events will stream in live.
                   </p>
                 </div>
@@ -205,7 +205,7 @@ const LiveActivityFeedDrawer: React.FC<LiveActivityFeedDrawerProps> = ({
               filteredActivities.map((event) => (
                 <div
                   key={event.id}
-                  className="relative p-3.5 rounded-xl border border-[#1A1613]/10 bg-[#FFFDF8] hover:bg-[#FDF8ED] transition-all shadow-2xs hover:shadow-xs group"
+                  className="relative p-3.5 rounded-xl border border-[#1A1613]/10 bg-[#FFFDF8] hover:bg-[#FDF8ED] transition-all shadow-2xs hover:shadow-xs group dark:border-white/10 dark:bg-[#1E1A17] dark:hover:bg-[#2A2420]"
                 >
                   <div className="flex items-start gap-3">
                     <div
@@ -217,14 +217,14 @@ const LiveActivityFeedDrawer: React.FC<LiveActivityFeedDrawerProps> = ({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <h4 className="text-xs font-bold text-[#1A1613] truncate">
+                        <h4 className="text-xs font-bold text-[#1A1613] dark:text-[#F5EFE6] truncate">
                           {event.title}
                         </h4>
-                        <span className="text-[10px] font-medium text-[#1A1613]/45 whitespace-nowrap">
+                        <span className="text-[10px] font-medium text-[#1A1613]/45 dark:text-[#F5EFE6]/50 whitespace-nowrap">
                           {formatTimeAgo(event.timestamp)}
                         </span>
                       </div>
-                      <p className="text-xs text-[#1A1613]/75 mt-0.5 leading-relaxed break-words">
+                      <p className="text-xs text-[#1A1613]/75 dark:text-[#F5EFE6]/70 mt-0.5 leading-relaxed break-words">
                         {event.description}
                       </p>
 
@@ -249,7 +249,7 @@ const LiveActivityFeedDrawer: React.FC<LiveActivityFeedDrawerProps> = ({
           </div>
 
           {/* Footer Status Bar */}
-          <div className="p-3 border-t border-[#1A1613]/10 bg-[#FFFDF8] text-[11px] text-[#1A1613]/55 flex items-center justify-between">
+          <div className="p-3 border-t border-[#1A1613]/10 bg-[#FFFDF8] text-[11px] text-[#1A1613]/55 flex items-center justify-between dark:border-white/10 dark:bg-[#1E1A17] dark:text-[#F5EFE6]/50">
             <span className="flex items-center gap-1.5">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               Socket.IO Live Gateway Connected

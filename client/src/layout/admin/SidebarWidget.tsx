@@ -44,8 +44,8 @@ export default function SidebarWidget() {
       };
   
   return (
-     <div onClick={handleLogOut} className="border-t border-gray-300 cursor-pointer transition-colors hover:bg-red-50 p-4 mt-auto">
-        <div className="flex text-red-600 items-center gap-2">
+     <div onClick={handleLogOut} className="border-t border-gray-300 dark:border-white/10 cursor-pointer transition-colors hover:bg-red-50 dark:hover:bg-red-500/15 p-4 mt-auto">
+        <div className="flex text-red-600 dark:text-red-400 items-center gap-2">
           <div className="flex-shrink-0 px-3">
             <LogOut className="h-7 w-7" />
           </div>

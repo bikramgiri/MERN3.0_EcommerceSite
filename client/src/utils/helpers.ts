@@ -1,5 +1,5 @@
-import { FilterOptions, Product } from "../types/customer/productTypes";
-import { Review } from "../types/customer/reviewTypes";
+import type { SyntheticEvent } from "react";
+import type { Product } from "../types/customer/productTypes";
 
 interface HasRating {
   rating?: number | string | null;
@@ -14,109 +14,50 @@ export const getAverageRatingNumber = <T extends HasRating>(
   return Number((total / reviews?.length).toFixed(1));
 };
 
-/** Get review count for a product */
-export function getProductReviewCount(
-  productId: string,
-  reviews?: Review[],
-): number {
-  return reviews?.filter((r) => r.productId === productId).length || 0;
+/** Search rule shared by the header search and the products page: product name or category name */
+export function matchesSearch(product: Product, query: string): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  return (
+    product.productName.toLowerCase().includes(q) ||
+    (product.category?.categoryName || "").toLowerCase().includes(q)
+  );
 }
 
 /**
- * Filter products by price, rating, and category.
- * categoryFilter: category id string or "all" / undefined to skip.
+ * Asks Cloudinary for a resized, modern-format copy (WebP/AVIF) of an image
+ * instead of the full-size original. Non-Cloudinary URLs are returned unchanged.
  */
-export function filterProducts(
-  products: Product[],
-  filters: FilterOptions,
-  _reviews?: Review[],
-  categoryFilter?: string,
-): Product[] {
-  return products.filter((product) => {
-    // Category
-    if (categoryFilter && categoryFilter !== "all") {
-      if (product.categoryId !== categoryFilter) return false;
-    }
-
-    // Min price
-    if (
-      filters.minPrice !== undefined &&
-      product.productPrice < filters.minPrice
-    ) {
-      return false;
-    }
-
-    // Max price
-    if (
-      filters.maxPrice !== undefined &&
-      product.productPrice > filters.maxPrice
-    ) {
-      return false;
-    }
-
-    // Min rating
-    if (filters.minRating !== undefined && filters.minRating > 0) {
-      const avg = getAverageRatingNumber(product.reviews);
-      if (avg < filters.minRating) return false;
-    }
-
-    return true;
-  });
+export function optimizeImageUrl(url: string | undefined | null, width: number): string {
+  if (!url) return "";
+  if (!url.includes("res.cloudinary.com") || !url.includes("/upload/")) return url;
+  return url.replace("/upload/", `/upload/f_auto,q_auto,c_limit,w_${width}/`);
 }
 
-/** Sort products by the given sort key */
-export function sortProducts(
-  products: Product[],
-  sortBy: string,
-  reviews: Review[],
-): Product[] {
-  const sorted = [...products];
+/**
+ * <img> attributes offering several Cloudinary sizes, so the browser downloads the
+ * smallest copy that still looks sharp (retina screens pick a larger one, phones a smaller one).
+ * `sizes` tells the browser how wide the image is shown, e.g. "(min-width: 768px) 33vw, 50vw".
+ * Non-Cloudinary images (e.g. Google avatars) just get a plain src.
+ */
+export function responsiveImage(
+  url: string | undefined | null,
+  widths: number[],
+  sizes: string,
+): { src: string; srcSet?: string; sizes?: string } {
+  if (!url) return { src: "" };
+  if (!url.includes("res.cloudinary.com") || !url.includes("/upload/")) return { src: url };
+  return {
+    // Middle size as the fallback for browsers that ignore srcset
+    src: optimizeImageUrl(url, widths[Math.floor(widths.length / 2)]),
+    srcSet: widths.map((w) => `${optimizeImageUrl(url, w)} ${w}w`).join(", "),
+    sizes,
+  };
+}
 
-  switch (sortBy) {
-    case "popular":
-      return sorted.sort((a, b) => {
-        const countDiff = (b.reviews?.length || 0) - (a.reviews?.length || 0);
-        if (countDiff !== 0) return countDiff;
-        return (
-          getAverageRatingNumber(b.reviews) - getAverageRatingNumber(a.reviews)
-        );
-      });
-
-    case "price_asc":
-      return sorted.sort((a, b) => a.productPrice - b.productPrice);
-
-    case "price_desc":
-      return sorted.sort((a, b) => b.productPrice - a.productPrice);
-
-    case "rating_high":
-      return sorted.sort(
-        (a, b) =>
-          getAverageRatingNumber(b.reviews) - getAverageRatingNumber(a.reviews),
-      );
-
-    case "rating_low":
-      return sorted.sort(
-        (a, b) =>
-          getAverageRatingNumber(a.reviews) - getAverageRatingNumber(b.reviews),
-      );
-
-    case "newest":
-      return sorted.sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      );
-
-    default: // relevance
-      return sorted.sort((a, b) => {
-        const rA = getAverageRatingNumber(a.reviews);
-        const rB = getAverageRatingNumber(b.reviews);
-        if (Math.abs(rB - rA) > 0.1) return rB - rA;
-        return (
-          getProductReviewCount(b.id, reviews) -
-          getProductReviewCount(a.id, reviews)
-        );
-      });
-  }
+/** Hide an image that fails to load so the card background shows instead of a broken icon */
+export function hideBrokenImage(e: SyntheticEvent<HTMLImageElement>) {
+  e.currentTarget.style.visibility = "hidden";
 }
 
 export function formatCurrency(amount: number): string {

@@ -21,7 +21,9 @@ import { connectSocket } from "../../../services/socket";
 import {
   useStoreSettings,
   calculateShipping,
+  loadStoreSettings,
 } from "../../../services/storeSettingsService";
+import { Skeleton, SkeletonContainer } from "../../../global/Skeleton";
 
 interface ApiErrorPayload {
   field?: string;
@@ -52,10 +54,112 @@ const emptyErrors: CheckoutFormErrors = {
   general: "",
 };
 
+const skeletonCardClass =
+  "bg-[#FDF8ED] border border-[#1A1613]/10 rounded-2xl p-6 md:p-8";
+
+function CheckoutSkeleton() {
+  return (
+    <section className="py-6 sm:py-8 md:py-12 bg-[#FDF8ED] pb-16 mt-10 md:pt-18 font-['Inter',sans-serif] text-[#1A1613] antialiased">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mt-1 mb-4">
+          <Breadcrumb
+            items={[{ label: "Cart", href: "/cart" }, { label: "Checkout" }]}
+          />
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-['Fraunces',serif] font-bold text-[#1A1613]">
+            Checkout
+          </h1>
+        </div>
+
+        <SkeletonContainer
+          label="Loading checkout"
+          className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8"
+        >
+          <div className="space-y-6">
+            <div className={skeletonCardClass}>
+              <Skeleton className="h-7 sm:h-8 w-44 mb-4 sm:mb-6" />
+              <div className="space-y-4">
+                {Array.from({ length: 4 }).map((_, row) => (
+                  <div key={row} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {Array.from({ length: 2 }).map((_, col) => (
+                      <div key={col}>
+                        <Skeleton className="h-4 w-24 mb-2" />
+                        <Skeleton className="h-12 w-full rounded-xl" />
+                      </div>
+                    ))}
+                  </div>
+                ))}
+                <div className="flex items-center gap-3">
+                  <Skeleton className="w-4 h-4 rounded" />
+                  <Skeleton className="h-4 w-56" />
+                </div>
+              </div>
+            </div>
+
+            <div className={skeletonCardClass}>
+              <Skeleton className="h-7 sm:h-8 w-48 mb-4 sm:mb-6" />
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="h-13 sm:h-15 w-full rounded-2xl" />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4 sm:space-y-6">
+            <div className="space-y-3 sm:space-y-4">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="border border-[#1A1613]/10 rounded-2xl px-4 py-3 sm:px-6 sm:py-5 flex items-center gap-4"
+                >
+                  <Skeleton className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl flex-shrink-0" />
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <Skeleton className="h-6 sm:h-7 w-3/4 max-w-xs" />
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-5 sm:h-6 w-20" />
+                  </div>
+                  <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                    <Skeleton className="h-9 w-23 sm:h-10 sm:w-27 rounded-full" />
+                    <Skeleton className="w-9 h-9 sm:w-10 sm:h-10 rounded-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className={`${skeletonCardClass} lg:sticky lg:top-20`}>
+              <Skeleton className="h-7 sm:h-8 w-44 mb-4 sm:mb-6" />
+              <div className="space-y-3 sm:space-y-4">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex justify-between">
+                    <Skeleton className="h-5 w-24" />
+                    <Skeleton className="h-5 w-20" />
+                  </div>
+                ))}
+                <div className="border-t border-[#1A1613]/10 pt-4 flex justify-between">
+                  <Skeleton className="h-7 w-16" />
+                  <Skeleton className="h-7 w-28" />
+                </div>
+              </div>
+              <div className="mt-6 sm:mt-8">
+                <Skeleton className="h-4 w-40 mb-2" />
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Skeleton className="h-12 flex-1 rounded-xl" />
+                  <Skeleton className="h-12 w-full sm:w-20 rounded-xl" />
+                </div>
+              </div>
+              <Skeleton className="h-13 sm:h-15 w-full mt-6 sm:mt-8 rounded-xl" />
+            </div>
+          </div>
+        </SkeletonContainer>
+      </div>
+    </section>
+  );
+}
+
 const CheckOut = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { cart } = useAppSelector((state) => state.cart);
+  const { cart, status: cartStatus } = useAppSelector((state) => state.cart);
   const { khaltiUrl, esewaUrl, esewaPaymentData, status } = useAppSelector(
     (state) => state.checkout,
   );
@@ -336,8 +440,12 @@ const CheckOut = () => {
           errData &&
           httpStatus !== undefined &&
           httpStatus >= 400 &&
-          httpStatus < 500
+          (httpStatus < 500 || httpStatus === 503)
         ) {
+          // The order may have been rejected because store settings changed
+          // (shipping fee, payment options, maintenance), so refresh them
+          loadStoreSettings().catch(() => {});
+
           const field = errData.field as keyof CheckoutFormErrors | undefined;
           const msg = errData.message || "Validation error";
 
@@ -412,10 +520,18 @@ const CheckOut = () => {
     "hover:shadow-[0_-6px_26px_-6px_rgba(0,0,0,0.08),0_8px_16px_-6px_rgba(0,0,0,0.06)] " +
     "transition-shadow duration-500";
 
+  // IDLE means the header hasn't dispatched its cart fetch yet
+  if (
+    cart.length === 0 &&
+    (cartStatus === Status.LOADING || cartStatus === Status.IDLE)
+  ) {
+    return <CheckoutSkeleton />;
+  }
+
   if (cart.length === 0) {
     return (
       <section className="py-16 sm:py-20 bg-[#FDF8ED] font-['Inter',sans-serif]">
-        <div className="max-w-[1500px] mx-auto px-4 text-center">
+        <div className="max-w-7xl mx-auto px-4 text-center">
           <Breadcrumb
             items={[{ label: "Cart", href: "/cart" }, { label: "Checkout" }]}
           />
@@ -438,7 +554,7 @@ const CheckOut = () => {
 
   return (
     <section className="py-6 sm:py-8 md:py-12 bg-[#FDF8ED] pb-16 mt-10 md:pt-18 font-['Inter',sans-serif] text-[#1A1613] antialiased">
-      <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mt-1 mb-4">
           <Breadcrumb
             items={[{ label: "Cart", href: "/cart" }, { label: "Checkout" }]}

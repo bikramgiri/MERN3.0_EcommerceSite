@@ -12,6 +12,7 @@ import jwt, { Secret } from "jsonwebtoken";
 import { AuthRequest } from "../../middleware/authMiddleware";
 import getFullImageUrl from "../../services/imageHandler";
 import { emitToAdmin } from "../../services/socketService";
+import { notifyNewCustomer } from "../../services/notificationService";
 const SENSITIVE_FIELDS = [
   "password",
   "emailVerificationToken",
@@ -116,6 +117,7 @@ class AuthController {
         type: "user-registered",
         userId: registerData.id,
       });
+      await notifyNewCustomer(registerData.id, registerData.username, registerData.email, "email");
 
       res.status(201).json({
         message: "User registered successfully! Please check your email for verification.",

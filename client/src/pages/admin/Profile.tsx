@@ -21,53 +21,53 @@ const ProfileSkeleton: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-12 animate-pulse font-sans">
       {/* Header Skeleton */}
-      <div className="pb-4 border-b border-gray-200">
-        <div className="h-7 w-44 rounded-md bg-gray-200" />
-        <div className="h-4 w-72 rounded bg-gray-100 mt-2" />
+      <div className="pb-4 border-b border-gray-200 dark:border-white/10">
+        <div className="h-7 w-44 rounded-md bg-gray-200 dark:bg-white/10" />
+        <div className="h-4 w-72 rounded bg-gray-100 dark:bg-white/5 mt-2" />
       </div>
 
       {/* Tabs Skeleton */}
-      <div className="flex gap-6 border-b border-gray-200 pb-2">
-        <div className="h-5 w-20 rounded bg-gray-200" />
-        <div className="h-5 w-20 rounded bg-gray-200" />
+      <div className="flex gap-6 border-b border-gray-200 dark:border-white/10 pb-2">
+        <div className="h-5 w-20 rounded bg-gray-200 dark:bg-white/10" />
+        <div className="h-5 w-20 rounded bg-gray-200 dark:bg-white/10" />
       </div>
 
       {/* Card Skeleton */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-xs divide-y divide-gray-100 overflow-hidden">
+      <div className="bg-white dark:bg-[#1E1A17] rounded-xl border border-gray-200 dark:border-white/10 shadow-xs divide-y divide-gray-100 dark:divide-white/10 overflow-hidden">
         <div className="px-4 sm:px-6 py-5">
-          <div className="h-5 w-36 rounded bg-gray-200" />
-          <div className="h-3 w-56 rounded bg-gray-100 mt-2" />
+          <div className="h-5 w-36 rounded bg-gray-200 dark:bg-white/10" />
+          <div className="h-3 w-56 rounded bg-gray-100 dark:bg-white/5 mt-2" />
         </div>
 
         {/* Avatar Row */}
         <div className="p-4 sm:p-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="h-16 w-16 rounded-full bg-gray-200 shrink-0" />
+            <div className="h-16 w-16 rounded-full bg-gray-200 dark:bg-white/10 shrink-0" />
             <div className="space-y-2">
-              <div className="h-4 w-24 rounded bg-gray-200" />
-              <div className="h-3 w-36 rounded bg-gray-100" />
+              <div className="h-4 w-24 rounded bg-gray-200 dark:bg-white/10" />
+              <div className="h-3 w-36 rounded bg-gray-100 dark:bg-white/5" />
             </div>
           </div>
-          <div className="h-8 w-28 rounded-lg bg-gray-100" />
+          <div className="h-8 w-28 rounded-lg bg-gray-100 dark:bg-white/5" />
         </div>
 
         {/* Inputs */}
         <div className="p-4 sm:p-6 space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div className="space-y-2">
-              <div className="h-3.5 w-16 rounded bg-gray-200" />
-              <div className="h-10 w-full rounded-lg bg-gray-100" />
+              <div className="h-3.5 w-16 rounded bg-gray-200 dark:bg-white/10" />
+              <div className="h-10 w-full rounded-lg bg-gray-100 dark:bg-white/5" />
             </div>
             <div className="space-y-2">
-              <div className="h-3.5 w-20 rounded bg-gray-200" />
-              <div className="h-10 w-full rounded-lg bg-gray-100" />
+              <div className="h-3.5 w-20 rounded bg-gray-200 dark:bg-white/10" />
+              <div className="h-10 w-full rounded-lg bg-gray-100 dark:bg-white/5" />
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="bg-gray-50/70 px-4 sm:px-6 py-3.5 flex justify-end">
-          <div className="h-9 w-28 rounded-lg bg-gray-200" />
+        <div className="bg-gray-50/70 dark:bg-[#2A2420] px-4 sm:px-6 py-3.5 flex justify-end">
+          <div className="h-9 w-28 rounded-lg bg-gray-200 dark:bg-white/10" />
         </div>
       </div>
     </div>
@@ -319,24 +319,24 @@ const Profile: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-16 font-sans">
       {/* 1. Page Header */}
-      <div className="pb-4 border-b border-gray-200">
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900 font-heading">
+      <div className="pb-4 border-b border-gray-200 dark:border-white/10">
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-[#F5EFE6] font-heading">
           Profile Settings
         </h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-gray-500 dark:text-[#F5EFE6]/50 mt-1">
           Manage your account information, profile picture, and login credentials.
         </p>
       </div>
 
       {/* 2. Tabs */}
-      <div className="flex border-b border-gray-200">
+      <div className="flex border-b border-gray-200 dark:border-white/10">
         <button
           type="button"
           onClick={() => setActiveTab("general")}
           className={`pb-3 px-4 text-sm font-medium border-b-2 inline-flex items-center gap-2 transition-colors cursor-pointer ${
             activeTab === "general"
               ? "border-[#E6540B] text-[#E6540B]"
-              : "border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300"
+              : "border-transparent text-gray-500 dark:text-[#F5EFE6]/50 hover:text-gray-800 dark:hover:text-[#F5EFE6] hover:border-gray-300 dark:hover:border-white/20"
           }`}
         >
           <UserIcon className="w-4 h-4" />
@@ -349,7 +349,7 @@ const Profile: React.FC = () => {
           className={`pb-3 px-4 text-sm font-medium border-b-2 inline-flex items-center gap-2 transition-colors cursor-pointer ${
             activeTab === "security"
               ? "border-[#E6540B] text-[#E6540B]"
-              : "border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300"
+              : "border-transparent text-gray-500 dark:text-[#F5EFE6]/50 hover:text-gray-800 dark:hover:text-[#F5EFE6] hover:border-gray-300 dark:hover:border-white/20"
           }`}
         >
           <ShieldCheck className="w-4 h-4" />
@@ -361,12 +361,12 @@ const Profile: React.FC = () => {
       {activeTab === "general" && (
         <form
           onSubmit={handleProfileSubmit}
-          className="bg-white rounded-xl border border-gray-200 shadow-2xs divide-y divide-gray-100 overflow-hidden"
+          className="bg-white dark:bg-[#1E1A17] rounded-xl border border-gray-200 dark:border-white/10 shadow-2xs divide-y divide-gray-100 dark:divide-white/10 overflow-hidden"
         >
           {/* Card Header */}
           <div className="px-4 sm:px-6 py-5">
-            <h2 className="text-base font-semibold text-gray-900">Personal Information</h2>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <h2 className="text-base font-semibold text-gray-900 dark:text-[#F5EFE6]">Personal Information</h2>
+            <p className="text-xs text-gray-500 dark:text-[#F5EFE6]/50 mt-0.5">
               Update your photo and personal details.
             </p>
           </div>
@@ -394,8 +394,8 @@ const Profile: React.FC = () => {
               </div>
 
               <div>
-                <h3 className="text-sm font-semibold text-gray-900">Profile photo</h3>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-[#F5EFE6]">Profile photo</h3>
+                <p className="text-xs text-gray-500 dark:text-[#F5EFE6]/50 mt-0.5">
                   JPG, JPEG, or PNG under 10MB.
                 </p>
               </div>
@@ -413,9 +413,9 @@ const Profile: React.FC = () => {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploadingAvatar}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 shadow-2xs transition-colors disabled:opacity-50 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-lg border border-gray-300 dark:border-white/15 bg-white dark:bg-[#1E1A17] text-gray-700 dark:text-[#F5EFE6]/70 hover:bg-gray-50 dark:hover:bg-[#2A2420] shadow-2xs transition-colors disabled:opacity-50 cursor-pointer"
               >
-                <Camera className="w-3.5 h-3.5 text-gray-500" />
+                <Camera className="w-3.5 h-3.5 text-gray-500 dark:text-[#F5EFE6]/50" />
                 <span>{isUploadingAvatar ? "Uploading..." : "Change photo"}</span>
               </button>
 
@@ -424,7 +424,7 @@ const Profile: React.FC = () => {
                   type="button"
                   onClick={() => setShowDeleteAvatarModal(true)}
                   disabled={isDeletingAvatar || isUploadingAvatar}
-                  className="p-2 text-xs rounded-lg border border-gray-300 text-gray-600 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-colors disabled:opacity-50 cursor-pointer"
+                  className="p-2 text-xs rounded-lg border border-gray-300 dark:border-white/15 text-gray-600 dark:text-[#F5EFE6]/70 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-500/30 hover:bg-red-50 dark:hover:bg-red-500/15 transition-colors disabled:opacity-50 cursor-pointer"
                   title="Remove photo"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -438,7 +438,7 @@ const Profile: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               {/* Username */}
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                <label className="block text-xs font-medium text-gray-700 dark:text-[#F5EFE6]/70 mb-1.5">
                   Username
                 </label>
                 <input
@@ -447,20 +447,20 @@ const Profile: React.FC = () => {
                   value={formData.username}
                   onChange={handleFormChange}
                   placeholder="Username"
-                  className={`w-full rounded-lg border px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none transition-colors ${
+                  className={`w-full rounded-lg border dark:bg-[#14110F] dark:placeholder:text-[#F5EFE6]/40 px-3.5 py-2.5 text-sm text-gray-900 dark:text-[#F5EFE6] focus:outline-none transition-colors ${
                     detailsErrors.username
                       ? "border-red-500 focus:border-red-500 bg-red-50/20"
-                      : "border-gray-300 focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
+                      : "border-gray-300 dark:border-white/15 focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
                   }`}
                 />
                 {detailsErrors.username && (
-                  <p className="mt-1 text-xs text-red-600">{detailsErrors.username}</p>
+                  <p className="mt-1 text-xs text-red-600 dark:text-red-400">{detailsErrors.username}</p>
                 )}
               </div>
 
               {/* Email */}
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                <label className="block text-xs font-medium text-gray-700 dark:text-[#F5EFE6]/70 mb-1.5">
                   Email address
                 </label>
                 <input
@@ -469,29 +469,29 @@ const Profile: React.FC = () => {
                   value={formData.email}
                   onChange={handleFormChange}
                   placeholder="Email"
-                  className={`w-full rounded-lg border px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none transition-colors ${
+                  className={`w-full rounded-lg border dark:bg-[#14110F] dark:placeholder:text-[#F5EFE6]/40 px-3.5 py-2.5 text-sm text-gray-900 dark:text-[#F5EFE6] focus:outline-none transition-colors ${
                     detailsErrors.email
                       ? "border-red-500 focus:border-red-500 bg-red-50/20"
-                      : "border-gray-300 focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
+                      : "border-gray-300 dark:border-white/15 focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
                   }`}
                 />
                 {detailsErrors.email && (
-                  <p className="mt-1 text-xs text-red-600">{detailsErrors.email}</p>
+                  <p className="mt-1 text-xs text-red-600 dark:text-red-400">{detailsErrors.email}</p>
                 )}
               </div>
             </div>
 
             {/* Readonly info */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-4 border-t border-gray-100">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-4 border-t border-gray-100 dark:border-white/10">
               <div>
-                <span className="block text-xs font-medium text-gray-500">Account role</span>
-                <span className="inline-block mt-1 text-xs font-medium bg-gray-100 text-gray-700 px-2 py-0.5 rounded capitalize">
+                <span className="block text-xs font-medium text-gray-500 dark:text-[#F5EFE6]/50">Account role</span>
+                <span className="inline-block mt-1 text-xs font-medium bg-gray-100 dark:bg-[#2A2420] text-gray-700 dark:text-[#F5EFE6]/70 px-2 py-0.5 rounded capitalize">
                   {user?.role || "Admin"}
                 </span>
               </div>
               <div>
-                <span className="block text-xs font-medium text-gray-500">Member since</span>
-                <span className="text-xs font-medium text-gray-700 mt-1 inline-block">
+                <span className="block text-xs font-medium text-gray-500 dark:text-[#F5EFE6]/50">Member since</span>
+                <span className="text-xs font-medium text-gray-700 dark:text-[#F5EFE6]/70 mt-1 inline-block">
                   {memberDate}
                 </span>
               </div>
@@ -499,12 +499,12 @@ const Profile: React.FC = () => {
           </div>
 
           {/* Action Footer */}
-          <div className="bg-gray-50/70 px-4 sm:px-6 py-3.5 flex items-center justify-between flex-wrap gap-3">
-            <span className="text-xs text-gray-500 flex items-center gap-1.5">
+          <div className="bg-gray-50/70 dark:bg-[#2A2420] px-4 sm:px-6 py-3.5 flex items-center justify-between flex-wrap gap-3">
+            <span className="text-xs text-gray-500 dark:text-[#F5EFE6]/50 flex items-center gap-1.5">
               {isDirty ? (
                 <>
                   <span className="inline-block w-2 h-2 rounded-full bg-amber-500" />
-                  <span className="text-amber-700 font-medium">Unsaved changes</span>
+                  <span className="text-amber-700 dark:text-amber-400 font-medium">Unsaved changes</span>
                 </>
               ) : (
                 <>
@@ -520,7 +520,7 @@ const Profile: React.FC = () => {
                   type="button"
                   onClick={handleDiscardChanges}
                   disabled={isUpdatingProfile}
-                  className="rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 shadow-2xs transition-colors cursor-pointer"
+                  className="rounded-lg border border-gray-300 dark:border-white/15 bg-white dark:bg-[#1E1A17] px-3.5 py-2 text-xs font-medium text-gray-700 dark:text-[#F5EFE6]/70 hover:bg-gray-50 dark:hover:bg-[#2A2420] shadow-2xs transition-colors cursor-pointer"
                 >
                   Discard
                 </button>
@@ -546,10 +546,10 @@ const Profile: React.FC = () => {
 
       {/* TAB 2: Security */}
       {activeTab === "security" && (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-2xs divide-y divide-gray-100 overflow-hidden max-w-2xl">
+        <div className="bg-white dark:bg-[#1E1A17] rounded-xl border border-gray-200 dark:border-white/10 shadow-2xs divide-y divide-gray-100 dark:divide-white/10 overflow-hidden max-w-2xl">
           <div className="px-6 py-5">
-            <h2 className="text-base font-semibold text-gray-900">Change Password</h2>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <h2 className="text-base font-semibold text-gray-900 dark:text-[#F5EFE6]">Change Password</h2>
+            <p className="text-xs text-gray-500 dark:text-[#F5EFE6]/50 mt-0.5">
               Ensure your account is using a long, random password to stay secure.
             </p>
           </div>
@@ -558,7 +558,7 @@ const Profile: React.FC = () => {
             <div className="p-6 space-y-4">
               {/* Current Password */}
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                <label className="block text-xs font-medium text-gray-700 dark:text-[#F5EFE6]/70 mb-1.5">
                   Current password
                 </label>
                 <div className="relative">
@@ -568,28 +568,28 @@ const Profile: React.FC = () => {
                     value={passwordForm.currentPassword}
                     onChange={handlePasswordChange}
                     placeholder="Enter current password"
-                    className={`w-full rounded-lg border px-3.5 py-2.5 pr-10 text-sm text-gray-900 focus:outline-none transition-colors ${
+                    className={`w-full rounded-lg border dark:bg-[#14110F] dark:placeholder:text-[#F5EFE6]/40 px-3.5 py-2.5 pr-10 text-sm text-gray-900 dark:text-[#F5EFE6] focus:outline-none transition-colors ${
                       passwordErrors.currentPassword
                         ? "border-red-500 bg-red-50/20"
-                        : "border-gray-300 focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
+                        : "border-gray-300 dark:border-white/15 focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
                     }`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowCurrentPass(!showCurrentPass)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 cursor-pointer"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-[#F5EFE6]/50 hover:text-gray-700 dark:hover:text-[#F5EFE6] cursor-pointer"
                   >
                     {showCurrentPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
                 {passwordErrors.currentPassword && (
-                  <p className="mt-1 text-xs text-red-600">{passwordErrors.currentPassword}</p>
+                  <p className="mt-1 text-xs text-red-600 dark:text-red-400">{passwordErrors.currentPassword}</p>
                 )}
               </div>
 
               {/* New Password */}
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                <label className="block text-xs font-medium text-gray-700 dark:text-[#F5EFE6]/70 mb-1.5">
                   New password
                 </label>
                 <div className="relative">
@@ -599,28 +599,28 @@ const Profile: React.FC = () => {
                     value={passwordForm.newPassword}
                     onChange={handlePasswordChange}
                     placeholder="Minimum 8 characters"
-                    className={`w-full rounded-lg border px-3.5 py-2.5 pr-10 text-sm text-gray-900 focus:outline-none transition-colors ${
+                    className={`w-full rounded-lg border dark:bg-[#14110F] dark:placeholder:text-[#F5EFE6]/40 px-3.5 py-2.5 pr-10 text-sm text-gray-900 dark:text-[#F5EFE6] focus:outline-none transition-colors ${
                       passwordErrors.newPassword
                         ? "border-red-500 bg-red-50/20"
-                        : "border-gray-300 focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
+                        : "border-gray-300 dark:border-white/15 focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
                     }`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowNewPass(!showNewPass)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 cursor-pointer"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-[#F5EFE6]/50 hover:text-gray-700 dark:hover:text-[#F5EFE6] cursor-pointer"
                   >
                     {showNewPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
                 {passwordErrors.newPassword && (
-                  <p className="mt-1 text-xs text-red-600">{passwordErrors.newPassword}</p>
+                  <p className="mt-1 text-xs text-red-600 dark:text-red-400">{passwordErrors.newPassword}</p>
                 )}
               </div>
 
               {/* Confirm New Password */}
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                <label className="block text-xs font-medium text-gray-700 dark:text-[#F5EFE6]/70 mb-1.5">
                   Confirm new password
                 </label>
                 <div className="relative">
@@ -630,28 +630,28 @@ const Profile: React.FC = () => {
                     value={passwordForm.confirmNewPassword}
                     onChange={handlePasswordChange}
                     placeholder="Re-enter new password"
-                    className={`w-full rounded-lg border px-3.5 py-2.5 pr-10 text-sm text-gray-900 focus:outline-none transition-colors ${
+                    className={`w-full rounded-lg border dark:bg-[#14110F] dark:placeholder:text-[#F5EFE6]/40 px-3.5 py-2.5 pr-10 text-sm text-gray-900 dark:text-[#F5EFE6] focus:outline-none transition-colors ${
                       passwordErrors.confirmNewPassword
                         ? "border-red-500 bg-red-50/20"
-                        : "border-gray-300 focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
+                        : "border-gray-300 dark:border-white/15 focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
                     }`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPass(!showConfirmPass)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 cursor-pointer"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-[#F5EFE6]/50 hover:text-gray-700 dark:hover:text-[#F5EFE6] cursor-pointer"
                   >
                     {showConfirmPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
                 {passwordErrors.confirmNewPassword && (
-                  <p className="mt-1 text-xs text-red-600">{passwordErrors.confirmNewPassword}</p>
+                  <p className="mt-1 text-xs text-red-600 dark:text-red-400">{passwordErrors.confirmNewPassword}</p>
                 )}
               </div>
             </div>
 
             {/* Action Footer */}
-            <div className="bg-gray-50/70 px-6 py-3.5 flex items-center justify-end">
+            <div className="bg-gray-50/70 dark:bg-[#2A2420] px-6 py-3.5 flex items-center justify-end">
               <button
                 type="submit"
                 disabled={isChangingPassword}
@@ -674,9 +674,9 @@ const Profile: React.FC = () => {
       {/* Delete Photo Confirmation Modal */}
       {showDeleteAvatarModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-2xs">
-          <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl border border-gray-200">
-            <h3 className="text-base font-semibold text-gray-900">Remove profile photo?</h3>
-            <p className="mt-2 text-xs text-gray-500 leading-relaxed">
+          <div className="w-full max-w-sm rounded-xl bg-white dark:bg-[#1E1A17] p-6 shadow-xl dark:shadow-black/40 border border-gray-200 dark:border-white/10">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-[#F5EFE6]">Remove profile photo?</h3>
+            <p className="mt-2 text-xs text-gray-500 dark:text-[#F5EFE6]/50 leading-relaxed">
               Your photo will be deleted and replaced with your default initial.
             </p>
 
@@ -685,7 +685,7 @@ const Profile: React.FC = () => {
                 type="button"
                 onClick={() => setShowDeleteAvatarModal(false)}
                 disabled={isDeletingAvatar}
-                className="px-3.5 py-2 text-xs font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 cursor-pointer"
+                className="px-3.5 py-2 text-xs font-medium rounded-lg border border-gray-300 dark:border-white/15 text-gray-700 dark:text-[#F5EFE6]/70 hover:bg-gray-50 dark:hover:bg-[#2A2420] cursor-pointer"
               >
                 Cancel
               </button>

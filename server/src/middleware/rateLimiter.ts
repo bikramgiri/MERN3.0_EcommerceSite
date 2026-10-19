@@ -47,3 +47,15 @@ export const registerRateLimiter = rateLimit({
     field: "general",
   },
 });
+
+// For the public newsletter form (stops bots flooding the subscriber list)
+export const newsletterRateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    message: "Too many subscribe attempts. Please try again later.",
+    field: "email",
+  },
+});

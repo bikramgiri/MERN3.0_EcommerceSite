@@ -14,6 +14,12 @@ import {
 import { toast } from "react-toastify";
 import axios from "axios";
 import Breadcrumb from "../../../global/Breadcrumb";
+import {
+  calculateShipping,
+  getStoreSettings,
+} from "../../../services/storeSettingsService";
+import { Status } from "../../../global/statuses";
+import { Skeleton, SkeletonContainer } from "../../../global/Skeleton";
 
 interface ApiErrorPayload {
   field?: string;
@@ -41,11 +47,111 @@ interface EditFormData {
   phoneNumber: string;
 }
 
+function EditMyOrdersSkeleton({ id }: { id?: string }) {
+  return (
+    <SkeletonContainer
+      label="Loading order"
+      className="bg-gradient-to-br from-[#FDF8ED] to-[#FAF3E4] min-h-screen py-12 antialiased"
+    >
+      <div className="mt-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mt-10">
+          <Breadcrumb
+            items={[
+              { label: "My Orders", href: "/my-orders" },
+              { label: "Order Details", href: `/my-orders/orderdetails/${id}` },
+              { label: "Edit Order" },
+            ]}
+          />
+        </div>
+
+        <div className="bg-[#FDF8ED] rounded-xl shadow-md overflow-hidden border border-[#1A1613]/10">
+          <div className="bg-gradient-to-r from-[#E6540B] to-[#9B3A2E] p-4 md:p-4">
+            <h2 className="text-3xl md:text-4xl font-['Fraunces',serif] font-bold text-[#FDF8ED] text-center">
+              Order Details
+            </h2>
+            <p className="text-center text-[#FDF8ED]/90 mt-2 text-lg">
+              Edit Order ID: <span className="font-semibold">{id}</span>
+            </p>
+          </div>
+
+          <div className="p-6 md:p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
+              <div className="bg-[#FDF8ED] rounded-xl p-4 md:p-4 border border-[#1A1613]/10 shadow-sm">
+                <h3 className="text-2xl font-['Fraunces',serif] font-bold text-[#1A1613] mb-4">
+                  Products
+                </h3>
+                <div className="space-y-6">
+                  {Array.from({ length: 2 }, (_, i) => (
+                    <div
+                      key={i}
+                      className="flex flex-col sm:flex-row items-start gap-4 bg-[#F4EEDF] rounded-lg p-4 border border-[#1A1613]/10 shadow-sm"
+                    >
+                      <Skeleton className="aspect-square w-full sm:w-32 shrink-0 rounded-lg" />
+                      <div className="flex-1 w-full">
+                        <div className="flex items-center h-7">
+                          <Skeleton className="h-5 w-2/3" />
+                        </div>
+                        <div className="flex items-center mt-2 h-6">
+                          <Skeleton className="h-4 w-36" />
+                        </div>
+                        <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <Skeleton className="h-8 w-44" />
+                          <Skeleton className="h-6 w-24 self-end sm:self-center" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-[#FDF8ED] rounded-xl p-6 md:p-8 border border-[#1A1613]/10 shadow-sm">
+                <h3 className="text-2xl font-['Fraunces',serif] font-bold mb-6 text-[#1A1613]">
+                  Order Summary
+                </h3>
+                <div className="space-y-4">
+                  {Array.from({ length: 2 }, (_, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between h-7"
+                    >
+                      <Skeleton className="h-5 w-20" />
+                      <Skeleton className="h-5 w-28" />
+                    </div>
+                  ))}
+                  <div className="pt-4 border-t border-[#1A1613]/10">
+                    <div className="flex items-center justify-between h-7">
+                      <Skeleton className="h-5 w-28" />
+                      <Skeleton className="h-5 w-32" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4 p-6 lg:p-4 rounded-md bg-[#FDF8ED] border border-[#1A1613]/10 shadow-sm">
+              {Array.from({ length: 3 }, (_, i) => (
+                <div key={i}>
+                  <div className="flex items-center h-5 mb-1">
+                    <Skeleton className="h-3.5 w-28" />
+                  </div>
+                  <Skeleton className="h-[50px] w-full rounded-lg" />
+                </div>
+              ))}
+            </div>
+
+            <Skeleton className="h-[60px] w-full rounded-xl" />
+          </div>
+        </div>
+      </div>
+    </SkeletonContainer>
+  );
+}
+
 const EditMyOrders = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { id } = useParams<{ id: string }>();
-  const { singleOrder } = useAppSelector((state) => state.checkout);
+  const { singleOrder, status } = useAppSelector((state) => state.checkout);
   const { product: products } = useAppSelector((state) => state.product);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -139,7 +245,8 @@ const EditMyOrders = () => {
         acc + item.productPrice * item.quantity,
       0,
     );
-    const shipping = 50;
+    // Same shipping rule the server uses to validate the total
+    const { fee: shipping } = calculateShipping(subtotal, getStoreSettings());
     const total = subtotal + shipping;
     setFormData((prev) => ({
       ...prev,
@@ -233,6 +340,18 @@ const EditMyOrders = () => {
     }
   };
 
+  // Same rule as the order details page: wait for this URL's order, but let a
+  // null order after SUCCESS or an ERROR fall through to "Order Not Found".
+  const isInitialLoading =
+    !!id &&
+    orderInfo?.id !== id &&
+    status !== Status.ERROR &&
+    (orderInfo !== null || status !== Status.SUCCESS);
+
+  if (isInitialLoading) {
+    return <EditMyOrdersSkeleton id={id} />;
+  }
+
   if (!orderInfo) {
     return (
       <section className="min-h-screen bg-gradient-to-br from-[#FDF8ED] to-[#FAF3E4] py-20">
@@ -256,7 +375,7 @@ const EditMyOrders = () => {
 
   return (
     <div className="bg-gradient-to-br from-[#FDF8ED] to-[#FAF3E4] min-h-screen py-12 antialiased">
-      <div className="mt-6 max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="mt-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mt-10">
           <Breadcrumb
             items={[

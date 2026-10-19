@@ -1,313 +1,410 @@
 import { useEffect, useState } from "react";
-import { useAppDispatch, useAppSelector } from "../../../../../hooks/hooks";
-import { Heart, Loader2, Minus, Plus } from "lucide-react";
-import { BsMessenger, BsWhatsapp } from "react-icons/bs";
-import { fetchSingleProduct } from "../../../../../store/customer/productSlice";
-import { Status } from "../../../../../global/statuses";
-import {
-  AddToWishlist,
-  removeFromWishlist,
-} from "../../../../../store/customer/wishlistSlice";
-import { FaFacebook } from "react-icons/fa";
-import Breadcrumb from "../../../../../global/Breadcrumb";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
-  addToCart,
-  updateCartItems,
-} from "../../../../../store/customer/cartSlice";
-import { useNavigate } from "react-router-dom";
+  Banknote,
+  Check,
+  Heart,
+  Link2,
+  Loader2,
+  Minus,
+  PackageSearch,
+  Plus,
+  RotateCcw,
+  ShoppingCart,
+  Star,
+  Truck,
+} from "lucide-react";
+import { FaFacebook, FaWhatsapp } from "react-icons/fa6";
+import { useAppDispatch, useAppSelector } from "../../../../../hooks/hooks";
+import { fetchSingleProduct } from "../../../../../store/customer/productSlice";
+import { AddToWishlist } from "../../../../../store/customer/wishlistSlice";
+import { addToCart, updateCartItems } from "../../../../../store/customer/cartSlice";
+import { Status } from "../../../../../global/statuses";
+import Breadcrumb from "../../../../../global/Breadcrumb";
+import { Skeleton, SkeletonContainer } from "../../../../../global/Skeleton";
+import useIsAdmin from "../../../../../hooks/useIsAdmin";
+import usePageTitle from "../../../../../hooks/usePageTitle";
+import { getAverageRatingNumber, hideBrokenImage, responsiveImage } from "../../../../../utils/helpers";
+import { describeDeliveryTime, useStoreSettings } from "../../../../../services/storeSettingsService";
 
 interface SingleProductProps {
   productId: string;
 }
 
+const LOW_STOCK = 5;
+
+const errorMessage = (error: unknown) =>
+  (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+  "Something went wrong. Please try again.";
+
+function SingleProductSkeleton() {
+  return (
+    <div className="bg-[#FDF8ED] pt-16">
+      <SkeletonContainer label="Loading product" className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <Skeleton className="mb-6 h-4 w-56" />
+        <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
+          <Skeleton className="aspect-square w-full rounded-xl" />
+          <div className="space-y-4">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-9 w-3/4" />
+            <Skeleton className="h-5 w-40" />
+            <Skeleton className="h-8 w-32" />
+            <Skeleton className="h-6 w-24 rounded-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-5/6" />
+            <div className="flex gap-3 pt-2">
+              <Skeleton className="h-12 w-32 rounded-lg" />
+              <Skeleton className="h-12 flex-1 rounded-lg" />
+              <Skeleton className="h-12 w-12 rounded-lg" />
+            </div>
+            <Skeleton className="h-28 w-full rounded-xl" />
+          </div>
+        </div>
+      </SkeletonContainer>
+    </div>
+  );
+}
+
 const SingleProduct = ({ productId }: SingleProductProps) => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const isAdmin = useIsAdmin();
+  const settings = useStoreSettings();
   const { singleProduct, status } = useAppSelector((state) => state.product);
-  const { wishlist } = useAppSelector((state) => state.wishlist);
   const { cart } = useAppSelector((state) => state.cart);
-  const [addingIds, setAddingIds] = useState<Set<string>>(new Set());
+  const isWishlisted = useAppSelector((state) =>
+    state.wishlist.wishlist.some((item) => item.id === productId),
+  );
+  const [quantity, setQuantity] = useState(1);
+  const [isAdding, setIsAdding] = useState(false);
+  const [isWishlisting, setIsWishlisting] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (productId && productId !== "undefined") {
-      dispatch(fetchSingleProduct(productId));
-    } else {
-      console.error("Invalid product ID:", productId);
-    }
+    dispatch(fetchSingleProduct(productId)).catch(() => {});
   }, [dispatch, productId]);
 
-  const [localQuantity, setLocalQuantity] = useState(1);
+  const product = singleProduct?.id === productId ? singleProduct : null;
+  usePageTitle(product?.productName);
 
-  const handleIncrease = () => {
-    if (singleProduct && localQuantity < singleProduct.productStock) {
-      setLocalQuantity((prev) => prev + 1);
-    }
-  };
-
-  const handleDecrease = () => {
-    if (localQuantity > 1) {
-      setLocalQuantity((prev) => prev - 1);
-    }
-  };
-
-  const handleAddToCart = async () => {
-    if (!localStorage.getItem("token")) {
-      navigate("/login");
-      return;
-    }
-
-    if (!singleProduct || isAdding) return;
-
-    const existingItem = cart?.find((i) => i.productId === productId);
-
-    setAddingIds((prev) => new Set(prev).add(singleProduct.id));
-
-    try {
-      if (existingItem) {
-        await dispatch(
-          updateCartItems({
-            ...existingItem,
-            quantity: existingItem.quantity + localQuantity,
-          }),
-        );
-        toast.success("Cart updated successfully!");
-      } else {
-        await dispatch(addToCart(productId, localQuantity));
-        toast.success("Product added to cart successfully!");
-      }
-    } catch {
-      toast.error("Something went wrong. Please try again.");
-    } finally {
-      setAddingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(singleProduct.id);
-        return next;
-      });
-    }
-  };
-
-  if (!singleProduct || status === Status.LOADING) {
+  if (!product && status === Status.ERROR) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#FDF8ED] to-[#FAF3E4]">
-        <div className="text-center">
-          <Loader2 className="w-16 h-16 animate-spin text-[#E6540B] mx-auto mb-4" />
-          <p className="text-xl text-[#1A1613]/70">Loading product.....</p>
+      <div className="bg-[#FDF8ED] pt-16">
+        <div className="mx-auto max-w-xl px-4 py-20 text-center">
+          <PackageSearch className="mx-auto mb-4 h-12 w-12 text-[#1A1613]/30" />
+          <h1 className="text-2xl font-bold text-[#1A1613]">Product not found</h1>
+          <p className="mt-2 text-[#1A1613]/70">
+            This product may have been removed, or the link is incorrect.
+          </p>
+          <Link
+            to="/products"
+            className="mt-6 inline-flex rounded-lg bg-[#E6540B] px-6 py-3 font-semibold text-white hover:bg-[#c94806]"
+          >
+            Browse all products
+          </Link>
         </div>
       </div>
     );
   }
 
-  const isWishlisted = wishlist.some((item) => item.id === singleProduct.id);
+  if (!product) return <SingleProductSkeleton />;
 
-  const handleWishlistToggle = async () => {
-    if (isWishlisted) {
-      dispatch(removeFromWishlist(singleProduct.id));
-      toast.success("Product removed from wishlist!");
-    } else {
-      await dispatch(AddToWishlist({ id: singleProduct.id }));
-      toast.success("Product added to wishlist!");
+  const stock = Number(product.productStock) || 0;
+  const outOfStock = stock <= 0;
+  const reviewCount = product.reviews?.length || 0;
+  const rating = getAverageRatingNumber(product.reviews);
+  const showOldPrice = !!product.oldPrice && product.oldPrice > product.productPrice;
+  const inCart = cart?.find((item) => item.productId === productId);
+  const inCartQty = inCart?.quantity ?? 0;
+  const canStillAdd = Math.max(0, stock - inCartQty);
+  const deliveryTime = describeDeliveryTime(settings);
+  const shareUrl = window.location.href;
+
+  const requireLogin = () => {
+    if (localStorage.getItem("token")) return false;
+    navigate("/login");
+    return true;
+  };
+
+  const handleAddToCart = async () => {
+    if (requireLogin() || isAdding) return;
+    if (quantity > canStillAdd) {
+      toast.info(
+        canStillAdd === 0
+          ? "You already have all available stock of this product in your cart."
+          : `You can add ${canStillAdd} more (you already have ${inCartQty} in your cart).`,
+      );
+      return;
+    }
+    setIsAdding(true);
+    try {
+      if (inCart) {
+        await dispatch(updateCartItems({ ...inCart, quantity: inCartQty + quantity }));
+      } else {
+        await dispatch(addToCart(productId, quantity));
+      }
+      toast.success(`Added ${quantity} × ${product.productName} to your cart`);
+      setQuantity(1);
+    } catch (error) {
+      toast.error(errorMessage(error));
+    } finally {
+      setIsAdding(false);
     }
   };
 
-  const averageRating =
-    singleProduct.reviews && singleProduct.reviews.length > 0
-      ? (
-          singleProduct.reviews.reduce(
-            (acc, r) => acc + Number(r.rating || 0),
-            0,
-          ) / singleProduct.reviews.length
-        ).toFixed(1)
-      : "0.0";
+  const handleWishlist = async () => {
+    if (requireLogin() || isWishlisting) return;
+    setIsWishlisting(true);
+    try {
+      const action = await dispatch(AddToWishlist({ id: productId }));
+      toast.success(action === "removed" ? "Removed from wishlist" : "Added to wishlist");
+    } catch (error) {
+      toast.error(errorMessage(error));
+    } finally {
+      setIsWishlisting(false);
+    }
+  };
 
-  const reviewCount = singleProduct.reviews?.length || 0;
-  const isAdding = addingIds.has(singleProduct.id);
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Couldn't copy the link");
+    }
+  };
+
+  const stockBadge = outOfStock
+    ? { text: "Out of stock", className: "bg-red-50 text-red-700" }
+    : stock <= LOW_STOCK
+      ? { text: `Only ${stock} left`, className: "bg-amber-50 text-amber-700" }
+      : { text: "In stock", className: "bg-green-50 text-green-700" };
+
   return (
-    <section className="py-8 md:py-8 bg-[#FDF8ED] font-['Inter',sans-serif] text-[#1A1613]">
-      <div className="mt-10 ml-4 md:ml-9">
+    <div className="bg-[#FDF8ED] pt-16 text-[#1A1613]">
+      <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <Breadcrumb
           items={[
             { label: "Products", href: "/products" },
-            { label: singleProduct.productName },
+            ...(product.category?.categoryName
+              ? [{ label: product.category.categoryName, href: `/products?category=${product.categoryId}` }]
+              : []),
+            { label: product.productName },
           ]}
         />
-      </div>
 
-      <div className="flex flex-col lg:flex-row lg:gap-12 bg-[#FDF8ED] shadow-sm overflow-hidden">
-        <div className="w-full lg:w-1/2 p-4 md:p-8 lg:p-10 bg-[#F4EEDF]">
-          <div className="overflow-hidden rounded-sm shadow-md">
+        <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
+          {/* Image */}
+          <div className="relative self-start overflow-hidden rounded-xl border border-[#1A1613]/10 bg-white">
             <img
-              className="w-full max-h-100 object-cover *:transition-transform duration-300 ease-in-out hover:scale-105"
-              src={singleProduct.productImage}
-              alt={singleProduct.productName}
+              {...responsiveImage(product.productImage, [480, 720, 960, 1200], "(min-width: 1024px) 50vw, 100vw")}
+              alt={product.productName}
+              fetchPriority="high"
+              onError={hideBrokenImage}
+              className="aspect-square w-full object-contain p-4"
             />
-          </div>
-        </div>
-
-        <div className="w-full lg:w-1/2 p-6 md:p-8 lg:p-10">
-          <h1 className="text-4xl md:text-3xl lg:text-4xl font-['Fraunces',serif] font-semibold text-[#1A1613] mb-4">
-            {singleProduct.productName}
-          </h1>
-
-          <div className="flex items-center gap-4 mb-6">
-            <span className="font-['IBM_Plex_Mono',monospace] text-2xl md:text-2xl font-bold text-[#8A3B12]">
-              Rs. {singleProduct.productPrice}
-            </span>
-            {singleProduct.oldPrice && (
-              <span className="text-xl text-[#1A1613]/50 line-through">
-                Rs. {singleProduct.oldPrice}
+            {product.productDiscount > 0 && (
+              <span className="absolute left-3 top-3 rounded-md bg-[#E6540B] px-2.5 py-1 text-sm font-semibold text-white">
+                -{product.productDiscount}%
               </span>
             )}
-            {Boolean(singleProduct.productDiscount) &&
-              singleProduct.productDiscount > 0 && (
-                <span className="bg-[#9B3A2E] text-[#FDF8ED] px-3 py-1 rounded-full text-sm font-bold">
-                  - {singleProduct.productDiscount}%
+          </div>
+
+          {/* Details */}
+          <div>
+            {product.category?.categoryName && (
+              <Link
+                to={`/products?category=${product.categoryId}`}
+                className="text-sm font-medium text-[#1A1613]/60 hover:text-[#E6540B]"
+              >
+                {product.category.categoryName}
+              </Link>
+            )}
+            <h1 className="mt-1 text-2xl font-bold sm:text-3xl">{product.productName}</h1>
+
+            <a href="#reviews" className="mt-2 inline-flex items-center gap-1.5 text-sm text-[#1A1613]/70 hover:text-[#E6540B]">
+              <span className="flex" aria-hidden="true">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <Star
+                    key={s}
+                    className={`h-4 w-4 ${s <= Math.round(rating) ? "text-amber-400" : "text-[#1A1613]/15"}`}
+                    fill="currentColor"
+                    strokeWidth={0}
+                  />
+                ))}
+              </span>
+              {reviewCount > 0
+                ? `${rating.toFixed(1)} · ${reviewCount} ${reviewCount === 1 ? "review" : "reviews"}`
+                : "No reviews yet"}
+            </a>
+
+            <div className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <span className="text-3xl font-bold">Rs {product.productPrice.toLocaleString()}</span>
+              {showOldPrice && (
+                <span className="text-lg text-[#1A1613]/50 line-through">
+                  Rs {product.oldPrice!.toLocaleString()}
                 </span>
               )}
-          </div>
-
-          <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
-            <div className="flex flex-wrap items-center gap-1 sm:gap-2">
-              {reviewCount > 0 ? (
-                <>
-                  {[...Array(5)].map((_, i) => (
-                    <svg
-                      key={i}
-                      className={`w-4 h-4 sm:w-5 sm:h-5 ${
-                        i < Math.round(Number(averageRating))
-                          ? "text-[#E6540B]"
-                          : "text-[#1A1613]/15"
-                      }`}
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
-                  <span className="ml-1 text-sm font-medium text-[#1A1613]/80">
-                    {averageRating}
-                  </span>
-                  <a
-                    href="#reviews"
-                    className="cursor-pointer text-sm font-medium leading-none text-[#1A1613] underline hover:text-[#E6540B]"
-                  >
-                    ({reviewCount} Reviews)
-                  </a>
-                </>
-              ) : (
-                <>
-                  <svg
-                    className="w-4 h-4 sm:w-5 sm:h-5 text-[#1A1613]/15"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  <span className="ml-1 text-sm font-medium text-[#1A1613]/80">
-                    0.0
-                  </span>
-                  <span className="text-sm text-[#1A1613]/50">(0)</span>
-                </>
-              )}
             </div>
 
-            <div className="flex items-center gap-4 sm:gap-5">
-              <span className="text-md text-[#1A1613]/80 whitespace-nowrap">
-                Share:
-              </span>
-
-              <div className="flex items-center gap-4 sm:gap-5">
-                <button className="cursor-pointer text-blue-600 hover:text-blue-800 transition-colors">
-                  <FaFacebook className="w-6 h-6 sm:w-7 sm:h-7" />
-                </button>
-
-                <button className="cursor-pointer text-green-600 hover:text-green-800 transition-colors">
-                  <BsWhatsapp className="w-6 h-6 sm:w-7 sm:h-7" />
-                </button>
-
-                <button className="cursor-pointer text-blue-600 hover:text-blue-800 transition-colors">
-                  <BsMessenger className="w-6 h-6 sm:w-7 sm:h-7" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="block text-md font-medium text-[#1A1613]/70 mb-8">
-            Quantity: {singleProduct.productStock}
-          </div>
-
-          <div className="flex items-center gap-4 mb-8">
-            <button
-              onClick={handleDecrease}
-              disabled={localQuantity <= 1}
-              className="cursor-pointer w-10 h-10 flex items-center justify-center rounded-full border border-[#1A1613]/20 text-[#1A1613] hover:bg-[#F4EEDF] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Minus className="text-[#1A1613] h-4 w-4" />
-            </button>
-            <span className="w-12 text-center text-lg font-semibold text-[#1A1613]">
-              {localQuantity}
+            <span className={`mt-3 inline-block rounded-full px-3 py-1 text-sm font-medium ${stockBadge.className}`}>
+              {stockBadge.text}
             </span>
-            <button
-              onClick={handleIncrease}
-              disabled={localQuantity >= singleProduct.productStock}
-              className="cursor-pointer w-10 h-10 flex items-center justify-center rounded-full border border-[#1A1613]/20 text-[#1A1613] hover:bg-[#F4EEDF] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Plus className="text-[#1A1613] h-4 w-4" />
-            </button>
-          </div>
 
-          <div className="prose max-w-none text-[#1A1613]/80 leading-relaxed mb-6">
-            <p className="text-base">{singleProduct.productDescription}</p>
-          </div>
+            {product.productDescription && (
+              <p className="mt-5 whitespace-pre-line leading-relaxed text-[#1A1613]/80">
+                {product.productDescription}
+              </p>
+            )}
 
-          <div className="flex flex-col sm:flex-row gap-8">
-            <button
-              type="button"
-              onClick={handleAddToCart}
-              disabled={singleProduct.productStock === 0 || isAdding}
-              className="cursor-pointer flex-1 disabled:bg-[#1A1613]/20 disabled:cursor-not-allowed flex items-center justify-center rounded-xl px-8 py-4 text-base font-semibold text-[#FDF8ED] bg-[#E6540B] hover:bg-[#c94806] transition-colors shadow-md"
-            >
-              {isAdding ? (
-                <Loader2 className="animate-spin inline-block w-5 h-5 mr-2" />
-              ) : (
-                <>
-                  <svg
-                    className="w-6 h-6 mr-3"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+            {isAdmin ? (
+              <div className="mt-6 rounded-xl border border-[#1A1613]/10 bg-[#F4EEDF] p-5 text-sm text-[#1A1613]/80">
+                You're signed in as an admin, so cart and wishlist are turned off. You can update this
+                product from{" "}
+                <Link to="/admin-dashboard/products" className="font-semibold text-[#E6540B] hover:underline">
+                  Product Management
+                </Link>
+                .
+              </div>
+            ) : (
+              <>
+                <div className="mt-6 flex flex-wrap items-center gap-3">
+                  {!outOfStock && (
+                    <div className="flex items-center rounded-lg border border-[#1A1613]/20 bg-white">
+                      <button
+                        type="button"
+                        onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                        disabled={quantity <= 1}
+                        aria-label="Decrease quantity"
+                        className="flex h-12 w-11 cursor-pointer items-center justify-center hover:bg-[#F4EEDF] disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </button>
+                      <span className="w-10 text-center font-semibold" aria-live="polite">
+                        {quantity}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setQuantity((q) => Math.min(stock, q + 1))}
+                        disabled={quantity >= stock}
+                        aria-label="Increase quantity"
+                        className="flex h-12 w-11 cursor-pointer items-center justify-center hover:bg-[#F4EEDF] disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={handleAddToCart}
+                    disabled={outOfStock || isAdding}
+                    className="flex h-12 min-w-44 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#E6540B] px-6 font-semibold text-white transition hover:bg-[#c94806] disabled:cursor-not-allowed disabled:bg-[#1A1613]/20"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-                    />
-                  </svg>
-                </>
-              )}
-              {isAdding ? "Adding..." : "Add to Cart"}
-            </button>
+                    {isAdding ? <Loader2 className="h-5 w-5 animate-spin" /> : <ShoppingCart className="h-5 w-5" />}
+                    {outOfStock ? "Out of stock" : isAdding ? "Adding..." : "Add to cart"}
+                  </button>
 
-            <button
-              type="button"
-              onClick={handleWishlistToggle}
-              className={`cursor-pointer flex flex-1 gap-3 items-center justify-center rounded-xl px-8 py-2 text-base font-semibold border-2 transition-colors ${
-                isWishlisted
-                  ? "text-[#9B3A2E] border-[#9B3A2E] bg-[#9B3A2E]/10"
-                  : "text-[#9B3A2E] border-[#9B3A2E] hover:bg-[#9B3A2E]/10"
-              }`}
-            >
-              <Heart
-                className="w-6 h-6"
-                fill={isWishlisted ? "currentColor" : "none"}
-              />
-              Add to Favourite
-            </button>
+                  <button
+                    type="button"
+                    onClick={handleWishlist}
+                    disabled={isWishlisting}
+                    aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                    aria-pressed={isWishlisted}
+                    className={`flex h-12 w-12 cursor-pointer items-center justify-center rounded-lg border transition disabled:opacity-60 ${
+                      isWishlisted
+                        ? "border-[#E6540B] bg-[#E6540B]/10 text-[#E6540B]"
+                        : "border-[#1A1613]/20 bg-white text-[#1A1613]/70 hover:border-[#E6540B] hover:text-[#E6540B]"
+                    }`}
+                  >
+                    <Heart className="h-5 w-5" fill={isWishlisted ? "currentColor" : "none"} />
+                  </button>
+                </div>
+
+                {inCartQty > 0 && (
+                  <p className="mt-3 text-sm text-[#1A1613]/60">
+                    You have {inCartQty} in your{" "}
+                    <Link to="/cart" className="font-medium text-[#E6540B] hover:underline">
+                      cart
+                    </Link>
+                    .
+                  </p>
+                )}
+                {outOfStock && (
+                  <p className="mt-3 text-sm text-[#1A1613]/60">
+                    Add it to your wishlist and we'll notify you when it's back in stock.
+                  </p>
+                )}
+              </>
+            )}
+
+            {/* Delivery & returns (from store settings) */}
+            <ul className="mt-6 space-y-3 rounded-xl border border-[#1A1613]/10 bg-white p-4 text-sm text-[#1A1613]/80">
+              {(deliveryTime || settings.freeShippingThreshold > 0) && (
+                <li className="flex gap-3">
+                  <Truck className="mt-0.5 h-4 w-4 shrink-0 text-[#E6540B]" />
+                  <span>
+                    {deliveryTime}
+                    {settings.freeShippingThreshold > 0 &&
+                      ` Free delivery on orders over Rs ${settings.freeShippingThreshold.toLocaleString()}.`}
+                  </span>
+                </li>
+              )}
+              {settings.enableCod && (
+                <li className="flex gap-3">
+                  <Banknote className="mt-0.5 h-4 w-4 shrink-0 text-[#E6540B]" />
+                  <span>Cash on delivery available{settings.enableOnlinePayment && ", or pay with eSewa or Khalti"}.</span>
+                </li>
+              )}
+              {settings.returnWindowDays > 0 && (
+                <li className="flex gap-3">
+                  <RotateCcw className="mt-0.5 h-4 w-4 shrink-0 text-[#E6540B]" />
+                  <span>
+                    Damaged or wrong item? Tell us within {settings.returnWindowDays} days of delivery.{" "}
+                    <Link to="/faq#damaged-item" className="font-medium text-[#E6540B] hover:underline">
+                      Learn more
+                    </Link>
+                  </span>
+                </li>
+              )}
+            </ul>
+
+            {/* Share */}
+            <div className="mt-5 flex flex-wrap items-center gap-2 text-sm">
+              <span className="mr-1 text-[#1A1613]/60">Share:</span>
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent(`${product.productName} ${shareUrl}`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Share on WhatsApp"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-[#1A1613]/15 bg-white text-green-600 hover:border-green-600"
+              >
+                <FaWhatsapp className="h-4 w-4" />
+              </a>
+              <a
+                href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Share on Facebook"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-[#1A1613]/15 bg-white text-blue-600 hover:border-blue-600"
+              >
+                <FaFacebook className="h-4 w-4" />
+              </a>
+              <button
+                type="button"
+                onClick={copyLink}
+                className="flex h-9 cursor-pointer items-center gap-1.5 rounded-full border border-[#1A1613]/15 bg-white px-3 hover:border-[#E6540B] hover:text-[#E6540B]"
+              >
+                {copied ? <Check className="h-4 w-4 text-green-600" /> : <Link2 className="h-4 w-4" />}
+                {copied ? "Copied" : "Copy link"}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 };
 

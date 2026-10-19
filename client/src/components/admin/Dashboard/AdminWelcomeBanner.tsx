@@ -21,6 +21,7 @@ interface AdminWelcomeBannerProps {
   activeCheckoutsCount?: number;
   activityCount?: number;
   onOpenActivityDrawer?: () => void;
+  loading?: boolean;
 }
 
 const AdminWelcomeBanner: React.FC<AdminWelcomeBannerProps> = ({
@@ -34,6 +35,7 @@ const AdminWelcomeBanner: React.FC<AdminWelcomeBannerProps> = ({
   activeCheckoutsCount = 0,
   activityCount = 0,
   onOpenActivityDrawer,
+  loading = false,
 }) => {
   // Get time of day greeting
   const hour = new Date().getHours();
@@ -48,7 +50,7 @@ const AdminWelcomeBanner: React.FC<AdminWelcomeBannerProps> = ({
   });
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-[#1A1613]/10 bg-gradient-to-r from-[#FFFDF8] via-[#FDF8ED] to-[#FFF7EE] p-5 sm:p-6 shadow-[0_2px_16px_-4px_rgba(26,22,19,0.06)]">
+    <div className="relative overflow-hidden rounded-2xl border border-[#1A1613]/10 bg-gradient-to-r from-[#FFFDF8] via-[#FDF8ED] to-[#FFF7EE] p-5 sm:p-6 shadow-[0_2px_16px_-4px_rgba(26,22,19,0.06)] dark:border-white/10 dark:from-[#2A2420] dark:via-[#1E1A17] dark:to-[#1E1A17]">
       {/* Subtle background decorative shapes */}
       <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-[#E6540B]/8 blur-3xl" />
       <div className="pointer-events-none absolute bottom-0 right-1/3 h-40 w-40 rounded-full bg-amber-500/8 blur-2xl" />
@@ -59,12 +61,12 @@ const AdminWelcomeBanner: React.FC<AdminWelcomeBannerProps> = ({
           <div className="flex flex-wrap items-center gap-2">
             {/* Live Gateway Sync Badge */}
             {isLiveConnected ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                 Live Real-Time Sync
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 border border-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30">
                 <span className="h-2 w-2 rounded-full bg-amber-500" />
                 Connecting Real-Time Sync...
               </span>
@@ -73,11 +75,11 @@ const AdminWelcomeBanner: React.FC<AdminWelcomeBannerProps> = ({
             {/* Live Active Shoppers Counter (Filtered to real customers & storefront visitors) */}
             {onlineVisitorsCount > 0 ? (
               <span
-                className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800 border border-emerald-200 shadow-2xs"
+                className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800 border border-emerald-200 shadow-2xs dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30"
                 title={`${onlineVisitorsCount} active customer/storefront visitor(s) (${adminOnlineCount} admin session active)`}
               >
                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                <Users className="w-3.5 h-3.5 text-emerald-600" />
+                <Users className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 <span>
                   {onlineVisitorsCount === 1
                     ? "1 customer online"
@@ -86,10 +88,10 @@ const AdminWelcomeBanner: React.FC<AdminWelcomeBannerProps> = ({
               </span>
             ) : (
               <span
-                className="inline-flex items-center gap-1.5 rounded-full bg-[#1A1613]/5 px-3 py-1 text-xs font-medium text-[#1A1613]/70 border border-[#1A1613]/10"
+                className="inline-flex items-center gap-1.5 rounded-full bg-[#1A1613]/5 px-3 py-1 text-xs font-medium text-[#1A1613]/70 border border-[#1A1613]/10 dark:bg-[#2A2420] dark:text-[#F5EFE6]/70 dark:border-white/10"
                 title={`No external customers browsing right now (${adminOnlineCount} admin active)`}
               >
-                <Users className="w-3.5 h-3.5 text-[#1A1613]/40" />
+                <Users className="w-3.5 h-3.5 text-[#1A1613]/40 dark:text-[#F5EFE6]/50" />
                 <span>0 customers online</span>
               </span>
             )}
@@ -97,7 +99,7 @@ const AdminWelcomeBanner: React.FC<AdminWelcomeBannerProps> = ({
             {/* Active Checkouts Indicator */}
             {activeCheckoutsCount > 0 && (
               <span
-                className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 px-3 py-1 text-xs font-bold text-[#E6540B] border border-orange-200 animate-pulse"
+                className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 px-3 py-1 text-xs font-bold text-[#E6540B] border border-orange-200 animate-pulse dark:bg-orange-500/15 dark:border-orange-500/30"
                 title="Customers currently at checkout"
               >
                 <Zap className="w-3.5 h-3.5 fill-[#E6540B]" />
@@ -105,24 +107,29 @@ const AdminWelcomeBanner: React.FC<AdminWelcomeBannerProps> = ({
               </span>
             )}
 
-            <span className="inline-flex items-center gap-1 text-xs font-medium text-[#1A1613]/55 ml-1">
-              <Calendar className="w-3.5 h-3.5 text-[#1A1613]/40" />
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-[#1A1613]/55 dark:text-[#F5EFE6]/50 ml-1">
+              <Calendar className="w-3.5 h-3.5 text-[#1A1613]/40 dark:text-[#F5EFE6]/50" />
               {todayStr}
             </span>
           </div>
 
-          <h2 className="text-2xl font-bold tracking-tight text-[#1A1613] sm:text-3xl font-heading">
+          <h2 className="text-2xl font-bold tracking-tight text-[#1A1613] dark:text-[#F5EFE6] sm:text-3xl font-heading">
             {greeting}, {adminName}!
           </h2>
 
-          <p className="text-sm text-[#1A1613]/70 leading-relaxed">
+          <p className="text-sm text-[#1A1613]/70 dark:text-[#F5EFE6]/70 leading-relaxed">
             Monitor real-time sales, fulfill active orders, and track customer growth.
-            {pendingOrdersCount > 0 ? (
+            {loading ? (
+              <span
+                aria-hidden="true"
+                className="ml-1 inline-block h-3.5 w-56 max-w-full animate-pulse rounded-md bg-[#1A1613]/10 dark:bg-white/10 align-middle"
+              />
+            ) : pendingOrdersCount > 0 ? (
               <span className="font-semibold text-[#E6540B] ml-1">
                 You have {pendingOrdersCount} orders currently in preparation.
               </span>
             ) : (
-              <span className="text-[#1A1613]/70 ml-1">
+              <span className="text-[#1A1613]/70 dark:text-[#F5EFE6]/70 ml-1">
                 All store orders are currently up to date.
               </span>
             )}
@@ -135,7 +142,7 @@ const AdminWelcomeBanner: React.FC<AdminWelcomeBannerProps> = ({
           {onOpenActivityDrawer && (
             <button
               onClick={onOpenActivityDrawer}
-              className="relative inline-flex items-center gap-1.5 rounded-xl border border-[#1A1613]/15 bg-[#FFFDF8] px-3.5 py-2.5 text-xs font-semibold text-[#1A1613] hover:bg-[#FDF8ED] hover:border-[#E6540B]/40 hover:text-[#E6540B] shadow-2xs transition-all active:scale-95"
+              className="relative inline-flex items-center gap-1.5 rounded-xl border border-[#1A1613]/15 bg-[#FFFDF8] px-3.5 py-2.5 text-xs font-semibold text-[#1A1613] hover:bg-[#FDF8ED] hover:border-[#E6540B]/40 hover:text-[#E6540B] shadow-2xs transition-all active:scale-95 dark:border-white/15 dark:bg-[#1E1A17] dark:text-[#F5EFE6] dark:hover:bg-[#2A2420]"
               title="Open real-time activity stream"
             >
               <Activity className="w-3.5 h-3.5 text-[#E6540B]" />
@@ -152,11 +159,11 @@ const AdminWelcomeBanner: React.FC<AdminWelcomeBannerProps> = ({
           <button
             onClick={onRefresh}
             disabled={isRefreshing}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-[#1A1613]/15 bg-[#FFFDF8] px-3.5 py-2.5 text-xs font-semibold text-[#1A1613] hover:bg-[#F4EEDF] hover:text-[#E6540B] shadow-2xs transition-all active:scale-95 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[#1A1613]/15 bg-[#FFFDF8] px-3.5 py-2.5 text-xs font-semibold text-[#1A1613] hover:bg-[#F4EEDF] hover:text-[#E6540B] shadow-2xs transition-all active:scale-95 disabled:opacity-50 dark:border-white/15 dark:bg-[#1E1A17] dark:text-[#F5EFE6] dark:hover:bg-[#2A2420]"
             title="Refresh dashboard data"
           >
             <RefreshCw
-              className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#E6540B]" : "text-[#1A1613]/60"}`}
+              className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#E6540B]" : "text-[#1A1613]/60 dark:text-[#F5EFE6]/50"}`}
             />
             <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
           </button>

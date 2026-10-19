@@ -37,18 +37,18 @@ const ProductGrid: React.FC<ProductGridProps> = ({
         {Array.from({ length: 8 }).map((_, idx) => (
           <div
             key={`grid-skeleton-${idx}`}
-            className="rounded-2xl border border-[#1A1613]/10 bg-[#FFFDF8] overflow-hidden shadow-xs animate-pulse"
+            className="rounded-2xl border border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] overflow-hidden shadow-xs animate-pulse"
           >
-            <div className="h-44 bg-[#1A1613]/10" />
+            <div className="h-44 bg-[#1A1613]/10 dark:bg-white/10" />
             <div className="p-4 space-y-3">
-              <div className="h-3 w-16 rounded-full bg-[#1A1613]/10" />
-              <div className="h-4 w-3/4 rounded bg-[#1A1613]/15" />
-              <div className="h-3.5 w-1/2 rounded bg-[#1A1613]/10" />
-              <div className="h-4 w-20 rounded bg-[#1A1613]/15 pt-2" />
+              <div className="h-3 w-16 rounded-full bg-[#1A1613]/10 dark:bg-white/10" />
+              <div className="h-4 w-3/4 rounded bg-[#1A1613]/15 dark:bg-white/10" />
+              <div className="h-3.5 w-1/2 rounded bg-[#1A1613]/10 dark:bg-white/10" />
+              <div className="h-4 w-20 rounded bg-[#1A1613]/15 dark:bg-white/10 pt-2" />
             </div>
-            <div className="p-3 border-t border-[#1A1613]/10 bg-[#F4EEDF]/20 flex justify-between items-center">
-              <div className="h-3 w-16 rounded bg-[#1A1613]/10" />
-              <div className="h-6 w-16 rounded bg-[#1A1613]/10" />
+            <div className="p-3 border-t border-[#1A1613]/10 dark:border-white/10 bg-[#F4EEDF]/20 dark:bg-white/5 flex justify-between items-center">
+              <div className="h-3 w-16 rounded bg-[#1A1613]/10 dark:bg-white/10" />
+              <div className="h-6 w-16 rounded bg-[#1A1613]/10 dark:bg-white/10" />
             </div>
           </div>
         ))}
@@ -58,10 +58,10 @@ const ProductGrid: React.FC<ProductGridProps> = ({
 
   if (products.length === 0) {
     return (
-      <div className="p-12 text-center text-[#1A1613]/50">
-        <Package className="w-12 h-12 mx-auto mb-3 text-[#1A1613]/30" />
-        <h4 className="font-bold text-sm text-[#1A1613]">No products found</h4>
-        <p className="text-xs text-[#1A1613]/60 mt-1">
+      <div className="p-12 text-center text-[#1A1613]/50 dark:text-[#F5EFE6]/50">
+        <Package className="w-12 h-12 mx-auto mb-3 text-[#1A1613]/30 dark:text-[#F5EFE6]/30" />
+        <h4 className="font-bold text-sm text-[#1A1613] dark:text-[#F5EFE6]">No products found</h4>
+        <p className="text-xs text-[#1A1613]/60 dark:text-[#F5EFE6]/50 mt-1">
           Try adjusting your search query or filters.
         </p>
       </div>
@@ -97,10 +97,10 @@ const ProductGrid: React.FC<ProductGridProps> = ({
         return (
           <div
             key={product.id}
-            className="group rounded-2xl border border-[#1A1613]/10 bg-[#FFFDF8] overflow-hidden shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between"
+            className="group rounded-2xl border border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] overflow-hidden shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between"
           >
             {/* Image Container with Floating Badges */}
-            <div className="relative h-44 w-full bg-[#FDF8ED] overflow-hidden flex items-center justify-center">
+            <div className="relative h-44 w-full bg-[#FDF8ED] dark:bg-[#2A2420] overflow-hidden flex items-center justify-center">
               {product.productImage ? (
                 <img
                   src={product.productImage}
@@ -111,7 +111,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
                   }}
                 />
               ) : (
-                <ImageIcon className="w-10 h-10 text-[#1A1613]/25" />
+                <ImageIcon className="w-10 h-10 text-[#1A1613]/25 dark:text-[#F5EFE6]/30" />
               )}
 
               {/* Discount Tag */}
@@ -157,13 +157,13 @@ const ProductGrid: React.FC<ProductGridProps> = ({
               <div>
                 {/* Category Pill & Rating */}
                 <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[#1A1613]/5 px-2 py-0.5 text-[10px] font-medium text-[#1A1613]/70 truncate max-w-[120px]">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#1A1613]/5 dark:bg-[#2A2420] px-2 py-0.5 text-[10px] font-medium text-[#1A1613]/70 dark:text-[#F5EFE6]/70 truncate max-w-[120px]">
                     <Layers className="w-2.5 h-2.5 text-[#E6540B]" />
                     <span>{categoryName}</span>
                   </span>
 
                   {avgRating && (
-                    <div className="flex items-center gap-1 text-[11px] font-bold text-amber-600">
+                    <div className="flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400">
                       <Star className="w-3 h-3 fill-amber-400 text-amber-500" />
                       <span>{avgRating}</span>
                     </div>
@@ -171,23 +171,23 @@ const ProductGrid: React.FC<ProductGridProps> = ({
                 </div>
 
                 {/* Product Name */}
-                <h4 className="font-bold text-sm text-[#1A1613] truncate group-hover:text-[#E6540B] transition-colors">
+                <h4 className="font-bold text-sm text-[#1A1613] dark:text-[#F5EFE6] truncate group-hover:text-[#E6540B] transition-colors">
                   {product.productName}
                 </h4>
 
                 {/* Description */}
-                <p className="mt-1 text-xs text-[#1A1613]/60 line-clamp-2 leading-relaxed">
+                <p className="mt-1 text-xs text-[#1A1613]/60 dark:text-[#F5EFE6]/50 line-clamp-2 leading-relaxed">
                   {product.productDescription || "No description provided."}
                 </p>
               </div>
 
               {/* Price Row */}
-              <div className="mt-3 pt-2.5 border-t border-[#1A1613]/6 flex items-baseline gap-2">
-                <span className="font-bold text-sm text-[#1A1613]">
+              <div className="mt-3 pt-2.5 border-t border-[#1A1613]/6 dark:border-white/10 flex items-baseline gap-2">
+                <span className="font-bold text-sm text-[#1A1613] dark:text-[#F5EFE6]">
                   Rs. {finalPrice.toLocaleString()}
                 </span>
                 {discount > 0 && (
-                  <span className="text-xs text-[#1A1613]/40 line-through">
+                  <span className="text-xs text-[#1A1613]/40 dark:text-[#F5EFE6]/50 line-through">
                     Rs. {originalPrice.toLocaleString()}
                   </span>
                 )}
@@ -195,33 +195,33 @@ const ProductGrid: React.FC<ProductGridProps> = ({
             </div>
 
             {/* Footer Actions */}
-            <div className="p-3 border-t border-[#1A1613]/10 bg-[#F4EEDF]/20 flex items-center justify-between text-xs text-[#1A1613]/55">
+            <div className="p-3 border-t border-[#1A1613]/10 dark:border-white/10 bg-[#F4EEDF]/20 dark:bg-white/5 flex items-center justify-between text-xs text-[#1A1613]/55 dark:text-[#F5EFE6]/50">
               <span>{formatDate(product.createdAt)}</span>
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => onView(product)}
-                  className="p-1 rounded-md hover:bg-[#F4EEDF] text-[#1A1613]/60 hover:text-[#1A1613] transition-colors"
+                  className="p-1 rounded-md hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] text-[#1A1613]/60 dark:text-[#F5EFE6]/50 hover:text-[#1A1613] dark:hover:text-[#F5EFE6] transition-colors"
                   title="View Details"
                 >
                   <Eye className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => onQuickStock(product)}
-                  className="p-1 rounded-md hover:bg-[#F4EEDF] text-[#1A1613]/60 hover:text-[#E6540B] transition-colors"
+                  className="p-1 rounded-md hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] text-[#1A1613]/60 dark:text-[#F5EFE6]/50 hover:text-[#E6540B] transition-colors"
                   title="Quick Stock Update"
                 >
                   <Boxes className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => onEdit(product)}
-                  className="p-1 rounded-md hover:bg-[#F4EEDF] text-[#1A1613]/60 hover:text-[#E6540B] transition-colors"
+                  className="p-1 rounded-md hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] text-[#1A1613]/60 dark:text-[#F5EFE6]/50 hover:text-[#E6540B] transition-colors"
                   title="Edit Product"
                 >
                   <Edit className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => onDelete(product)}
-                  className="p-1 rounded-md hover:bg-rose-50 text-rose-500 hover:text-rose-700 transition-colors"
+                  className="p-1 rounded-md hover:bg-rose-50 dark:hover:bg-rose-500/15 text-rose-500 hover:text-rose-700 dark:hover:text-rose-300 transition-colors"
                   title="Delete Product"
                 >
                   <Trash2 className="w-3.5 h-3.5" />

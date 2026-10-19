@@ -19,18 +19,18 @@ const OrderDeleteModal: React.FC<OrderDeleteModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="w-full max-w-md rounded-2xl border border-rose-200 bg-[#FFFDF8] p-6 shadow-xl space-y-4">
+      <div className="w-full max-w-md rounded-2xl border border-rose-200 dark:border-rose-500/30 bg-[#FFFDF8] dark:bg-[#1E1A17] p-6 shadow-xl space-y-4">
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-[#1A1613]/10">
+        <div className="flex items-center justify-between pb-3 border-b border-[#1A1613]/10 dark:border-white/10">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400 flex items-center justify-center">
               <AlertTriangle className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-[#1A1613]">
+              <h3 className="text-base font-bold text-[#1A1613] dark:text-[#F5EFE6]">
                 Delete Order Record
               </h3>
-              <p className="text-xs text-[#1A1613]/55">
+              <p className="text-xs text-[#1A1613]/55 dark:text-[#F5EFE6]/50">
                 This action is irreversible
               </p>
             </div>
@@ -38,21 +38,21 @@ const OrderDeleteModal: React.FC<OrderDeleteModalProps> = ({
           <button
             onClick={onClose}
             disabled={loading}
-            className="p-1.5 rounded-lg text-[#1A1613]/40 hover:text-[#1A1613] hover:bg-[#F4EEDF]"
+            className="p-1.5 rounded-lg text-[#1A1613]/40 dark:text-[#F5EFE6]/50 hover:text-[#1A1613] dark:hover:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420]"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Warning Content */}
-        <div className="space-y-3 text-xs text-[#1A1613]/70">
+        <div className="space-y-3 text-xs text-[#1A1613]/70 dark:text-[#F5EFE6]/70">
           <p>
             Are you sure you want to permanently delete order{" "}
-            <strong className="text-[#1A1613] font-mono">
+            <strong className="text-[#1A1613] dark:text-[#F5EFE6] font-mono">
               #{order.id.slice(0, 8)}
             </strong>{" "}
             placed by{" "}
-            <strong className="text-[#1A1613]">
+            <strong className="text-[#1A1613] dark:text-[#F5EFE6]">
               {order.User?.username || "Customer"}
             </strong>{" "}
             for{" "}
@@ -62,7 +62,7 @@ const OrderDeleteModal: React.FC<OrderDeleteModalProps> = ({
             ?
           </p>
 
-          <div className="p-3 rounded-xl bg-rose-50/60 border border-rose-200 text-rose-800 text-[11px] leading-relaxed">
+          <div className="p-3 rounded-xl bg-rose-50/60 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-800 dark:text-rose-400 text-[11px] leading-relaxed">
             Deleting this order will remove all associated line items, delivery
             logs, and payment references. If you only wish to stop processing,
             consider changing the status to <strong>Cancelled</strong> instead.
@@ -70,12 +70,12 @@ const OrderDeleteModal: React.FC<OrderDeleteModalProps> = ({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#1A1613]/10">
+        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#1A1613]/10 dark:border-white/10">
           <button
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="px-4 py-2 rounded-xl border border-[#1A1613]/15 text-xs font-semibold text-[#1A1613] hover:bg-[#F4EEDF] transition-all disabled:opacity-50"
+            className="px-4 py-2 rounded-xl border border-[#1A1613]/15 dark:border-white/10 text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] transition-all disabled:opacity-50"
           >
             Keep Order
           </button>

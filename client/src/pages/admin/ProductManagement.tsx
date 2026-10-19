@@ -27,6 +27,7 @@ import { fetchProducts as syncCustomerProducts } from "../../store/customer/prod
 import { fetchDatas as syncDashboardStats } from "../../store/admin/datasSlice";
 import { AdminProduct } from "../../types/admin/productTypes";
 import { Status } from "../../global/statuses";
+import { Skeleton } from "../../global/Skeleton";
 import ProductTable from "../../components/admin/Products/ProductTable";
 import ProductGrid from "../../components/admin/Products/ProductGrid";
 import ProductModal from "../../components/admin/Products/ProductModal";
@@ -365,6 +366,9 @@ const ProductManagement: React.FC = () => {
   );
 
   const loading = status === Status.LOADING;
+  // Skeletons only until the first response; refreshes keep the loaded rows visible
+  const initialLoading =
+    (status === Status.IDLE || status === Status.LOADING) && products.length === 0;
 
   // KPI Calculations
   const totalProductsCount = products.length;
@@ -388,14 +392,14 @@ const ProductManagement: React.FC = () => {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-[#E6540B]/10 text-[#E6540B] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-[#E6540B]/10 dark:bg-[#E6540B]/15 text-[#E6540B] flex items-center justify-center">
               <Package className="w-5 h-5" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-[#1A1613] sm:text-3xl">
+            <h1 className="text-2xl font-bold tracking-tight text-[#1A1613] dark:text-[#F5EFE6] sm:text-3xl">
               Product Management
             </h1>
           </div>
-          <p className="mt-1 text-xs text-[#1A1613]/60 sm:text-sm">
+          <p className="mt-1 text-xs text-[#1A1613]/60 dark:text-[#F5EFE6]/50 sm:text-sm">
             Manage your catalog, stock levels, pricing, and product categories.
           </p>
         </div>
@@ -404,7 +408,7 @@ const ProductManagement: React.FC = () => {
           <button
             onClick={handleRefresh}
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-xl border border-[#1A1613]/15 bg-[#FFFDF8] px-4 py-2 text-xs font-semibold text-[#1A1613] shadow-xs hover:bg-[#F4EEDF] transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+            className="inline-flex items-center gap-2 rounded-xl border border-[#1A1613]/15 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] px-4 py-2 text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] shadow-xs hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
           >
             <RefreshCw
               className={`w-3.5 h-3.5 ${
@@ -434,24 +438,28 @@ const ProductManagement: React.FC = () => {
           }}
           className={`p-4 rounded-2xl border transition-all cursor-pointer select-none active:scale-[0.98] ${
             stockFilter === "ALL" && selectedCategory === "ALL" && !searchTerm
-              ? "border-[#E6540B]/40 bg-[#FFFDF8] shadow-xs"
-              : "border-[#1A1613]/10 bg-[#FFFDF8] shadow-xs hover:border-[#E6540B]/40"
+              ? "border-[#E6540B]/40 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs"
+              : "border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs hover:border-[#E6540B]/40"
           }`}
           title="Click to reset filters and view all products"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#1A1613]/60">
+            <span className="text-xs font-medium text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
               Total Products
             </span>
-            <div className="w-8 h-8 rounded-lg bg-[#E6540B]/10 text-[#E6540B] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-[#E6540B]/10 dark:bg-[#E6540B]/15 text-[#E6540B] flex items-center justify-center">
               <Package className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-[#1A1613]">
-              {loading ? "..." : totalProductsCount}
-            </span>
-            <span className="text-[11px] text-[#1A1613]/40">in catalog</span>
+            {initialLoading ? (
+              <Skeleton className="h-8 w-14" />
+            ) : (
+              <span className="text-2xl font-bold text-[#1A1613] dark:text-[#F5EFE6]">
+                {totalProductsCount}
+              </span>
+            )}
+            <span className="text-[11px] text-[#1A1613]/40 dark:text-[#F5EFE6]/50">in catalog</span>
           </div>
         </div>
 
@@ -467,31 +475,35 @@ const ProductManagement: React.FC = () => {
           }}
           className={`p-4 rounded-2xl border transition-all cursor-pointer select-none active:scale-[0.98] ${
             stockFilter === "IN_STOCK"
-              ? "border-emerald-500 bg-emerald-50/50 shadow-sm ring-2 ring-emerald-500/20"
-              : "border-[#1A1613]/10 bg-[#FFFDF8] shadow-xs hover:border-emerald-400 hover:shadow-xs"
+              ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-500/10 shadow-sm ring-2 ring-emerald-500/20"
+              : "border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs hover:border-emerald-400 hover:shadow-xs"
           }`}
           title="Click to filter healthy in-stock products (10+ units)"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#1A1613]/60">
+            <span className="text-xs font-medium text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
               In Stock
             </span>
             <div className="flex items-center gap-1.5">
               {stockFilter === "IN_STOCK" && (
-                <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-100/90 px-1.5 py-0.5 rounded-md">
+                <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-100/90 dark:bg-emerald-500/15 px-1.5 py-0.5 rounded-md">
                   Filtered
                 </span>
               )}
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                 <CheckCircle2 className="w-4 h-4" />
               </div>
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-emerald-700">
-              {loading ? "..." : inStockCount}
-            </span>
-            <span className="text-[11px] text-[#1A1613]/40">10+ units</span>
+            {initialLoading ? (
+              <Skeleton className="h-8 w-14" />
+            ) : (
+              <span className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
+                {inStockCount}
+              </span>
+            )}
+            <span className="text-[11px] text-[#1A1613]/40 dark:text-[#F5EFE6]/50">10+ units</span>
           </div>
         </div>
 
@@ -507,62 +519,74 @@ const ProductManagement: React.FC = () => {
           }}
           className={`p-4 rounded-2xl border transition-all cursor-pointer select-none active:scale-[0.98] ${
             stockFilter === "ALERT"
-              ? "border-amber-500 bg-amber-50/50 shadow-sm ring-2 ring-amber-500/20"
-              : "border-[#1A1613]/10 bg-[#FFFDF8] shadow-xs hover:border-amber-400 hover:shadow-xs"
+              ? "border-amber-500 bg-amber-50/50 dark:bg-amber-500/10 shadow-sm ring-2 ring-amber-500/20"
+              : "border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs hover:border-amber-400 hover:shadow-xs"
           }`}
           title="Click to filter low stock (<10) and out of stock items"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#1A1613]/60">
+            <span className="text-xs font-medium text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
               Inventory Alert
             </span>
             <div className="flex items-center gap-1.5">
               {stockFilter === "ALERT" && (
-                <span className="text-[10px] font-semibold text-amber-700 bg-amber-100/90 px-1.5 py-0.5 rounded-md">
+                <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-100/90 dark:bg-amber-500/15 px-1.5 py-0.5 rounded-md">
                   Filtered
                 </span>
               )}
-              <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center">
                 <AlertCircle className="w-4 h-4" />
               </div>
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-amber-700">
-              {loading ? "..." : lowStockCount + outOfStockCount}
-            </span>
-            <span className="text-[11px] text-[#1A1613]/40">
-              {outOfStockCount > 0 ? `${outOfStockCount} out of stock` : `${lowStockCount} low stock`}
-            </span>
+            {initialLoading ? (
+              <Skeleton className="h-8 w-14" />
+            ) : (
+              <span className="text-2xl font-bold text-amber-700 dark:text-amber-400">
+                {lowStockCount + outOfStockCount}
+              </span>
+            )}
+            {initialLoading ? (
+              <Skeleton className="h-2.5 w-16" />
+            ) : (
+              <span className="text-[11px] text-[#1A1613]/40 dark:text-[#F5EFE6]/50">
+                {outOfStockCount > 0 ? `${outOfStockCount} out of stock` : `${lowStockCount} low stock`}
+              </span>
+            )}
           </div>
         </div>
 
         {/* Total Catalog Value */}
-        <div className="p-4 rounded-2xl border border-[#1A1613]/10 bg-[#FFFDF8] shadow-xs">
+        <div className="p-4 rounded-2xl border border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#1A1613]/60">
+            <span className="text-xs font-medium text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
               Total Stock Value
             </span>
-            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center">
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-xl sm:text-2xl font-bold text-blue-800 truncate">
-              {loading ? "..." : `Rs. ${totalCatalogValue.toLocaleString()}`}
-            </span>
+            {initialLoading ? (
+              <Skeleton className="h-7 sm:h-8 w-28" />
+            ) : (
+              <span className="text-xl sm:text-2xl font-bold text-blue-800 dark:text-blue-300 truncate">
+                {`Rs. ${totalCatalogValue.toLocaleString()}`}
+              </span>
+            )}
           </div>
         </div>
       </div>
 
       {/* 3. Unified Product Management Container */}
-      <div className="rounded-xl border border-[#1A1613]/10 bg-[#FFFDF8] shadow-xs overflow-hidden">
+      <div className="rounded-xl border border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs overflow-hidden">
         {/* Filter Bar */}
-        <div className="p-4 sm:p-5 border-b border-[#1A1613]/10 space-y-3">
+        <div className="p-4 sm:p-5 border-b border-[#1A1613]/10 dark:border-white/10 space-y-3">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             {/* Search Input */}
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#1A1613]/40 w-4 h-4" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#1A1613]/40 dark:text-[#F5EFE6]/50 w-4 h-4" />
               <input
                 type="text"
                 placeholder="Search products by name, description, or ID..."
@@ -571,12 +595,12 @@ const ProductManagement: React.FC = () => {
                   setSearchTerm(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full h-10 pl-10 pr-9 rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] text-xs text-[#1A1613] placeholder:text-[#1A1613]/40 focus:outline-none focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
+                className="w-full h-10 pl-10 pr-9 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] text-xs text-[#1A1613] dark:text-[#F5EFE6] placeholder:text-[#1A1613]/40 dark:placeholder:text-[#F5EFE6]/40 focus:outline-none focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
               />
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1A1613]/40 hover:text-[#1A1613] cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1A1613]/40 dark:text-[#F5EFE6]/50 hover:text-[#1A1613] dark:hover:text-[#F5EFE6] cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -590,7 +614,7 @@ const ProductManagement: React.FC = () => {
                 <select
                   value={selectedCategory}
                   onChange={(e) => handleCategoryChange(e.target.value)}
-                  className="w-full h-9 rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] px-3 text-xs font-medium text-[#1A1613] focus:outline-none focus:border-[#E6540B] cursor-pointer"
+                  className="w-full h-9 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] px-3 text-xs font-medium text-[#1A1613] dark:text-[#F5EFE6] dark:scheme-dark focus:outline-none focus:border-[#E6540B] cursor-pointer"
                 >
                   <option value="ALL">All Categories</option>
                   {categories.map((cat) => (
@@ -608,7 +632,7 @@ const ProductManagement: React.FC = () => {
                   setStockFilter(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="flex-1 min-w-[120px] sm:flex-initial sm:min-w-0 h-9 rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] px-3 text-xs font-medium text-[#1A1613] focus:outline-none focus:border-[#E6540B] cursor-pointer"
+                className="flex-1 min-w-[120px] sm:flex-initial sm:min-w-0 h-9 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] px-3 text-xs font-medium text-[#1A1613] dark:text-[#F5EFE6] dark:scheme-dark focus:outline-none focus:border-[#E6540B] cursor-pointer"
               >
                 <option value="ALL">All Stock</option>
                 <option value="IN_STOCK">In Stock (10+)</option>
@@ -621,7 +645,7 @@ const ProductManagement: React.FC = () => {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                className="flex-1 min-w-[130px] sm:flex-initial sm:min-w-0 h-9 rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] px-3 text-xs font-medium text-[#1A1613] focus:outline-none focus:border-[#E6540B] cursor-pointer"
+                className="flex-1 min-w-[130px] sm:flex-initial sm:min-w-0 h-9 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] px-3 text-xs font-medium text-[#1A1613] dark:text-[#F5EFE6] dark:scheme-dark focus:outline-none focus:border-[#E6540B] cursor-pointer"
               >
                 <option value="newest">Sort: Newest First</option>
                 <option value="oldest">Sort: Oldest First</option>
@@ -638,7 +662,7 @@ const ProductManagement: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleResetFilters}
-                  className="h-9 px-3 rounded-lg border border-dashed border-[#1A1613]/25 text-xs font-semibold text-[#1A1613]/70 hover:text-[#E6540B] hover:border-[#E6540B] transition-colors cursor-pointer"
+                  className="h-9 px-3 rounded-lg border border-dashed border-[#1A1613]/25 dark:border-white/15 text-xs font-semibold text-[#1A1613]/70 dark:text-[#F5EFE6]/70 hover:text-[#E6540B] hover:border-[#E6540B] transition-colors cursor-pointer"
                   title="Reset all search & filters"
                 >
                   Reset
@@ -646,14 +670,14 @@ const ProductManagement: React.FC = () => {
               )}
 
               {/* View Switcher: Table / Grid */}
-              <div className="flex items-center rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] p-0.5 ml-auto sm:ml-0">
+              <div className="flex items-center rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] p-0.5 ml-auto sm:ml-0">
                 <button
                   type="button"
                   onClick={() => setViewMode("table")}
                   className={`p-1.5 rounded-md transition-all cursor-pointer ${
                     viewMode === "table"
                       ? "bg-[#E6540B] text-white shadow-xs"
-                      : "text-[#1A1613]/60 hover:text-[#1A1613]"
+                      : "text-[#1A1613]/60 dark:text-[#F5EFE6]/50 hover:text-[#1A1613] dark:hover:text-[#F5EFE6]"
                   }`}
                   title="Table View"
                 >
@@ -665,7 +689,7 @@ const ProductManagement: React.FC = () => {
                   className={`p-1.5 rounded-md transition-all cursor-pointer ${
                     viewMode === "grid"
                       ? "bg-[#E6540B] text-white shadow-xs"
-                      : "text-[#1A1613]/60 hover:text-[#1A1613]"
+                      : "text-[#1A1613]/60 dark:text-[#F5EFE6]/50 hover:text-[#1A1613] dark:hover:text-[#F5EFE6]"
                   }`}
                   title="Grid View"
                 >
@@ -678,12 +702,12 @@ const ProductManagement: React.FC = () => {
 
         {/* Active Category Filter Indicator */}
         {selectedCategory !== "ALL" && (
-          <div className="flex items-center justify-between gap-3 px-4 py-3 bg-[#E6540B]/10 border-b border-[#E6540B]/20 text-xs animate-in fade-in duration-200">
+          <div className="flex items-center justify-between gap-3 px-4 py-3 bg-[#E6540B]/10 dark:bg-[#E6540B]/15 border-b border-[#E6540B]/20 text-xs animate-in fade-in duration-200">
             <div className="flex items-center gap-2 min-w-0">
               <Package className="w-4 h-4 text-[#E6540B] shrink-0" />
-              <span className="text-[#1A1613]/70 truncate">
+              <span className="text-[#1A1613]/70 dark:text-[#F5EFE6]/70 truncate">
                 Filtered by category:{" "}
-                <span className="font-bold text-[#1A1613]">
+                <span className="font-bold text-[#1A1613] dark:text-[#F5EFE6]">
                   {activeCategoryObj?.categoryName ||
                     (location.state as any)?.categoryName ||
                     "Selected Category"}
@@ -697,7 +721,7 @@ const ProductManagement: React.FC = () => {
             <button
               type="button"
               onClick={() => handleCategoryChange("ALL")}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-[#E6540B]/30 text-xs font-semibold text-[#E6540B] hover:bg-[#E6540B]/10 transition-all cursor-pointer shrink-0"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-[#1E1A17] border border-[#E6540B]/30 text-xs font-semibold text-[#E6540B] hover:bg-[#E6540B]/10 dark:hover:bg-[#E6540B]/15 transition-all cursor-pointer shrink-0"
               title="Clear category filter to view all products"
             >
               <X className="w-3.5 h-3.5" />
@@ -710,7 +734,7 @@ const ProductManagement: React.FC = () => {
         {viewMode === "table" ? (
           <ProductTable
             products={paginatedProducts}
-            loading={loading}
+            loading={initialLoading}
             onView={(prod) => setViewingProduct(prod)}
             onEdit={handleOpenEdit}
             onQuickStock={(prod) => setStockProduct(prod)}
@@ -722,7 +746,7 @@ const ProductManagement: React.FC = () => {
         ) : (
           <ProductGrid
             products={paginatedProducts}
-            loading={loading}
+            loading={initialLoading}
             onView={(prod) => setViewingProduct(prod)}
             onEdit={handleOpenEdit}
             onQuickStock={(prod) => setStockProduct(prod)}
@@ -732,10 +756,10 @@ const ProductManagement: React.FC = () => {
         )}
 
         {/* 4. Pagination Footer */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-[#1A1613]/10 text-xs text-[#1A1613]/60 bg-[#FDF8ED]/30">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-[#1A1613]/10 dark:border-white/10 text-xs text-[#1A1613]/60 dark:text-[#F5EFE6]/50 bg-[#FDF8ED]/30 dark:bg-white/5">
           <div>
-            {loading ? (
-              <div className="h-3.5 w-32 rounded bg-[#1A1613]/10 animate-pulse" />
+            {initialLoading ? (
+              <div className="h-3.5 w-32 rounded bg-[#1A1613]/10 dark:bg-white/10 animate-pulse" />
             ) : filteredProducts.length === 0 ? (
               "Showing 0 products"
             ) : (
@@ -752,7 +776,7 @@ const ProductManagement: React.FC = () => {
             <button
               disabled={loading || currentPage === 1}
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              className="p-1.5 rounded-lg border border-[#1A1613]/15 text-[#1A1613] hover:bg-[#F4EEDF] disabled:opacity-40 transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg border border-[#1A1613]/15 dark:border-white/10 text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] disabled:opacity-40 transition-colors cursor-pointer"
               title="Previous Page"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -768,7 +792,7 @@ const ProductManagement: React.FC = () => {
               ) {
                 if (Math.abs(pageNum - currentPage) === 2) {
                   return (
-                    <span key={`dots-${pageNum}`} className="px-1 text-[#1A1613]/40">
+                    <span key={`dots-${pageNum}`} className="px-1 text-[#1A1613]/40 dark:text-[#F5EFE6]/50">
                       ...
                     </span>
                   );
@@ -783,7 +807,7 @@ const ProductManagement: React.FC = () => {
                   className={`min-w-[28px] h-7 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                     currentPage === pageNum
                       ? "bg-[#E6540B] text-white shadow-xs"
-                      : "border border-[#1A1613]/15 text-[#1A1613] hover:bg-[#F4EEDF]"
+                      : "border border-[#1A1613]/15 dark:border-white/10 text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420]"
                   }`}
                 >
                   {pageNum}
@@ -794,7 +818,7 @@ const ProductManagement: React.FC = () => {
             <button
               disabled={loading || currentPage === totalPages}
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              className="p-1.5 rounded-lg border border-[#1A1613]/15 text-[#1A1613] hover:bg-[#F4EEDF] disabled:opacity-40 transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg border border-[#1A1613]/15 dark:border-white/10 text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] disabled:opacity-40 transition-colors cursor-pointer"
               title="Next Page"
             >
               <ChevronRight className="w-4 h-4" />

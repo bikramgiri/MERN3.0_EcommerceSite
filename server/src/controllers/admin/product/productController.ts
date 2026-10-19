@@ -11,6 +11,9 @@ import Order from "../../../database/models/orderModel";
 import OrderDetails from "../../../database/models/orderDetailsModel";
 import { getPublicIdFromAvatar } from "../../../services/cloudinaryHelper";
 import Review from "../../../database/models/reviewModel";
+import { approvedReviewsOnly, formatReviewImages } from "../../../services/productPresenter";
+import { notifyBackInStock } from "../../../services/notificationService";
+
 
 class ProductController {
   public static async addProduct(
@@ -202,6 +205,8 @@ class ProductController {
          {
           model: Review,
           as: "reviews",
+          where: approvedReviewsOnly,
+          required: false,
           attributes: ["id", "rating", "message", "reviewImage", "createdAt"],
           include: [
             {
@@ -227,12 +232,7 @@ class ProductController {
       return {
         ...productData,
         productImage: getFullImageUrl(productData.productImage), // Use the helper function to get full URL
-        reviews: (productData.reviews || []).map((review: any) => ({
-          ...review,
-          reviewImage: review.reviewImage
-            ? getFullImageUrl(review.reviewImage)
-            : null,
-        })),
+        reviews: (productData.reviews || []).map(formatReviewImages),
       };
     });
     productsWithProductImageUrl.sort(
@@ -261,6 +261,12 @@ class ProductController {
       return;
     }
 
+    // A malformed id can't match any product (and would make Postgres throw a 500)
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(productId))) {
+      res.status(404).json({ message: "Product not found", field: "general" });
+      return;
+    }
+
     const product = await Product.findByPk(productId as string, {
       include: [
         {
@@ -275,6 +281,8 @@ class ProductController {
         {
           model: Review,
           as: "reviews",
+          where: approvedReviewsOnly,
+          required: false,
           attributes: ["id", "rating", "message", "reviewImage", "createdAt"],
           include: [
             {
@@ -298,12 +306,7 @@ class ProductController {
     const productWithProductImageUrl = {
       ...productData,
       productImage: getFullImageUrl(product.productImage), // Use the helper function to get full URL
-       reviews: (productData.reviews || []).map((review: any) => ({
-        ...review,
-        reviewImage: review.reviewImage
-          ? getFullImageUrl(review.reviewImage)
-          : null,
-      })),
+       reviews: (productData.reviews || []).map(formatReviewImages),
     };
 
     res.status(200).json({
@@ -343,6 +346,8 @@ class ProductController {
          {
           model: Review,
           as: "reviews",
+          where: approvedReviewsOnly,
+          required: false,
           attributes: ["id", "rating", "message", "reviewImage", "createdAt"],
           include: [
             {
@@ -368,12 +373,7 @@ class ProductController {
       return {
         ...productData,
         productImage: getFullImageUrl(productData.productImage), // Use the helper function to get full URL
-        reviews: (productData.reviews || []).map((review: any) => ({
-          ...review,
-          reviewImage: review.reviewImage
-            ? getFullImageUrl(review.reviewImage)
-            : null,
-        })),
+        reviews: (productData.reviews || []).map(formatReviewImages),
       };
     });
     categoryProductsWithImageUrl.sort(
@@ -419,6 +419,8 @@ class ProductController {
         {
           model: Review,
           as: "reviews",
+          where: approvedReviewsOnly,
+          required: false,
           attributes: ["id", "rating", "message", "reviewImage", "createdAt"],
           include: [
             {
@@ -444,12 +446,7 @@ class ProductController {
       return {
         ...productData,
         productImage: getFullImageUrl(productData.productImage), // Use the helper function to get full URL
-         reviews: (productData.reviews || []).map((review: any) => ({
-          ...review,
-          reviewImage: review.reviewImage
-            ? getFullImageUrl(review.reviewImage)
-            : null,
-        })),
+         reviews: (productData.reviews || []).map(formatReviewImages),
       };
     });
     userProductsWithImageUrl.sort(
@@ -612,6 +609,7 @@ class ProductController {
       productImage = "";
     }
 
+    const wasSoldOut = Number(product.productStock) <= 0;
     const updatedProduct = await product.update({
       productName,
       productDescription,
@@ -621,6 +619,9 @@ class ProductController {
       categoryId: resolvedCategoryId,
       productImage: fileName, // Store only the filename in the database
     });
+    if (wasSoldOut && Number(productStock) > 0) {
+      await notifyBackInStock(updatedProduct);
+    }
 
     const refreshedProduct = await Product.findByPk(product.id, {
       include: [
@@ -636,6 +637,8 @@ class ProductController {
         {
           model: Review,
           as: "reviews",
+          where: approvedReviewsOnly,
+          required: false,
           attributes: ["id", "rating", "message", "reviewImage", "createdAt"],
           include: [
             {
@@ -652,10 +655,7 @@ class ProductController {
     const updatedProductDataWithImageUrl = {
       ...productData,
       productImage: productImage, // Use the full URL for the response
-      reviews: (productData.reviews || []).map((review: any) => ({
-        ...review,
-        reviewImage: review.reviewImage ? getFullImageUrl(review.reviewImage) : null,
-      })),
+      reviews: (productData.reviews || []).map(formatReviewImages),
     };
 
     res.status(200).json({
@@ -779,7 +779,11 @@ class ProductController {
       return;
     }
 
+    const wasSoldOut = Number(product.productStock) <= 0;
     await product.update({ productStock: parsedStock });
+    if (wasSoldOut && parsedStock > 0) {
+      await notifyBackInStock(product);
+    }
 
     const refreshedProduct = await Product.findByPk(productId as string, {
       include: [
@@ -795,6 +799,8 @@ class ProductController {
         {
           model: Review,
           as: "reviews",
+          where: approvedReviewsOnly,
+          required: false,
           attributes: ["id", "rating", "message", "reviewImage", "createdAt"],
           include: [
             {
@@ -811,10 +817,7 @@ class ProductController {
     const productWithFullImage = {
       ...productData,
       productImage: getFullImageUrl(productData.productImage),
-      reviews: (productData.reviews || []).map((review: any) => ({
-        ...review,
-        reviewImage: review.reviewImage ? getFullImageUrl(review.reviewImage) : null,
-      })),
+      reviews: (productData.reviews || []).map(formatReviewImages),
     };
 
     res.status(200).json({
