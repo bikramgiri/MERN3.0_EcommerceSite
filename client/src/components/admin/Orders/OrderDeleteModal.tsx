@@ -1,3 +1,4 @@
+import { formatOrderNumber } from "../../../services/storeSettingsService";
 import React from "react";
 import { Trash2, AlertTriangle, RefreshCw, X } from "lucide-react";
 import { AdminOrder } from "../../../types/admin/orderTypes";
@@ -49,7 +50,7 @@ const OrderDeleteModal: React.FC<OrderDeleteModalProps> = ({
           <p>
             Are you sure you want to permanently delete order{" "}
             <strong className="text-[#1A1613] dark:text-[#F5EFE6] font-mono">
-              #{order.id.slice(0, 8)}
+              {formatOrderNumber(order.id)}
             </strong>{" "}
             placed by{" "}
             <strong className="text-[#1A1613] dark:text-[#F5EFE6]">

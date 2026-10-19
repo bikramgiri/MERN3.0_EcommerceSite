@@ -8,6 +8,9 @@ router.route('/cart')
 .post(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Customer), catchAsyncError(CartController.addToCart))
 .get(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Customer), catchAsyncError(CartController.getCartItems))
 
+router.route('/cart/:id/save-for-later')
+.post(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Customer), catchAsyncError(CartController.saveForLater))
+
 router.route('/cart/:id')
 .get(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Customer), catchAsyncError(CartController.getCartItem))
 .patch(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Customer), catchAsyncError(CartController.updateCartItem))

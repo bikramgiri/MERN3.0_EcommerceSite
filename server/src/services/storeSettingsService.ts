@@ -202,3 +202,20 @@ export const calculateShippingCost = (
   }
   return settings.standardShippingFee;
 };
+
+/**
+ * Delivery fee when a customer edits an order. A paid delivery keeps the fee the order
+ * was placed with (so a later price rise doesn't apply), unless the edited order now
+ * qualifies for free delivery. An order that had free delivery is checked against
+ * today's free-delivery rule again, so ordering big and editing down can't keep it free.
+ */
+export const editedOrderShippingCost = (
+  savedFee: number | string | null | undefined,
+  subtotal: number,
+  settings: StoreSettings,
+): number => {
+  const current = calculateShippingCost(subtotal, settings);
+  const original = savedFee == null ? null : Number(savedFee);
+  if (original == null || !Number.isFinite(original) || original <= 0) return current;
+  return current === 0 ? 0 : original;
+};

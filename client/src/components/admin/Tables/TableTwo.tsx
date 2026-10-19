@@ -1,3 +1,4 @@
+import { formatOrderNumber } from "../../../services/storeSettingsService";
 import { useAppSelector } from '../../../hooks/hooks';
 import { OrderStatus, PaymentStatus } from '../../../types/customer/checkoutTypes';
 
@@ -81,7 +82,7 @@ const TableTwo = () => {
         >
           <div className="col-span-2 flex flex-col">
             <p className="font-['IBM_Plex_Mono',monospace] text-xs text-[#1A1613]">
-              #{order.id.slice(0, 8)}
+              {formatOrderNumber(order.id)}
             </p>
             <p className="mt-0.5 text-[11px] text-[#1A1613]/50">
               {formatDate(order.createdAt)}

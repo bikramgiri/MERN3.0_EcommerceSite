@@ -21,6 +21,7 @@ import SearchProducts from "./components/SearchProducts";
 import UserDropdown from "./components/UserDropdown";
 import useIsAdmin from "../../../hooks/useIsAdmin";
 import MaintenanceBanner from "./components/MaintenanceBanner";
+import AnnouncementBar from "./components/AnnouncementBar";
 import { connectSocket } from "../../../services/socket";
 import { useStoreSettings } from "../../../services/storeSettingsService";
 
@@ -158,6 +159,7 @@ const Header = () => {
     // flex column + max height lets the mobile menu scroll below the bar (and maintenance banner)
     <nav className="fixed top-0 left-0 right-0 z-50 flex max-h-dvh flex-col shadow-md border-b border-[#1A1613]/10 bg-[#FDF8ED]/90 backdrop-blur">
       <MaintenanceBanner />
+      <AnnouncementBar />
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-4">
           <Link

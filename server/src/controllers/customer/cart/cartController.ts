@@ -2,11 +2,37 @@ import { Response } from "express";
 import { AuthRequest } from "../../../middleware/authMiddleware";
 import Cart from "../../../database/models/cartModel";
 import Product from "../../../database/models/productModel";
-import User from "../../../database/models/userModel";
 import Category from "../../../database/models/categoryModel";
 import getFullImageUrl from "../../../services/imageHandler";
 import Review from "../../../database/models/reviewModel";
+import Wishlist from "../../../database/models/wishlistModel";
 import { UniqueConstraintError } from "sequelize";
+import { approvedReviewsOnly } from "../../../services/productPresenter";
+
+// What the cart page needs about each product: price, stock, image and the
+// approved ratings (no review text, reviewer details or the account's own data)
+const cartProductInclude = {
+  model: Product,
+  attributes: ["id", "productName", "productStock", "productPrice", "productImage"],
+  include: [
+    { model: Category, attributes: ["id", "categoryName"] },
+    {
+      model: Review,
+      as: "reviews",
+      where: approvedReviewsOnly,
+      required: false,
+      attributes: ["id", "rating"],
+    },
+  ],
+};
+
+const presentCartItem = (cartItem: Cart) => {
+  const data = cartItem.toJSON();
+  return {
+    ...data,
+    product: { ...data.product, productImage: getFullImageUrl(data.product.productImage) },
+  };
+};
 
 class CartController {
   // *Add to cart
@@ -145,75 +171,18 @@ class CartController {
       return;
     }
 
+    // Newest first; rows whose product no longer exists are skipped
     const cartItems = await Cart.findAll({
       where: { userId },
-      include: [
-        {
-          model: Product,
-          attributes: [
-            "id",
-            "productName",
-            "productStock",
-            "productPrice",
-            "productImage",
-          ],
-          include: [
-            {
-              model: Category,
-              attributes: ["id", "categoryName"],
-            },
-            {
-              model: Review,
-              as: "reviews",
-              attributes: [
-                "id",
-                "rating",
-                "message",
-                "reviewImage",
-                "createdAt",
-              ],
-              include: [
-                {
-                  model: User,
-                  as: "User",
-                  attributes: ["id", "username", "avatar"],
-                },
-              ],
-            },
-          ],
-        },
-        {
-          model: User,
-          attributes: ["id", "username", "email", "avatar"],
-        },
-      ],
+      include: [cartProductInclude],
+      order: [["createdAt", "DESC"]],
     });
-
-    if (!cartItems || cartItems.length === 0) {
-      res.status(200).json({
-        message: "No cart items found for this user.",
-        field: "cartItems",
-        totalItems: 0,
-        data: [],
-      });
-      return;
-    }
-    cartItems.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-
-    // attach full image URL to each product's productImage
-    const CartItemsWithFullImages = cartItems.map((cartItem) => {
-      if (cartItem.product) {
-        cartItem.product.productImage = getFullImageUrl(
-          cartItem.product.productImage,
-        );
-      }
-      return cartItem;
-    });
+    const items = cartItems.filter((item) => item.product).map(presentCartItem);
 
     res.status(200).json({
-      message: "Cart items retrieved successfully.",
-      totalItems: cartItems.length,
-      data: CartItemsWithFullImages,
+      message: items.length ? "Cart items retrieved successfully." : "Your cart is empty.",
+      totalItems: items.length,
+      data: items,
     });
   }
 
@@ -242,49 +211,10 @@ class CartController {
 
     const cartItem = await Cart.findOne({
       where: { id: cartId, userId },
-      include: [
-        {
-          model: Product,
-          attributes: [
-            "id",
-            "productName",
-            "productStock",
-            "productPrice",
-            "productImage",
-          ],
-          include: [
-            {
-              model: Category,
-              attributes: ["id", "categoryName"],
-            },
-            {
-              model: Review,
-              as: "reviews",
-              attributes: [
-                "id",
-                "rating",
-                "message",
-                "reviewImage",
-                "createdAt",
-              ],
-              include: [
-                {
-                  model: User,
-                  as: "User",
-                  attributes: ["id", "username", "avatar"],
-                },
-              ],
-            },
-          ],
-        },
-        {
-          model: User,
-          attributes: ["id", "username"],
-        },
-      ],
+      include: [cartProductInclude],
     });
 
-    if (!cartItem) {
+    if (!cartItem || !cartItem.product) {
       res.status(404).json({
         message: "Cart item not found.",
         field: "cartId",
@@ -294,7 +224,7 @@ class CartController {
 
     res.status(200).json({
       message: "Cart item retrieved successfully.",
-      data: cartItem,
+      data: presentCartItem(cartItem),
     });
   }
 
@@ -378,10 +308,15 @@ class CartController {
         return;
       }
 
-      if (quantity > product.productStock) {
+      // Lowering the quantity is always allowed, so a shopper whose item ran low
+      // on stock can step back down to what's available
+      if (quantity > product.productStock && quantity > cartItem.quantity) {
         await t.rollback();
         res.status(400).json({
-          message: "Cannot update cart item. Quantity exceeds product stock.",
+          message:
+            product.productStock > 0
+              ? `Only ${product.productStock} left in stock.`
+              : "This product is out of stock.",
           field: "quantity",
         });
         return;
@@ -399,6 +334,47 @@ class CartController {
       await t.rollback();
       throw error;
     }
+  }
+
+  // *Save for later: move a cart item to the wishlist (kept if it's already there)
+  public static async saveForLater(
+    req: AuthRequest,
+    res: Response,
+  ): Promise<void> {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({
+        message: "Unauthorized! User not authenticated.",
+        field: "userId",
+      });
+      return;
+    }
+
+    const cartId = String(req.params.id);
+    const cartItem = /^[0-9a-f-]{36}$/i.test(cartId)
+      ? await Cart.findOne({ where: { id: cartId, userId } })
+      : null;
+    if (!cartItem) {
+      res.status(404).json({ message: "Cart item not found.", field: "cartId" });
+      return;
+    }
+
+    const sequelize = Cart.sequelize!;
+    await sequelize.transaction(async (t) => {
+      const existing = await Wishlist.findOne({
+        where: { userId, productId: cartItem.productId },
+        transaction: t,
+      });
+      if (!existing) {
+        await Wishlist.create({ userId, productId: cartItem.productId }, { transaction: t });
+      }
+      await cartItem.destroy({ transaction: t });
+    });
+
+    res.status(200).json({
+      message: "Saved to your wishlist.",
+      data: { productId: cartItem.productId },
+    });
   }
 
   // *Delete cart item

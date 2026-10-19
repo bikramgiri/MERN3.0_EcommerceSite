@@ -25,6 +25,7 @@ interface Category {
 }
 
 export interface ProductDetails {
+  id?: string;
   productName: string;
   productPrice: number;
   productDescription: string;
@@ -44,6 +45,13 @@ export interface FetchOrder {
   phoneNumber: string;
   shippingAddress: string;
   totalAmount: number;
+  // Price breakdown (null on orders placed before it was saved). Numbers may arrive as strings.
+  subtotalAmount?: number | string | null;
+  shippingFee?: number | string | null;
+  discountAmount?: number | string | null;
+  couponCode?: string | null;
+  // When an unpaid online order will be cancelled automatically (null otherwise)
+  paymentDueAt?: string | null;
   orderStatus: OrderStatus;
   createdAt: string;
   updatedAt: string;
@@ -52,10 +60,13 @@ export interface FetchOrder {
   Payment: {
     paymentMethod: PaymentMethod;
     paymentStatus: PaymentStatus;
+    updatedAt?: string;
   };
   OrderDetails: Array<{
     productId: string;
     quantity: number;
+    // Price paid per item (null on orders placed before it was saved)
+    unitPrice?: number | string | null;
     Product: ProductDetails;
   }>;
 }
@@ -68,13 +79,7 @@ export interface OrderData {
     paymentMethod: PaymentMethod;
   };
   products: ItemsDetails[];
-  username?: string;
-  email?: string;
-  city?: string;
-  state?: string;
-  postalCode?: number;
-  country?: string;
-  saveData?: false;
+  couponCode?: string | null;
 }
 
 export interface EsewaPaymentData {

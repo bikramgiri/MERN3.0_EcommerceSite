@@ -19,9 +19,14 @@ class OrderDetails extends Model{
     @AllowNull(false)
     @Column({
         type : DataType.INTEGER,
-        validate: { min: { args: [1], msg: "..." }, max: { args: [10], msg: "..." } }
+        validate: { min: { args: [1], msg: "Quantity must be at least 1." } }
     })
     declare quantity:number
+
+  // Price of one item when it was ordered, so later price changes don't rewrite past orders
+  // (null on lines saved before this column existed)
+  @Column({ type: DataType.DECIMAL(10, 2), allowNull: true, defaultValue: null })
+  declare unitPrice: number | null;
 
   @ForeignKey(() => Order)
   @Column({ type: DataType.UUID })

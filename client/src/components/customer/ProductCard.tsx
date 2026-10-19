@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import { useAppDispatch, useAppSelector } from "../../hooks/hooks";
 import useIsAdmin from "../../hooks/useIsAdmin";
 import { addToCart } from "../../store/customer/cartSlice";
-import { AddToWishlist } from "../../store/customer/wishlistSlice";
+import { AddToWishlist, removeWishlistItem } from "../../store/customer/wishlistSlice";
 import type { Product } from "../../types/customer/productTypes";
 import { getAverageRatingNumber, hideBrokenImage, responsiveImage } from "../../utils/helpers";
 import { Skeleton } from "../../global/Skeleton";
@@ -15,15 +15,19 @@ const errorMessage = (error: unknown) =>
   "Something went wrong. Please try again.";
 
 /**
- * Product card used across the storefront (home, products page).
+ * Product card used across the storefront (home, products page, wishlist).
  * Handles its own add-to-cart and wishlist actions; admins get "View details" instead.
+ * `moveToCart` (wishlist page): the button adds to cart and then removes it from the wishlist.
  */
-const ProductCard = ({ product }: { product: Product }) => {
+const ProductCard = ({ product, moveToCart = false }: { product: Product; moveToCart?: boolean }) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const isAdmin = useIsAdmin();
   const isWishlisted = useAppSelector((state) =>
     state.wishlist.wishlist.some((item) => item.id === product.id),
+  );
+  const alreadyInCart = useAppSelector((state) =>
+    (state.cart.cart || []).some((item) => item.productId === product.id),
   );
   const [isAdding, setIsAdding] = useState(false);
   const [isWishlisting, setIsWishlisting] = useState(false);
@@ -44,10 +48,28 @@ const ProductCard = ({ product }: { product: Product }) => {
     if (requireLogin() || isAdding) return;
     setIsAdding(true);
     try {
-      await dispatch(addToCart(product.id));
-      toast.success("Added to cart");
+      // Moving something that's already in the cart shouldn't add a second one
+      if (!(moveToCart && alreadyInCart)) {
+        await dispatch(addToCart(product.id));
+      }
     } catch (error) {
       toast.error(errorMessage(error));
+      setIsAdding(false);
+      return;
+    }
+
+    if (!moveToCart) {
+      toast.success("Added to cart");
+      setIsAdding(false);
+      return;
+    }
+
+    // Only remove from the wishlist once the cart step has worked
+    try {
+      await dispatch(removeWishlistItem(product.id));
+      toast.success(alreadyInCart ? "Already in your cart, removed from your wishlist" : "Moved to cart");
+    } catch {
+      toast.info("Added to cart, but we couldn't remove it from your wishlist.");
     } finally {
       setIsAdding(false);
     }
@@ -163,7 +185,11 @@ const ProductCard = ({ product }: { product: Product }) => {
             className="mt-auto flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#E6540B] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#c94806] disabled:cursor-not-allowed disabled:bg-[#1A1613]/20"
           >
             {isAdding ? <Loader2 size={16} className="animate-spin" /> : <ShoppingCart size={16} />}
-            {outOfStock ? "Out of stock" : isAdding ? "Adding..." : "Add to cart"}
+            {outOfStock
+              ? "Out of stock"
+              : isAdding
+                ? moveToCart ? "Moving..." : "Adding..."
+                : moveToCart ? "Move to cart" : "Add to cart"}
           </button>
         )}
       </div>

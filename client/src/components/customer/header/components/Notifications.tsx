@@ -8,6 +8,9 @@ import { connectSocket } from "../../../../services/socket";
 import useNotifications, { type AppNotification } from "../../../../hooks/useNotifications";
 import { notificationVisual, timeAgo } from "../../../../global/notificationVisuals";
 
+// Results of the shopper's own actions, already confirmed by the page they're on
+const SHOWN_ON_SCREEN = new Set(["order-placed", "payment-received", "payment-failed"]);
+
 /** Customer notifications (order updates, payments, review replies, back in stock…), live via socket.io */
 const Notifications = () => {
   const dispatch = useAppDispatch();
@@ -17,7 +20,12 @@ const Notifications = () => {
 
   const { items, unreadCount, hasMore, loaded, loadingMore, loadMore, markRead, markAllRead } =
     useNotifications({
-      onNew: (n) => toast.info(`${n.title}: ${n.message}`, { toastId: n.id }),
+      onNew: (n) => {
+        // The shopper already sees these on screen (checkout or payment result page,
+        // or the page the notification links to), so they only go into the bell
+        if (SHOWN_ON_SCREEN.has(n.type) || (n.link && window.location.pathname === n.link)) return;
+        toast.info(`${n.title}: ${n.message}`, { toastId: n.id });
+      },
     });
 
   // Keep My orders up to date when the store changes an order

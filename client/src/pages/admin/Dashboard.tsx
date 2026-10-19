@@ -1,3 +1,4 @@
+import { formatOrderNumber } from "../../services/storeSettingsService";
 
 import { useEffect, useState } from "react";
 import {
@@ -473,7 +474,7 @@ const AdminDashboard = () => {
                       className="border-b border-[#1A1613]/10 hover:bg-[#F4EEDF] transition-colors"
                     >
                       <td className="py-4 px-4 font-['IBM_Plex_Mono',monospace] text-sm text-[#1A1613]">
-                        {order.id.slice(0, 8)}...
+                        {formatOrderNumber(order.id)}
                       </td>
                       <td className="py-4 px-4 text-sm text-[#1A1613]/80">
                         {formatDate(order.createdAt)}

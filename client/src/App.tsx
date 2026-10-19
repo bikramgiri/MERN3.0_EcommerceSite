@@ -1,3 +1,4 @@
+import { loadSitePromotion } from "./services/couponService";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -38,6 +39,7 @@ import { handleGoogleLogin, logout } from "./store/auth/authSlice.js";
 import { isTokenExpired, getTokenRemainingMs } from "./utils/token.js";
 import { handleSessionExpiry } from "./http/index.js";
 import ProtectedRoute from "./global/ProjectedRoute.js";
+import GuestOnlyRoute from "./global/GuestOnlyRoute";
 import { UserRole } from "./types/customer/authTypes.js";
 import { ThemeProvider, useTheme } from "./context/ThemeContext.js";
 import NotExists from "./components/admin/NotExists.js";
@@ -57,6 +59,7 @@ const ProductManagement = lazy(() => import("./pages/admin/ProductManagement"));
 const OrderManagement = lazy(() => import("./pages/admin/OrderManagement"));
 const ReviewManagement = lazy(() => import("./pages/admin/ReviewManagement"));
 const NewsletterSubscribers = lazy(() => import("./pages/admin/NewsletterSubscribers"));
+const CouponManagement = lazy(() => import("./pages/admin/CouponManagement"));
 const AdminProfile = lazy(() => import("./pages/admin/Profile.js"));
 const AdminSettings = lazy(() => import("./pages/admin/Settings"));
 
@@ -93,11 +96,13 @@ function App() {
 
     // Store settings (shipping, payments, maintenance) come from the server
     loadStoreSettings().catch(() => {});
+    loadSitePromotion();
 
     // Connect socket so live storefront visitors are counted in real-time,
     // and settings changes by the admin show up without a refresh
     const socket = connectSocket();
     socket.on("store:settings-updated", applyStoreSettings);
+    socket.on("store:promotions-updated", loadSitePromotion);
 
     const checkTokenStatus = () => {
       const token = localStorage.getItem("token");
@@ -142,6 +147,7 @@ function App() {
       document.removeEventListener("visibilitychange", handleVisibility);
       window.removeEventListener("auth:session-expired", handleSessionExpiredEvent);
       socket.off("store:settings-updated", applyStoreSettings);
+      socket.off("store:promotions-updated", loadSitePromotion);
     };
   }, [dispatch]);
   return (
@@ -151,9 +157,10 @@ function App() {
       <ThemedToastContainer />
       <Suspense fallback={null}>
       <Routes>
-        <Route path="/register" element={<Register />} />
+        {/* Signed-in users skip the login and sign-up forms */}
+        <Route path="/register" element={<GuestOnlyRoute><Register /></GuestOnlyRoute>} />
         <Route path="/verify-email" element={<VerifyEmail />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<GuestOnlyRoute><Login /></GuestOnlyRoute>} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/verify-otp" element={<VerifyOTP />} />
         <Route path="/reset-password" element={<ResetPassword />} />
@@ -296,6 +303,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={[UserRole.Admin]}>
                 <ReviewManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="coupons"
+            element={
+              <ProtectedRoute allowedRoles={[UserRole.Admin]}>
+                <CouponManagement />
               </ProtectedRoute>
             }
           />

@@ -59,3 +59,15 @@ export const newsletterRateLimiter = rateLimit({
     field: "email",
   },
 });
+
+// For promo code checks (stops anyone guessing codes by trying thousands of them)
+export const couponRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    message: "Too many promo code attempts. Please try again in a few minutes.",
+    field: "couponCode",
+  },
+});

@@ -175,7 +175,7 @@ export const calculateShipping = (
 export const playNotificationChime = (): void => {
   try {
     const AudioContextClass =
-      window.AudioContext || (window as any).webkitAudioContext;
+      window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!AudioContextClass) return;
     const ctx = new AudioContextClass();
     const now = ctx.currentTime;
@@ -218,3 +218,35 @@ const subscribeToSettings = (onChange: () => void) => {
 
 export const useStoreSettings = (): StoreSettings =>
   useSyncExternalStore(subscribeToSettings, getStoreSettings);
+
+/**
+ * Delivery fee for an edited order, the same rule the server uses: a paid delivery keeps
+ * the fee the order was placed with unless the order now qualifies for free delivery;
+ * an order that had free delivery is checked against today's rule again.
+ */
+export const editedOrderShipping = (
+  savedFee: number | string | null | undefined,
+  subtotal: number,
+  settings: StoreSettings = getStoreSettings(),
+): number => {
+  const { fee: current } = calculateShipping(subtotal, settings);
+  const original = savedFee == null ? null : Number(savedFee);
+  if (original == null || !Number.isFinite(original) || original <= 0) return current;
+  return current === 0 ? 0 : original;
+};
+
+/**
+ * Customer-facing order number, e.g. "TRV-ef2462": the store prefix plus the last 6
+ * characters of the order ID. The server builds the same label for notifications and
+ * emails (orderLabel), so shoppers and staff always quote the same number.
+ */
+export const formatOrderNumber = (id: string, prefix: string = getStoreSettings().orderPrefix): string =>
+  `${prefix || "#"}${String(id).slice(-6)}`;
+
+/** Whether a search like "TRV-ef2462", "#ef2462" or "ef24" points at this order */
+export const orderNumberMatches = (id: string, query: string, prefix: string = getStoreSettings().orderPrefix): boolean => {
+  const q = query.trim().toLowerCase().replace(/^#/, "");
+  const p = (prefix || "").toLowerCase();
+  const bare = p && q.startsWith(p) ? q.slice(p.length) : q;
+  return bare.length > 0 && String(id).toLowerCase().includes(bare);
+};

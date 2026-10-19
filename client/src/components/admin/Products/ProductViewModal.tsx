@@ -1,3 +1,4 @@
+import { formatOrderNumber } from "../../../services/storeSettingsService";
 import React, { useState, useEffect } from "react";
 import {
   X,
@@ -505,7 +506,7 @@ const ProductViewModal: React.FC<ProductViewModalProps> = ({
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
                             <span className="font-mono text-[11px] font-bold text-[#1A1613] dark:text-[#F5EFE6]">
-                              Order #{order?.id?.slice(0, 8) || "N/A"}
+                              Order {order?.id ? formatOrderNumber(order.id) : "N/A"}
                             </span>
                             {order?.id && (
                               <button

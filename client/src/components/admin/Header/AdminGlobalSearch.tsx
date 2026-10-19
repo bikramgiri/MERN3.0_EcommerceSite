@@ -1,3 +1,4 @@
+import { formatOrderNumber, orderNumberMatches } from "../../../services/storeSettingsService";
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -20,6 +21,7 @@ import {
   DollarSign,
   CheckCircle2,
   Mail,
+  Tag,
 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "../../../hooks/hooks";
 import { fetchAdminProducts } from "../../../store/admin/productSlice";
@@ -435,6 +437,16 @@ export const AdminGlobalSearch: React.FC = () => {
         icon: <Mail className="w-4 h-4 text-rose-600 dark:text-rose-400" />,
       },
       {
+        id: "page-coupons",
+        type: "page",
+        title: "Coupons",
+        subtitle: "Promo codes, discounts and usage limits",
+        badge: "Marketing",
+        badgeColor: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30",
+        path: "/admin-dashboard/coupons",
+        icon: <Tag className="w-4 h-4 text-rose-600 dark:text-rose-400" />,
+      },
+      {
         id: "page-settings",
         type: "page",
         title: "Store Settings",
@@ -489,7 +501,7 @@ export const AdminGlobalSearch: React.FC = () => {
     // 2. ORDERS
     allOrders.forEach((o) => {
       const id = String(o.id || "");
-      const displayId = id.startsWith(orderPrefix) ? id : `${orderPrefix}${id.slice(0, 8)}`;
+      const displayId = formatOrderNumber(id, orderPrefix);
       const customer = o.User?.username || o.customerName || (o as any).name || "Customer";
       const email = o.User?.email || "";
       const phone = o.phoneNumber || "";
@@ -498,7 +510,7 @@ export const AdminGlobalSearch: React.FC = () => {
       const address = o.shippingAddress || "";
 
       if (
-        id.toLowerCase().includes(q) ||
+        orderNumberMatches(id, q, orderPrefix) ||
         displayId.toLowerCase().includes(q) ||
         customer.toLowerCase().includes(q) ||
         email.toLowerCase().includes(q) ||

@@ -1,3 +1,4 @@
+import { formatOrderNumber } from "../../../services/storeSettingsService";
 import React from "react";
 import {
   Eye,
@@ -189,7 +190,7 @@ const OrderTable: React.FC<OrderTableProps> = ({
                   <td className="py-3.5 px-4">
                     <div className="flex items-center gap-1.5">
                       <span className="font-mono text-xs font-bold text-[#1A1613] dark:text-[#F5EFE6]">
-                        {orderPrefix || "#"}{order.id.slice(0, 8)}
+                        {formatOrderNumber(order.id, orderPrefix)}
                       </span>
                       <button
                         onClick={(e) => onCopyId(order.id, e)}

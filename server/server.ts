@@ -3,6 +3,7 @@ import { envConfig } from "./src/config/config";
 import adminSeeder from "./src/adminseeder";
 import { ensureStoreSettings } from "./src/services/storeSettingsService";
 import CategoryController from "./src/controllers/admin/category/categoryController";
+import { startUnpaidOrderJob } from "./src/services/unpaidOrderJob";
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 import User from "./src/database/models/userModel";
@@ -28,6 +29,9 @@ async function startServer() {
   await adminSeeder();
   await ensureStoreSettings();
   await CategoryController.seedCategory();
+
+  // Cancel online orders that were never paid, so their stock goes back on sale
+  startUnpaidOrderJob();
 
   // *Socket.io server (Method 1)
   //     const io = new Server(server, {

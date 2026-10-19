@@ -10,7 +10,7 @@ import {
   DashboardIcon,
   UserProfileIcon,
 } from "../../icons/icons";
-import { Mail, ShoppingCart, Sparkles, X } from "lucide-react";
+import { Mail, ShoppingCart, Sparkles, Tag, X } from "lucide-react";
 import SidebarWidget from "./SidebarWidget";
 import { useSidebar } from "../../context/SidebarContext";
 
@@ -56,6 +56,11 @@ const navItems: NavItem[] = [
     icon: <Sparkles className="w-5 h-5 flex-shrink-0" />,
     name: 'Reviews',
     path: '/admin-dashboard/reviews',
+  },
+  {
+    icon: <Tag className="w-5 h-5 flex-shrink-0" />,
+    name: 'Coupons',
+    path: '/admin-dashboard/coupons',
   },
   {
     icon: <Mail className="w-5 h-5 flex-shrink-0" />,

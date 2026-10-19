@@ -167,6 +167,27 @@ const connectDB = async () => {
       console.warn("Newsletter column migration notice:", migError);
     }
 
+    // Safe column migration for the order price breakdown and promo codes
+    try {
+      await sequelize.query(`
+        ALTER TABLE IF EXISTS "orders"
+          ADD COLUMN IF NOT EXISTS "subtotalAmount" DECIMAL(10,2) DEFAULT NULL,
+          ADD COLUMN IF NOT EXISTS "shippingFee" DECIMAL(10,2) DEFAULT NULL,
+          ADD COLUMN IF NOT EXISTS "discountAmount" DECIMAL(10,2) NOT NULL DEFAULT 0,
+          ADD COLUMN IF NOT EXISTS "couponCode" VARCHAR(40) DEFAULT NULL;
+        ALTER TABLE IF EXISTS "order_details"
+          ADD COLUMN IF NOT EXISTS "unitPrice" DECIMAL(10,2) DEFAULT NULL;
+        ALTER TABLE IF EXISTS "coupons"
+          ADD COLUMN IF NOT EXISTS "firstOrderOnly" BOOLEAN NOT NULL DEFAULT false,
+          ADD COLUMN IF NOT EXISTS "showToNewCustomers" BOOLEAN NOT NULL DEFAULT false,
+          ADD COLUMN IF NOT EXISTS "showOnSite" BOOLEAN NOT NULL DEFAULT false,
+          ADD COLUMN IF NOT EXISTS "bannerText" VARCHAR(120) NOT NULL DEFAULT '',
+          ADD COLUMN IF NOT EXISTS "lastEmailedAt" TIMESTAMP WITH TIME ZONE DEFAULT NULL;
+      `);
+    } catch (migError) {
+      console.warn("Orders column migration notice:", migError);
+    }
+
     await sequelize.sync({ force: false, alter: false }); // Set force to true to drop and recreate tables, alter to true to update tables
     console.log("Database Synced!");
   } catch (error) {

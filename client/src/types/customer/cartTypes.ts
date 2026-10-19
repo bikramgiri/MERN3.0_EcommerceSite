@@ -1,13 +1,9 @@
-import { Category, UserData } from './productTypes';
+import { Category } from './productTypes';
 
-export interface Review {
+// The cart only receives approved ratings, not full reviews
+export interface CartReview {
   id: string;
   rating: number;
-  message: string;
-  reviewImage: string | null;
-  createdAt: string;
-  productId: string
-  userId: string
 }
 
 export interface CartProduct {
@@ -17,7 +13,7 @@ export interface CartProduct {
   productStock: number;
   productImage: string;
   category: Category
-  reviews?: Review[]
+  reviews?: CartReview[]
 }
 
 export interface CartItem{
@@ -28,7 +24,6 @@ export interface CartItem{
   createdAt: string,
   updatedAt: string,
   product: CartProduct,
-  user: UserData
 }
 export interface CartState{
   cart: CartItem[]

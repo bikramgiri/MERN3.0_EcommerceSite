@@ -28,7 +28,7 @@ class AdminOrderController {
         include: [
           {
           model: OrderDetails,
-          attributes: ["id", "quantity"],
+          attributes: ["id", "quantity", "unitPrice"],
           include: [{
             model: Product,
             attributes: ["productName", "productPrice", "productImage", "productDescription", "productStock", "categoryId"],
@@ -102,7 +102,7 @@ class AdminOrderController {
         include: [
           {
             model: OrderDetails,
-            attributes: ["id", "quantity"],
+            attributes: ["id", "quantity", "unitPrice"],
             include: [{
               model: Product,
               attributes: ["productName", "productPrice", "productImage", "productDescription", "productStock", "categoryId"],
@@ -196,7 +196,7 @@ class AdminOrderController {
         include: [
           {
             model: OrderDetails,
-            attributes: ["id", "quantity"],
+            attributes: ["id", "quantity", "unitPrice"],
             include: [{
               model: Product,
               attributes: ["productName", "productPrice", "productImage", "productDescription", "productStock", "categoryId"],

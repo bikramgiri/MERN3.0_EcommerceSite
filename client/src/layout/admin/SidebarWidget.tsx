@@ -36,10 +36,9 @@ export default function SidebarWidget() {
       const dispatch = useAppDispatch();
     const navigate = useNavigate();
     const { isExpanded, isMobileOpen, isHovered} = useSidebar();
-        const handleLogOut = () => {
-        dispatch(logoutUser());
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
+        const handleLogOut = async () => {
+        // Wait until the session is cleared, or the login page would send us back to the dashboard
+        await dispatch(logoutUser());
         navigate("/login?logout=true");
       };
   

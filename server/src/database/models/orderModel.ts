@@ -46,6 +46,20 @@ class Order extends Model {
   })
   declare totalAmount: number;
 
+  // Price breakdown saved when the order is placed (null on orders placed before
+  // these columns existed): items subtotal - discount + delivery = totalAmount
+  @Column({ type: DataType.DECIMAL(10, 2), allowNull: true, defaultValue: null })
+  declare subtotalAmount: number | null;
+
+  @Column({ type: DataType.DECIMAL(10, 2), allowNull: true, defaultValue: null })
+  declare shippingFee: number | null;
+
+  @Column({ type: DataType.DECIMAL(10, 2), allowNull: false, defaultValue: 0 })
+  declare discountAmount: number;
+
+  @Column({ type: DataType.STRING(40), allowNull: true, defaultValue: null })
+  declare couponCode: string | null;
+
   @Column({
     // type : DataType.ENUM(...Object.values(OrderStatus)),
     // *OR

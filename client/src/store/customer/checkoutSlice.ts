@@ -32,6 +32,12 @@ const checkoutSlice = createSlice({
     },
     setMyOrders(state: CheckoutState, action: PayloadAction<FetchOrder[]>) {
       state.myOrder = action.payload;
+      // Keep an open order page in sync (status, payment) without losing its extra product details
+      const open = state.singleOrder;
+      const fresh = open && action.payload.find((order) => order.id === open.id);
+      if (open && fresh) {
+        state.singleOrder = { ...fresh, OrderDetails: open.OrderDetails };
+      }
     },
     setSingleOrder(
       state: CheckoutState,
@@ -216,21 +222,22 @@ export function fetchMySingleOrder(id: string) {
     dispatch: AppDispatch,
     getState: () => { checkout: CheckoutState },
   ) {
-    const store = getState();
-    const orders = store.checkout.myOrder;
-    const existOrder = orders.find((order: FetchOrder) => order.id === id);
-    if (existOrder) {
-      dispatch(setSingleOrder(existOrder));
+    // Show the copy from My orders straight away, then load the full, current order
+    const cached = getState().checkout.myOrder.find((order: FetchOrder) => order.id === id);
+    if (cached) {
+      dispatch(setSingleOrder(cached));
       dispatch(setStatus(Status.SUCCESS));
     } else {
       dispatch(setStatus(Status.LOADING));
-      try {
-        const response = await APIAuthenticated.get(`/customer/order/${id}`);
-        if (response.status === 200) {
-          dispatch(setSingleOrder(response.data.data));
-          dispatch(setStatus(Status.SUCCESS));
-        }
-      } catch (error) {
+    }
+    try {
+      const response = await APIAuthenticated.get(`/customer/order/${id}`);
+      if (response.status === 200) {
+        dispatch(setSingleOrder(response.data.data));
+        dispatch(setStatus(Status.SUCCESS));
+      }
+    } catch (error) {
+      if (!cached) {
         dispatch(setStatus(Status.ERROR));
         throw error;
       }
@@ -293,9 +300,10 @@ export function editMyOrders(id: string, data: OrderData) {
         data,
       );
       if (response.status === 200) {
-        dispatch(setSingleOrder(response.data.data));
         dispatch(setStatus(Status.SUCCESS));
-        dispatch(fetchMyOrder());
+        await dispatch(fetchMyOrder()).catch(() => {});
+        await dispatch(fetchMySingleOrder(id)).catch(() => {});
+        return response.data; // has paymentUrl / esewaPaymentData when paying online
       }
     } catch (error) {
       dispatch(setStatus(Status.ERROR));

@@ -24,6 +24,8 @@ export interface AdminOrderProduct {
 export interface AdminOrderDetailItem {
   id: string;
   quantity: number;
+  // Price paid per item (null on orders placed before it was saved)
+  unitPrice?: number | string | null;
   Product?: AdminOrderProduct;
 }
 
@@ -43,6 +45,10 @@ export interface AdminOrder {
   phoneNumber: string;
   shippingAddress: string;
   totalAmount: number;
+  subtotalAmount?: number | string | null;
+  shippingFee?: number | string | null;
+  discountAmount?: number | string | null;
+  couponCode?: string | null;
   orderStatus: AdminOrderStatus;
   userId?: string;
   paymentId?: string;

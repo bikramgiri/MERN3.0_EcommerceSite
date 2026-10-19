@@ -137,3 +137,56 @@ export const sendWelcomeEmail = async (email: string, unsubscribeToken: string) 
     ),
   });
 };
+
+/** Promo code email to a confirmed subscriber */
+export const sendCouponEmail = async (
+  email: string,
+  unsubscribeToken: string,
+  offer: { code: string; headline: string; details: string; minOrderAmount: number; expiresAt: Date | null; firstOrderOnly: boolean },
+) => {
+  const { storeName, address } = await getStoreSettings();
+  const shopUrl = `${clientUrl()}/products`;
+  const unsubscribeUrl = unsubscribePageUrl(unsubscribeToken);
+  const conditions = [
+    offer.minOrderAmount > 0 ? `On orders of Rs ${offer.minOrderAmount.toLocaleString()} or more.` : "",
+    offer.firstOrderOnly ? "For your first order." : "",
+    offer.expiresAt
+      ? `Valid until ${offer.expiresAt.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}.`
+      : "",
+  ].filter(Boolean);
+
+  await sendHtmlMail({
+    to: email,
+    subject: `${offer.headline} at ${storeName}`,
+    headers: unsubscribeHeaders(unsubscribeToken),
+    text: [
+      offer.headline,
+      offer.details,
+      "",
+      `Your code: ${offer.code}`,
+      "Enter it at checkout.",
+      ...conditions,
+      "",
+      `Shop now: ${shopUrl}`,
+      "",
+      `Unsubscribe: ${unsubscribeUrl}`,
+    ].join("\n"),
+    html: layout(
+      storeName,
+      `
+        <h1 style="margin:0 0 12px;font-size:20px;">${escapeHtml(offer.headline)}</h1>
+        ${offer.details ? `<p style="margin:0 0 16px;">${escapeHtml(offer.details)}</p>` : ""}
+        <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 8px;">
+          <tr>
+            <td style="border:2px dashed #E6540B;border-radius:8px;padding:12px 24px;font-family:'Courier New',monospace;font-size:22px;font-weight:bold;letter-spacing:2px;">${escapeHtml(offer.code)}</td>
+          </tr>
+        </table>
+        <p style="margin:0;font-size:13px;color:#7a726a;">Enter this code at checkout.${conditions.length ? ` ${escapeHtml(conditions.join(" "))}` : ""}</p>
+        ${button(shopUrl, "Shop now")}
+      `,
+      `You're receiving this because you subscribed at ${escapeHtml(storeName)}.<br><a href="${unsubscribeUrl}" style="color:#7a726a;">Unsubscribe</a>${
+        address ? ` · ${escapeHtml(address)}` : ""
+      }`,
+    ),
+  });
+};

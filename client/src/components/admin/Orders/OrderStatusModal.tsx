@@ -1,3 +1,4 @@
+import { formatOrderNumber } from "../../../services/storeSettingsService";
 import React, { useState, useEffect } from "react";
 import {
   X,
@@ -106,7 +107,7 @@ const OrderStatusModal: React.FC<OrderStatusModalProps> = ({
                 Update Order Status
               </h3>
               <p className="text-xs text-[#1A1613]/55 dark:text-[#F5EFE6]/50">
-                Order #{order.id.slice(0, 8)} • {order.User?.username || "Customer"}
+                Order {formatOrderNumber(order.id)} • {order.User?.username || "Customer"}
               </p>
             </div>
           </div>

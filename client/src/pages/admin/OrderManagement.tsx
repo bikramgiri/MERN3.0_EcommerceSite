@@ -1,3 +1,4 @@
+import { formatOrderNumber, orderNumberMatches } from "../../services/storeSettingsService";
 import React, { useEffect, useState, useMemo } from "react";
 import {
   ShoppingBag,
@@ -151,7 +152,8 @@ const OrderManagement: React.FC = () => {
 
   const handleCopyId = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(id);
+    // Copy the order number customers see (e.g. TRV-ef2462), ready to paste in a reply
+    navigator.clipboard.writeText(formatOrderNumber(id));
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   };
@@ -223,7 +225,7 @@ const OrderManagement: React.FC = () => {
         // Search
         if (searchTerm.trim()) {
           const q = searchTerm.toLowerCase();
-          const matchId = order.id?.toLowerCase().includes(q);
+          const matchId = orderNumberMatches(order.id, q);
           const matchUser = order.User?.username?.toLowerCase().includes(q);
           const matchEmail = order.User?.email?.toLowerCase().includes(q);
           const matchPhone = order.phoneNumber?.toLowerCase().includes(q);

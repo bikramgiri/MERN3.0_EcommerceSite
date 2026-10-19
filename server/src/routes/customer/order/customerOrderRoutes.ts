@@ -14,6 +14,12 @@ router.route("/order/:id")
 .patch(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Customer), catchAsyncError(CustomerOrderController.updateOrder))
 .delete(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Customer), catchAsyncError(CustomerOrderController.deleteOrder));
 
+router.route('/order/:id/pay')
+.post(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Customer), catchAsyncError(CustomerOrderController.retryPayment));
+
+router.route('/order/:id/sync-payment')
+.post(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Customer), catchAsyncError(CustomerOrderController.syncPayment));
+
 router.route('/order/cancel/:id')
 .patch(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Customer), catchAsyncError(CustomerOrderController.cancelOrder));
 

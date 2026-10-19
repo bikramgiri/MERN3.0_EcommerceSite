@@ -1,3 +1,4 @@
+import { formatOrderNumber } from "../../../services/storeSettingsService";
 import React from "react";
 import {
   X,
@@ -19,6 +20,7 @@ import {
 } from "lucide-react";
 import { AdminOrder } from "../../../types/admin/orderTypes";
 import { useStoreSettings } from "../../../services/storeSettingsService";
+import { orderBreakdown, unitPriceOf } from "../../../utils/orderTotals";
 
 interface OrderViewModalProps {
   order: AdminOrder | null;
@@ -45,12 +47,17 @@ const OrderViewModal: React.FC<OrderViewModalProps> = ({
   const user = order.User;
 
   const itemsSubtotal = items.reduce((sum, item) => {
-    const price = Number(item.Product?.productPrice) || 0;
+    const price = unitPriceOf(item);
     const qty = Number(item.quantity) || 1;
     return sum + price * qty;
   }, 0);
-  const totalAmount = Number(order.totalAmount || 0);
-  const shippingFee = Math.max(0, totalAmount - itemsSubtotal);
+  const {
+    subtotal: orderSubtotal,
+    discount,
+    shipping: shippingFee,
+    total: totalAmount,
+    couponCode,
+  } = orderBreakdown(order, itemsSubtotal);
 
   const handlePrintSlip = () => {
     if (!order) return;
@@ -72,7 +79,7 @@ const OrderViewModal: React.FC<OrderViewModalProps> = ({
     const itemsRows = items
       .map((item, idx) => {
         const prod = item.Product;
-        const price = Number(prod?.productPrice || 0);
+        const price = unitPriceOf(item);
         const qty = item.quantity || 1;
         const lineTotal = price * qty;
         return `
@@ -94,7 +101,7 @@ const OrderViewModal: React.FC<OrderViewModalProps> = ({
       <html>
         <head>
           <meta charset="utf-8" />
-          <title>Order_${order.id.slice(0, 8)}_Slip</title>
+          <title>Order_${formatOrderNumber(order.id, storeSettings.orderPrefix)}_Slip</title>
           <style>
             @page {
               size: portrait;
@@ -256,7 +263,7 @@ const OrderViewModal: React.FC<OrderViewModalProps> = ({
                 </td>
                 <td style="vertical-align: middle;">
                   <div class="slip-title">Packing Slip</div>
-                  <div class="slip-meta"><strong>Order:</strong> ${storeSettings.orderPrefix || "#"}${order.id.slice(0, 8)}</div>
+                  <div class="slip-meta"><strong>Order:</strong> ${formatOrderNumber(order.id, storeSettings.orderPrefix)}</div>
                   <div class="slip-meta"><strong>Date:</strong> ${formatDate(order.createdAt)}</div>
                 </td>
               </tr>
@@ -308,8 +315,12 @@ const OrderViewModal: React.FC<OrderViewModalProps> = ({
               <div class="summary-card">
                 <div class="summary-line">
                   <span>Items Subtotal:</span>
-                  <span style="font-weight: 600; color: #1A1613;">Rs. ${itemsSubtotal.toLocaleString()}</span>
+                  <span style="font-weight: 600; color: #1A1613;">Rs. ${orderSubtotal.toLocaleString()}</span>
                 </div>
+                ${discount > 0 ? `<div class="summary-line">
+                  <span>Discount${couponCode ? ` (${couponCode})` : ""}:</span>
+                  <span style="font-weight: 600; color: #047857;">- Rs. ${discount.toLocaleString()}</span>
+                </div>` : ""}
                 <div class="summary-line">
                   <span>Delivery / Shipping:</span>
                   <span style="font-weight: 600; color: #1A1613;">${shippingFee > 0 ? `Rs. ${shippingFee.toLocaleString()}` : "Free"}</span>
@@ -396,7 +407,7 @@ const OrderViewModal: React.FC<OrderViewModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-bold text-[#1A1613] dark:text-[#F5EFE6]">
-                  Order {storeSettings.orderPrefix || "#"}{order.id.slice(0, 8)}
+                  Order {formatOrderNumber(order.id, storeSettings.orderPrefix)}
                 </h3>
                 <button
                   onClick={(e) => onCopyId(order.id, e)}
@@ -503,9 +514,17 @@ const OrderViewModal: React.FC<OrderViewModalProps> = ({
               <div className="flex items-center justify-between text-xs text-[#1A1613]/65 dark:text-[#F5EFE6]/70">
                 <span>Items Subtotal:</span>
                 <span className="font-semibold text-[#1A1613] dark:text-[#F5EFE6]">
-                  Rs. {itemsSubtotal.toLocaleString()}
+                  Rs. {orderSubtotal.toLocaleString()}
                 </span>
               </div>
+              {discount > 0 && (
+                <div className="flex items-center justify-between text-xs text-[#1A1613]/65 dark:text-[#F5EFE6]/70">
+                  <span>Discount{couponCode ? ` (${couponCode})` : ""}:</span>
+                  <span className="font-semibold text-emerald-700 dark:text-emerald-400">
+                    − Rs. {discount.toLocaleString()}
+                  </span>
+                </div>
+              )}
               <div className="flex items-center justify-between text-xs text-[#1A1613]/65 dark:text-[#F5EFE6]/70">
                 <span>Shipping / Delivery:</span>
                 <span className="font-semibold text-[#1A1613] dark:text-[#F5EFE6]">
@@ -540,7 +559,7 @@ const OrderViewModal: React.FC<OrderViewModalProps> = ({
             ) : (
               items.map((item, idx) => {
                 const prod = item.Product;
-                const price = prod?.productPrice || 0;
+                const price = unitPriceOf(item);
                 const qty = item.quantity || 1;
                 const lineTotal = price * qty;
 

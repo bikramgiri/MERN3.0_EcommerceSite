@@ -16,6 +16,8 @@ import storeSettingsRoutes from './settings/storeSettingsRoutes';
 import newsletterRoutes from './customer/newsletter/newsletterRoutes';
 import storeProductRoutes from './customer/product/storeProductRoutes';
 import notificationRoutes from './common/notificationRoutes';
+import couponRoutes from './customer/coupon/couponRoutes';
+import adminCouponRoutes from './admin/coupon/adminCouponRoutes';
 
 const router: Router = express.Router()
 
@@ -26,11 +28,13 @@ router.use("/admin", adminOrderRoutes)
 router.use("/admin", productRoutes)
 router.use("/admin", adminReviewRoutes)
 router.use("/admin", dashboardRoutes)
+router.use("/admin", adminCouponRoutes)
 router.use("/common", profileRoutes)
 router.use("/customer", cartRoutes)
 router.use("/customer", customerOrderRoutes)
 router.use("/customer", reviewRoutes)
 router.use("/customer", wishlistRoutes)
+router.use("/customer", couponRoutes)
 router.use("/", storeSettingsRoutes)
 router.use("/", newsletterRoutes)
 router.use("/", storeProductRoutes)

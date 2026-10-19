@@ -1,3 +1,4 @@
+import { formatOrderNumber } from "../../services/storeSettingsService";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -98,7 +99,7 @@ const AdminDashboard: React.FC = () => {
     // 1. Order Created
     const handleOrderCreated = (data: any) => {
       const settings = getStoreSettings();
-      const orderRef = data?.orderId ? `${settings.orderPrefix || "#"}${String(data.orderId).slice(-6)}` : "New Order";
+      const orderRef = data?.orderId ? formatOrderNumber(String(data.orderId), settings.orderPrefix) : "New Order";
       const amount = data?.totalAmount ? ` (Rs. ${Number(data.totalAmount).toLocaleString()})` : "";
       const isHighValue = data?.isHighValue || Number(data?.totalAmount) >= 15000;
 
@@ -267,7 +268,7 @@ const AdminDashboard: React.FC = () => {
       addActivity({
         type: "payment-failed",
         title: `Payment Failed (${data?.gateway})`,
-        description: `Order #${String(data?.orderId || "").slice(-6)}: ${data?.reason || "Payment failure."}`,
+        description: `Order ${formatOrderNumber(String(data?.orderId || ""))}: ${data?.reason || "Payment failure."}`,
         link: "/admin-dashboard/orders",
         data,
       });
@@ -278,7 +279,7 @@ const AdminDashboard: React.FC = () => {
     // 7. Order Cancelled
     const handleOrderCancelled = (data: any) => {
       const settings = getStoreSettings();
-      const orderRef = data?.orderId ? `${settings.orderPrefix || "#"}${String(data.orderId).slice(-6)}` : "Order";
+      const orderRef = data?.orderId ? formatOrderNumber(String(data.orderId), settings.orderPrefix) : "Order";
       toast.error(`❌ ${orderRef} was cancelled by customer.`, {
         toastId: `order-cancel-${data?.orderId || Date.now()}`,
         autoClose: 6000,

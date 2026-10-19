@@ -2,6 +2,7 @@ import Notification from "../database/models/notificationModel";
 import Wishlist from "../database/models/wishlistModel";
 import { emitToAdmin, emitToUser } from "./socketService";
 import { getStoreSettings } from "./storeSettingsService";
+import { describeDiscount, findWelcomeCoupon } from "./couponService";
 
 interface NotifyInput {
   type: string;
@@ -54,10 +55,20 @@ export const notifyNewCustomer = async (
   email: string,
   method: "email" | "Google",
 ) => {
+  // Mention the new-customer offer, if the store has one switched on
+  let offer = "";
+  try {
+    const coupon = await findWelcomeCoupon();
+    if (coupon) {
+      offer = ` New here? Use ${coupon.code} for ${describeDiscount(coupon)}${coupon.firstOrderOnly ? " on your first order" : ""}.`;
+    }
+  } catch {
+    // the welcome message still goes out without the offer
+  }
   await notifyCustomer(userId, {
     type: "welcome",
     title: "Welcome to the store!",
-    message: "Your account is ready. Browse our products and add your favourites to the wishlist.",
+    message: `Your account is ready. Browse our products and add your favourites to the wishlist.${offer}`,
     link: "/products",
   });
   await notifyAdmins({

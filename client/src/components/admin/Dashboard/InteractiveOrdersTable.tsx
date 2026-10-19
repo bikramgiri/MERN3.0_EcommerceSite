@@ -1,3 +1,4 @@
+import { formatOrderNumber, orderNumberMatches } from "../../../services/storeSettingsService";
 import React, { useState, useMemo } from "react";
 import {
   Search,
@@ -88,7 +89,7 @@ const InteractiveOrdersTable: React.FC<InteractiveOrdersTableProps> = ({
         // Search term filter
         if (searchTerm.trim()) {
           const query = searchTerm.toLowerCase();
-          const matchId = order.id?.toLowerCase().includes(query);
+          const matchId = orderNumberMatches(order.id, query, orderPrefix);
           const matchUser = order.User?.username?.toLowerCase().includes(query);
           const matchEmail = order.User?.email?.toLowerCase().includes(query);
           const matchAmount = order.totalAmount?.toString().includes(query);
@@ -114,7 +115,7 @@ const InteractiveOrdersTable: React.FC<InteractiveOrdersTableProps> = ({
         }
         return 0;
       });
-  }, [recentOrders, statusFilter, paymentFilter, searchTerm, sortOrder]);
+  }, [recentOrders, statusFilter, paymentFilter, searchTerm, sortOrder, orderPrefix]);
 
   return (
     <>
@@ -304,7 +305,7 @@ const InteractiveOrdersTable: React.FC<InteractiveOrdersTableProps> = ({
                   <td className="py-3.5 px-4 sm:px-6">
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-xs font-bold text-[#1A1613] dark:text-[#F5EFE6]">
-                        {orderPrefix || "#"}{order.id.slice(0, 8)}
+                        {formatOrderNumber(order.id, orderPrefix)}
                       </span>
                       <button
                         onClick={(e) => handleCopy(order.id, e)}
@@ -405,7 +406,7 @@ const InteractiveOrdersTable: React.FC<InteractiveOrdersTableProps> = ({
                   </span>
                 </div>
                 <p className="font-mono text-xs text-[#1A1613]/60 dark:text-[#F5EFE6]/50 mt-0.5">
-                  ID: {orderPrefix || "#"}{selectedOrder.id}
+                  Order {formatOrderNumber(selectedOrder.id, orderPrefix)}
                 </p>
               </div>
 

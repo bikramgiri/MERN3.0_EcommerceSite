@@ -41,6 +41,7 @@ export interface OrderDetail {
     totalAmount: number;
     paymentDetails: PaymentDetails;
     products: OrderProducts[];
+    couponCode?: string | null;
 }
 
 export interface KhaltiResponse {

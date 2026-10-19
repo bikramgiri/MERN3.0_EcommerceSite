@@ -66,7 +66,7 @@ export function addToCart(productId: string, quantity: number = 1) {
         quantity,
       });
       if (response.status === 201 || response.status === 200) {
-        dispatch(fetchCartItems());
+        dispatch(fetchCartItems()).catch(() => {});
         dispatch(setStatus(Status.SUCCESS));
       }
     } catch (error) {
@@ -102,7 +102,7 @@ export function updateCartItems(data: CartItem) {
       );
       if (response.status === 200) {
         dispatch(updateItems(data));
-        dispatch(fetchCartItems());
+        dispatch(fetchCartItems()).catch(() => {});
         dispatch(setStatus(Status.SUCCESS));
       }
     } catch (error) {
@@ -119,12 +119,21 @@ export function removeFromCart(cartId: string) {
       const response = await APIAuthenticated.delete(`customer/cart/${cartId}`);
       if (response.status === 200) {
         dispatch(deleteItem(cartId));
-        dispatch(fetchCartItems());
+        dispatch(fetchCartItems()).catch(() => {});
         dispatch(setStatus(Status.SUCCESS));
       }
     } catch (error) {
       dispatch(setStatus(Status.ERROR));
       throw error;
     }
+  };
+}
+
+// Moves an item to the wishlist; the server keeps it there if it was already saved
+export function saveCartItemForLater(cartId: string) {
+  return async function saveCartItemForLaterThunk(dispatch: AppDispatch) {
+    await APIAuthenticated.post(`customer/cart/${cartId}/save-for-later`);
+    dispatch(deleteItem(cartId));
+    dispatch(fetchCartItems()).catch(() => {});
   };
 }
