@@ -27,7 +27,14 @@ window.addEventListener('unhandledrejection', (event) => {
   }
 });
 
-createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById('root')!, {
+  onUncaughtError(error, errorInfo) {
+    console.error("Uncaught error:", error, errorInfo?.componentStack);
+  },
+  onCaughtError(error, errorInfo) {
+    console.error("Caught error:", error, errorInfo?.componentStack);
+  },
+}).render(
   <StrictMode>
     <Provider store={store}>
     <App />

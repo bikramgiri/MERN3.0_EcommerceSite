@@ -3,7 +3,6 @@ import { Navigate } from "react-router-dom";
 import { useAppSelector } from "../hooks/hooks";
 import { UserRole } from "../types/customer/authTypes";
 import { isTokenExpired } from "../utils/token";
-import { handleSessionExpiry, clearAuthSession } from "../http";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -30,18 +29,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
   const effectiveToken = token || storedToken;
   const effectiveUser = user?.id ? user : storedUser;
 
-  // If token is missing or expired, clear session and send to login immediately
-  if (!effectiveToken || isTokenExpired(effectiveToken)) {
-    if (effectiveToken && isTokenExpired(effectiveToken)) {
-      handleSessionExpiry();
-    } else {
-      clearAuthSession();
-    }
-    return <Navigate to="/login" replace />;
-  }
-
-  if (!effectiveUser) {
-    clearAuthSession();
+  // If token is missing, expired, or user not found, safely redirect without side effects during render
+  if (!effectiveToken || !effectiveUser || isTokenExpired(effectiveToken)) {
     return <Navigate to="/login" replace />;
   }
 
