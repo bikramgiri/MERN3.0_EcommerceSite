@@ -13,6 +13,8 @@ export interface UserData {
   avatar?: string;
   createdAt?: string;
   updatedAt?: string;
+  // A new email waiting for the code sent to it (the account still uses `email` until then)
+  pendingEmail?: string | null;
 }
 
 export interface registerData {

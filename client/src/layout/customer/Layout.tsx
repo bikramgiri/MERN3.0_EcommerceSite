@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Outlet } from "react-router-dom";
 import Header from "../../components/customer/header/Header";
 import Footer from "../../components/customer/footer/Footer";
@@ -12,7 +13,10 @@ const Layout = () => {
       <MaintenanceBanner placeholder />
       <AnnouncementBar placeholder />
       <main className="flex-1">
-        <Outlet />
+        {/* Pages load on first visit; the header and footer stay put meanwhile */}
+        <Suspense fallback={<div className="min-h-[60vh]" aria-busy="true" />}>
+          <Outlet />
+        </Suspense>
       </main>
       <Footer />
     </div>

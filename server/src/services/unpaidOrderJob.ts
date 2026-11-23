@@ -39,6 +39,8 @@ export const cancelExpiredUnpaidOrders = async (): Promise<number> => {
           },
         },
       ],
+      // Oldest first, so orders that can't be settled yet never block newer ones forever
+      order: [["createdAt", "ASC"]],
       limit: 50,
     });
 

@@ -25,12 +25,13 @@ const cloudinaryUpload = async (
     const uploadStream = await cloudinary.uploader.upload_stream(
       {
         folder: "Mern3_Ecommerce_Images",
-        transformation: [{ width: 500, height: 500, crop: "limit" }],
+        // Large enough for sharp product photos on big and high-density screens
+        transformation: [{ width: 1600, height: 1600, crop: "limit" }],
       },
       (error: any, result: any) => {
         if (error) {
           console.log("Cloudinary Upload Error:", error);
-          return res.status(500).json({ message: "Cloudinary Image upload failed", error });
+          return res.status(502).json({ message: "The image couldn't be uploaded. Please try again." });
         }
 
         // Attach the Cloudinary Result to the request object for further processing
@@ -43,8 +44,7 @@ const cloudinaryUpload = async (
     streamifier.createReadStream((req as any).file.buffer).pipe(uploadStream);
   } catch (error) {
     console.error("Error in Cloudinary Upload Middleware:", error);
-    res.status(500).json({ message: "Internal Server Error", error });
-    next(error); // Pass the error to the next middleware for centralized error handling
+    if (!res.headersSent) res.status(500).json({ message: "The image couldn't be uploaded. Please try again." });
   }
 };
 

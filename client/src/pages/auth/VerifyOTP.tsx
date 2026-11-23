@@ -210,7 +210,7 @@ const VerifyOTP = () => {
     setIsResending(true);
     try {
       await dispatch(forgotPassword({ email }));
-      toast.success("A new OTP has been sent to your email.");
+      toast.success("If an account exists for this email, a new code is on its way.");
       dispatch(resetAuthStatus());
       setSecondsLeft(RESEND_SECONDS);
       setOtpDigits(Array(OTP_LENGTH).fill(""));

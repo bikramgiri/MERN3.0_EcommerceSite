@@ -18,6 +18,16 @@ router.route("/customer/newsletter/unsubscribe")
 router.route("/admin/newsletter")
 .get(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Admin), catchAsyncError(NewsletterController.fetchSubscribers));
 
+router.route("/admin/newsletter/export")
+.get(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Admin), catchAsyncError(NewsletterController.exportSubscribers));
+
+// Before "/:id" so "expired" isn't read as an id
+router.route("/admin/newsletter/expired")
+.delete(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Admin), catchAsyncError(NewsletterController.deleteExpiredPending));
+
+router.route("/admin/newsletter/:id/unsubscribe")
+.patch(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Admin), catchAsyncError(NewsletterController.adminUnsubscribe));
+
 router.route("/admin/newsletter/:id")
 .delete(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Admin), catchAsyncError(NewsletterController.deleteSubscriber));
 

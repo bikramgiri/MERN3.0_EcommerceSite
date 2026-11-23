@@ -5,12 +5,28 @@ export interface OrderData extends FetchOrder {
   User: UserData;
 }
 
-export interface SalesRecord {
-  id: string;
-  totalAmount: number;
-  orderStatus: string;
-  paymentStatus: string;
-  createdAt: string;
+/** Orders and money received on one day (store timezone), for the sales chart */
+export interface DailySales {
+  day: string; // YYYY-MM-DD
+  orders: number;
+  revenue: number;
+}
+
+/** Things the store team should act on */
+export interface DashboardAttention {
+  ordersToConfirm: number;
+  awaitingPayment: number;
+  lowStock: number;
+  outOfStock: number;
+  reviewsToModerate: number;
+  lowStockLimit: number;
+}
+
+export interface DashboardPeriod {
+  revenueThisMonth: number;
+  revenueLastMonth: number;
+  ordersThisMonth: number;
+  ordersLastMonth: number;
 }
 
 export interface TopSellingProduct {
@@ -69,6 +85,11 @@ export interface DatasState {
   recentReviews: Review[];
   topSellingProducts: TopSellingProduct[];
   orderDistribution?: OrderDistributionData;
-  salesAnalytics?: SalesRecord[];
+  verifiedCustomers: number;
+  newCustomers30d: number;
+  attention?: DashboardAttention;
+  period?: DashboardPeriod;
+  dailySales: DailySales[];
+  today?: string; // YYYY-MM-DD in the store's timezone
   status: string;
 }

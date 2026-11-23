@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import User from "../database/models/userModel";
 import { envConfig } from "../config/config";
+import { isTokenRevoked } from "../services/tokenRevocation";
 
 export interface AuthRequest extends Request {
   user?: {
@@ -84,6 +85,23 @@ class authMiddleware {
             if (!useData) {
               res.status(404).json({
                 message: "User not found",
+              });
+              return;
+            }
+
+            if (useData.isBlocked) {
+              res.status(403).json({
+                message: "This account has been blocked. Please contact the store if you think this is a mistake.",
+                code: "ACCOUNT_BLOCKED",
+              });
+              return;
+            }
+
+            if (isTokenRevoked(decoded.iat, useData.passwordChangedAt)) {
+              res.status(401).json({
+                message: "Your password was changed. Please log in again.",
+                errorType: "TokenRevoked",
+                isExpired: true,
               });
               return;
             }

@@ -184,58 +184,33 @@ export function loginUser(data: loginData) {
   };
 }
 
+// After Google sign-in the server redirects here with ?googleCode=…, a one-time code
+// that is swapped for the login token (works even when the shop and API are on different domains)
 export function handleGoogleLogin() {
   return async function (dispatch: AppDispatch) {
     const urlParams = new URLSearchParams(window.location.search);
-    const success = urlParams.get("loginSuccess");
+    const code = urlParams.get("googleCode");
+    if (!code) return;
 
-    if (success === "true") {
-      try {
-        // Read token & user directly from cookies
-        const tokenCookie = document.cookie
-          .split("; ")
-          .find((row) => row.startsWith("token="));
-        const userCookie = document.cookie
-          .split("; ")
-          .find((row) => row.startsWith("user="));
+    // Remove the code from the address bar straight away (it only works once)
+    urlParams.delete("googleCode");
+    const rest = urlParams.toString();
+    window.history.replaceState({}, document.title, window.location.pathname + (rest ? `?${rest}` : ""));
 
-        let tokenValue = null;
-        let userData = null;
-
-        if (tokenCookie) {
-          tokenValue = tokenCookie.split("=")[1];
-        }
-
-        if (userCookie) {
-          const userStr = userCookie.split("=")[1];
-          userData = JSON.parse(decodeURIComponent(userStr));
-        }
-
-        // Save to localStorage + Redux
-        if (tokenValue) {
-          localStorage.setItem("token", tokenValue);
-          dispatch(setToken(tokenValue));
-        }
-
-        if (userData) {
-          dispatch(setUser(userData));
-          localStorage.setItem("user", JSON.stringify(userData));
-        }
-        dispatch(fetchProfile());
-
-        dispatch(setStatus(Status.SUCCESS));
-
-        // Clean URL
-        window.history.replaceState(
-          {},
-          document.title,
-          window.location.pathname,
-        );
-      } catch (error) {
-        console.error("Google login processing failed:", error);
-        dispatch(setStatus(Status.ERROR));
-        throw error;
-      }
+    dispatch(setStatus(Status.LOADING));
+    try {
+      const response = await API.post("/auth/google/exchange", { code });
+      const { data: userData, token } = response.data;
+      localStorage.setItem("token", token);
+      dispatch(setToken(token));
+      dispatch(setUser(userData));
+      localStorage.setItem("user", JSON.stringify(userData));
+      dispatch(fetchProfile());
+      dispatch(setStatus(Status.SUCCESS));
+    } catch (error) {
+      console.error("Google login processing failed:", error);
+      dispatch(setStatus(Status.ERROR));
+      throw error;
     }
   };
 }
@@ -312,6 +287,8 @@ export function changePassword(data: changePasswordData) {
         "/auth/change-password",
         data,
       );
+      // Other devices are signed out; this one continues with the fresh token
+      if (typeof response.data?.token === "string") dispatch(setToken(response.data.token));
       dispatch(setStatus(Status.SUCCESS));
       return response;
     } catch (error) {
@@ -346,11 +323,30 @@ export function updateProfile(payload: UserData) {
         dispatch(setStatus(Status.SUCCESS));
         dispatch(fetchProfile());
       }
+      // pendingEmail is set when a code was sent to a new email address
+      return response.data as { message: string; pendingEmail: string | null };
     } catch (error) {
       console.log("Failed to edit profile:", error);
       dispatch(setStatus(Status.ERROR));
       throw error;
     }
+  };
+}
+
+// Finish an email change with the 6-digit code sent to the new address
+export function confirmEmailChange(code: string) {
+  return async function confirmEmailChangeThunk(dispatch: AppDispatch) {
+    const response = await APIAuthenticated.post("/common/profile/email/confirm", { code });
+    dispatch(editProfile(response.data.data));
+    return response.data as { message: string };
+  };
+}
+
+// Drop an email change that hasn't been confirmed yet
+export function cancelEmailChange() {
+  return async function cancelEmailChangeThunk(dispatch: AppDispatch) {
+    const response = await APIAuthenticated.delete("/common/profile/email");
+    dispatch(editProfile(response.data.data));
   };
 }
 

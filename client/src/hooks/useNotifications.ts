@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { playNotificationChime } from "../services/storeSettingsService";
 import { APIAuthenticated } from "../http";
 import { connectSocket } from "../services/socket";
 
@@ -53,6 +54,8 @@ const useNotifications = (options: { onNew?: (n: AppNotification) => void } = {}
         prev.some((n) => n.id === notification.id) ? prev : [notification, ...prev],
       );
       setUnreadCount((count) => count + 1);
+      // Admins with "Dashboard sound alerts" on hear a chime for orders, reviews and stock alerts
+      if ((notification as AppNotification & { playSound?: boolean }).playSound) playNotificationChime();
       onNewRef.current?.(notification);
     };
 

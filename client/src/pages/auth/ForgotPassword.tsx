@@ -71,7 +71,7 @@ const ForgotPassword = () => {
     setIsSending(true);
     try {
       await dispatch(forgotPassword({ email }));
-      toast.success("OTP sent to your email successfully!");
+      toast.success("If an account exists for this email, we've sent it a reset code.");
       dispatch(resetAuthStatus());
       setOtpSent(true);
       navigate("/verify-otp", { state: { email } });

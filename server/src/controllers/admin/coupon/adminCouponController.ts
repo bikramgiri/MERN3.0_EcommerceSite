@@ -163,15 +163,14 @@ const parseCouponInput = (
   };
 };
 
-// Redemptions per code (cancelled orders and failed online payments don't count)
+// Redemptions per code: every order that isn't cancelled, the same rule checkout uses
+// (an order whose online payment failed keeps its code, because the payment can be retried)
 const usageByCode = async (): Promise<Record<string, number>> => {
   const rows = await sequelize.query<{ couponCode: string; uses: string }>(
     `SELECT o."couponCode", COUNT(*) AS uses
        FROM "orders" o
-       JOIN "payments" p ON p.id = o."paymentId"
       WHERE o."couponCode" IS NOT NULL
         AND o."orderStatus" <> 'Cancelled'
-        AND p."paymentStatus" <> 'Failed'
       GROUP BY o."couponCode"`,
     { type: QueryTypes.SELECT },
   );

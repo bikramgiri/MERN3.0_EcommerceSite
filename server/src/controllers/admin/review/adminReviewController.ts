@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { Op, WhereOptions, fn, col } from "sequelize";
 import Review from "../../../database/models/reviewModel";
 import Product from "../../../database/models/productModel";
 import Category from "../../../database/models/categoryModel";
@@ -49,61 +50,129 @@ const notifyReviewVisibility = async (
   );
 };
 
+const REPLY_MAX = 1000;
+const isUuid = (id: unknown) =>
+  typeof id === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+/** Only well-formed ids reach the database (a malformed one makes Postgres throw a 500) */
+const validIds = (ids: unknown): string[] => (Array.isArray(ids) ? ids.filter(isUuid) : []);
+
+
+// ---- List filters (admin Reviews page) ----
+const REVIEW_SORTS: Record<string, [string, "ASC" | "DESC"][]> = {
+  newest: [["createdAt", "DESC"]],
+  oldest: [["createdAt", "ASC"]],
+  rating_desc: [["rating", "DESC"], ["createdAt", "DESC"]],
+  rating_asc: [["rating", "ASC"], ["createdAt", "DESC"]],
+};
+const escapeLike = (value: string) => value.replace(/[\\%_]/g, (c) => `\\${c}`);
+// Reviews saved before moderation existed have no status; they count as approved (visible)
+const VISIBLE: WhereOptions = { [Op.or]: [{ status: "APPROVED" }, { status: null }] };
+const TAB_WHERE: Record<string, WhereOptions> = {
+  ALL: {},
+  TO_CHECK: { status: { [Op.in]: ["PENDING", "FLAGGED"] } },
+  APPROVED: VISIBLE,
+  PENDING: { status: "PENDING" },
+  FLAGGED: { status: "FLAGGED" },
+};
+const reviewIncludes = [
+  {
+    model: Product,
+    attributes: ["id", "productName", "productImage", "productPrice"],
+    include: [{ model: Category, attributes: ["id", "categoryName"] }],
+  },
+  { model: User, attributes: ["id", "username", "avatar"] },
+];
+
+/** Search, rating and photo filters from the query (the tab is applied separately) */
+const reviewFilters = (query: Request["query"]): WhereOptions[] => {
+  const conditions: WhereOptions[] = [];
+  const search = typeof query.search === "string" ? query.search.trim().slice(0, 100) : "";
+  if (search) {
+    const pattern = `%${escapeLike(search)}%`;
+    conditions.push({
+      [Op.or]: [
+        { "$User.username$": { [Op.iLike]: pattern } },
+        { "$Product.productName$": { [Op.iLike]: pattern } },
+        { message: { [Op.iLike]: pattern } },
+        { adminReply: { [Op.iLike]: pattern } },
+      ],
+    });
+  }
+  const rating = String(query.rating || "").toUpperCase();
+  if (rating === "LOW") conditions.push({ rating: { [Op.lte]: 2 } });
+  else if (/^[1-5]$/.test(rating)) conditions.push({ rating: Number(rating) });
+  if (query.photo === "WITH") conditions.push({ reviewImage: { [Op.ne]: null } });
+  if (query.photo === "WITHOUT") conditions.push({ reviewImage: null });
+  return conditions;
+};
+
+const presentReview = (review: Review) => {
+  const plainReview = review.toJSON();
+  if (plainReview.reviewImage) plainReview.reviewImage = getFullImageUrl(plainReview.reviewImage);
+  if (plainReview.Product && plainReview.Product.productImage) {
+    plainReview.Product.productImage = getFullImageUrl(plainReview.Product.productImage);
+  }
+  if (plainReview.User && plainReview.User.avatar) plainReview.User.avatar = getFullImageUrl(plainReview.User.avatar);
+  return plainReview;
+};
+
 class AdminReviewController {
   // *Fetch all reviews
+  // One page of reviews, with tab counts (following the filters) and numbers for the cards (whole store)
+  // Query: tab (ALL|TO_CHECK|APPROVED|PENDING|FLAGGED), search, rating (1-5|LOW), photo (WITH|WITHOUT),
+  // sort (newest|oldest|rating_desc|rating_asc), page, limit
   public static async fetchAllReviews(
     req: Request,
     res: Response,
   ): Promise<void> {
-    const reviews = await Review.findAll({
-      order: [["createdAt", "DESC"]],
-      include: [
-        {
-          model: Product,
-          attributes: ["id", "productName", "productImage", "productPrice"],
-          include: [
-            {
-              model: Category,
-              attributes: ["id", "categoryName"],
-            },
-          ],
-        },
-        {
-          model: User,
-          attributes: ["id", "username", "avatar"],
-        },
-      ],
-    });
+    const tab = TAB_WHERE[String(req.query.tab || "").toUpperCase()] ? String(req.query.tab).toUpperCase() : "ALL";
+    const sort = REVIEW_SORTS[String(req.query.sort)] ?? REVIEW_SORTS.newest!;
+    const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit)) || 10));
+    let page = Math.max(1, parseInt(String(req.query.page)) || 1);
+    const filters = reviewFilters(req.query);
+    const whereFor = (tabKey: string): WhereOptions => ({ [Op.and]: [...filters, TAB_WHERE[tabKey]!] });
+    // Joined tables are only needed to search by customer or product name
+    const countIncludes = [
+      { model: Product, attributes: [] },
+      { model: User, attributes: [] },
+    ];
+    const countFor = (tabKey: string) =>
+      Review.count({ where: whereFor(tabKey), include: countIncludes, distinct: true, col: "id" });
 
-    if (!reviews || reviews.length === 0) {
-      res.status(200).json({
-        success: true,
-        message: "No reviews found",
-        totalReviews: 0,
-        data: [],
-      });
-      return;
-    }
+    const tabKeys = Object.keys(TAB_WHERE);
+    const [tabTotals, total, visible, toCheck, lowRated, average] = await Promise.all([
+      Promise.all(tabKeys.map(countFor)),
+      Review.count(),
+      Review.count({ where: VISIBLE }),
+      Review.count({ where: TAB_WHERE.TO_CHECK! }),
+      Review.count({ where: { rating: { [Op.lte]: 2 } } }),
+      Review.findOne({ where: VISIBLE, attributes: [[fn("AVG", col("rating")), "avg"]], raw: true }) as unknown as Promise<{ avg: string | null } | null>,
+    ]);
+    const counts = Object.fromEntries(tabKeys.map((key, i) => [key, tabTotals[i]]));
 
-    const reviewsWithFullImageUrl = reviews.map((review) => {
-      const plainReview = review.toJSON();
-      if (plainReview.reviewImage) {
-        plainReview.reviewImage = getFullImageUrl(plainReview.reviewImage);
-      }
-      if (plainReview.Product && plainReview.Product.productImage) {
-        plainReview.Product.productImage = getFullImageUrl(plainReview.Product.productImage);
-      }
-      if (plainReview.User && plainReview.User.avatar) {
-        plainReview.User.avatar = getFullImageUrl(plainReview.User.avatar);
-      }
-      return plainReview;
+    const matching = counts[tab] ?? 0;
+    const totalPages = Math.max(1, Math.ceil(matching / limit));
+    page = Math.min(page, totalPages);
+
+    const rows = await Review.findAll({
+      where: whereFor(tab),
+      include: reviewIncludes,
+      order: [...sort, ["id", "ASC"]],
+      limit,
+      offset: (page - 1) * limit,
+      subQuery: false,
     });
 
     res.status(200).json({
       success: true,
-      message: "All reviews fetched successfully",
-      totalReviews: reviewsWithFullImageUrl.length,
-      data: reviewsWithFullImageUrl,
+      message: "Reviews fetched successfully",
+      data: rows.map(presentReview),
+      total: matching,
+      totalPages,
+      currentPage: page,
+      counts,
+      // Average over visible reviews only: the same rating shoppers see in the store
+      stats: { total, visible, toCheck, lowRated, averageRating: average?.avg ? Number(average.avg) : 0 },
     });
   }
 
@@ -118,7 +187,7 @@ class AdminReviewController {
       return;
     }
 
-    const review = await Review.findByPk(reviewId as string);
+    const review = isUuid(reviewId) ? await Review.findByPk(reviewId as string) : null;
     if (!review) {
       res.status(404).json({
         success: false,
@@ -178,7 +247,7 @@ class AdminReviewController {
       return;
     }
 
-    const review = await Review.findByPk(reviewId as string, {
+    const review = !isUuid(reviewId) ? null : await Review.findByPk(reviewId as string, {
       include: [
         {
           model: Product,
@@ -243,7 +312,7 @@ class AdminReviewController {
     const reviewId = req.params.id;
     const { adminReply } = req.body;
 
-    const review = await Review.findByPk(reviewId as string, {
+    const review = !isUuid(reviewId) ? null : await Review.findByPk(reviewId as string, {
       include: [
         {
           model: Product,
@@ -267,6 +336,11 @@ class AdminReviewController {
         success: false,
         message: "Review not found",
       });
+      return;
+    }
+
+    if (typeof adminReply === "string" && adminReply.trim().length > REPLY_MAX) {
+      res.status(400).json({ success: false, message: `Replies can be up to ${REPLY_MAX} characters.` });
       return;
     }
 
@@ -318,10 +392,11 @@ class AdminReviewController {
     req: Request,
     res: Response,
   ): Promise<void> {
-    const { reviewIds, status } = req.body;
+    const { status } = req.body;
+    const reviewIds = validIds(req.body?.reviewIds);
 
     const validStatuses = ["APPROVED", "PENDING", "FLAGGED"];
-    if (!Array.isArray(reviewIds) || reviewIds.length === 0) {
+    if (reviewIds.length === 0) {
       res.status(400).json({
         success: false,
         message: "reviewIds must be a non-empty array of IDs",
@@ -343,7 +418,7 @@ class AdminReviewController {
       include: [{ model: Product, attributes: ["id", "productName"] }],
     });
 
-    await Review.update(
+    const [updatedCount] = await Review.update(
       { status },
       {
         where: {
@@ -364,7 +439,7 @@ class AdminReviewController {
 
     res.status(200).json({
       success: true,
-      message: `${reviewIds.length} review(s) successfully marked as ${status}`,
+      message: `${updatedCount} review${updatedCount === 1 ? "" : "s"} marked as ${status.toLowerCase()}`,
     });
   }
 
@@ -373,9 +448,9 @@ class AdminReviewController {
     req: Request,
     res: Response,
   ): Promise<void> {
-    const { reviewIds } = req.body;
+    const reviewIds = validIds(req.body?.reviewIds);
 
-    if (!Array.isArray(reviewIds) || reviewIds.length === 0) {
+    if (reviewIds.length === 0) {
       res.status(400).json({
         success: false,
         message: "reviewIds must be a non-empty array of IDs",
@@ -422,7 +497,7 @@ class AdminReviewController {
 
     res.status(200).json({
       success: true,
-      message: `${deletedCount} review(s) deleted successfully`,
+      message: `${deletedCount} review${deletedCount === 1 ? "" : "s"} deleted`,
     });
   }
 }

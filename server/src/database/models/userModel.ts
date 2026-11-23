@@ -36,11 +36,12 @@ class User extends Model {
   })
   declare email: string;
 
+  // Null for accounts created with Google sign-in (until a password is set via Forgot password)
   @Column({
     type: DataType.STRING,
-    allowNull: false,
+    allowNull: true,
   })
-  declare password: string;
+  declare password: string | null;
 
   @Column({
     type: DataType.STRING,
@@ -65,6 +66,28 @@ class User extends Model {
     defaultValue: false,
   })
   declare isVerified: boolean;
+
+  // Blocked customers can't sign in or use their account; their orders and reviews stay
+  @Column({ type: DataType.BOOLEAN, allowNull: false, defaultValue: false })
+  declare isBlocked: boolean;
+
+  @Column({ type: DataType.DATE, allowNull: true, defaultValue: null })
+  declare blockedAt: Date | null;
+
+  // Login tokens issued before this moment stop working (signs out every device after a password change)
+  @Column({ type: DataType.DATE, allowNull: true, defaultValue: null })
+  declare passwordChangedAt: Date | null;
+
+  // A new email waiting for its code to be entered; the account keeps the old email until then
+  @Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
+  declare pendingEmail: string | null;
+
+  // SHA-256 of the 6-digit code sent to pendingEmail, and when it was sent
+  @Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
+  declare pendingEmailCodeHash: string | null;
+
+  @Column({ type: DataType.DATE, allowNull: true, defaultValue: null })
+  declare pendingEmailCodeAt: Date | null;
 
   @AllowNull(true)
   @Column({

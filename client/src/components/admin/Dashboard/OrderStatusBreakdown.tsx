@@ -135,6 +135,10 @@ const OrderStatusBreakdown: React.FC<OrderStatusBreakdownProps> = ({
     },
   ];
 
+  // Show statuses in the order an order moves through them
+  const LIFECYCLE = ["Pending", "Preparation", "In Transit", "Delivered", "Cancelled"];
+  statusItems.sort((x, y) => LIFECYCLE.indexOf(x.label) - LIFECYCLE.indexOf(y.label));
+
   const paymentItems = [
     {
       label: "Khalti Wallet",

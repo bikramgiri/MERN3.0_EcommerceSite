@@ -1,33 +1,12 @@
+import { handleAccountBlocked } from "./http";
 import { loadSitePromotion } from "./services/couponService";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
-import { ToastContainer } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Home from "./pages/home/Home";
 import NotFound from "./global/NotFound.js.js";
-import Register from "./pages/auth/Register.js";
 import Login from "./pages/auth/Login.js";
-import VerifyEmail from "./pages/auth/VerifyEmail.js";
-import ForgotPassword from "./pages/auth/ForgotPassword.js";
-import VerifyOTP from "./pages/auth/VerifyOTP.js";
-import ResetPassword from "./pages/auth/ResetPassword.js";
-import ProductsWishlist from "./pages/customer/wishlist/ProductWishlist.js";
-import ProductDetails from "./pages/home/productDetails/ProductDetails.js";
-import Products from "./pages/home/products/Products.js";
-import Cart from "./pages/home/cart/Cart.js";
-import CheckOut from "./pages/home/checkout/CheckOut.js";
-import KhaltiPaymentCallback from "./pages/home/checkout/KhaltiPaymentCallback.js";
-import EsewaPaymentCallback from "./pages/home/checkout/EsewaPaymentCallback.js";
-import EsewaPaymentFailure from "./pages/home/checkout/EsewaPaymentFailure.js";
-import MyOrders from "./pages/customer/orders/MyOrders.js";
-import MyOrdersDetails from "./pages/customer/orders/MyOrdersDetails.js";
-import EditMyOrders from "./pages/customer/orders/EditMyOrders.js";
-import Profile from "./pages/customer/profile/Profile.js";
-import Setting from "./pages/customer/setting/Setting.js";
 import Layout from "./layout/customer/Layout.js";
-import About from "./pages/home/about/About.js";
-import FAQ from "./pages/home/faq/FAQ";
-import PrivacyPolicy from "./pages/home/legal/PrivacyPolicy";
-import Terms from "./pages/home/legal/Terms";
 import ScrollToTop from "./global/ScrollToTop";
 import {
   NewsletterConfirm,
@@ -51,6 +30,30 @@ import {
 } from "./services/storeSettingsService";
 
 // Admin pages are loaded on demand so shoppers don't download the dashboard code
+// Shop pages load when first visited, so the home page opens fast (Home and Login stay in the main bundle)
+const Register = lazy(() => import("./pages/auth/Register.js"));
+const VerifyEmail = lazy(() => import("./pages/auth/VerifyEmail.js"));
+const ForgotPassword = lazy(() => import("./pages/auth/ForgotPassword.js"));
+const VerifyOTP = lazy(() => import("./pages/auth/VerifyOTP.js"));
+const ResetPassword = lazy(() => import("./pages/auth/ResetPassword.js"));
+const ProductsWishlist = lazy(() => import("./pages/customer/wishlist/ProductWishlist.js"));
+const ProductDetails = lazy(() => import("./pages/home/productDetails/ProductDetails.js"));
+const Products = lazy(() => import("./pages/home/products/Products.js"));
+const Cart = lazy(() => import("./pages/home/cart/Cart.js"));
+const CheckOut = lazy(() => import("./pages/home/checkout/CheckOut.js"));
+const KhaltiPaymentCallback = lazy(() => import("./pages/home/checkout/KhaltiPaymentCallback.js"));
+const EsewaPaymentCallback = lazy(() => import("./pages/home/checkout/EsewaPaymentCallback.js"));
+const EsewaPaymentFailure = lazy(() => import("./pages/home/checkout/EsewaPaymentFailure.js"));
+const MyOrders = lazy(() => import("./pages/customer/orders/MyOrders.js"));
+const MyOrdersDetails = lazy(() => import("./pages/customer/orders/MyOrdersDetails.js"));
+const EditMyOrders = lazy(() => import("./pages/customer/orders/EditMyOrders.js"));
+const Profile = lazy(() => import("./pages/customer/profile/Profile.js"));
+const Setting = lazy(() => import("./pages/customer/setting/Setting.js"));
+const About = lazy(() => import("./pages/home/about/About.js"));
+const FAQ = lazy(() => import("./pages/home/faq/FAQ"));
+const PrivacyPolicy = lazy(() => import("./pages/home/legal/PrivacyPolicy"));
+const Terms = lazy(() => import("./pages/home/legal/Terms"));
+
 const AdminLayout = lazy(() => import("./layout/admin/AdminLayout.js"));
 const AdminDashboard = lazy(() => import("./pages/admin/adminDashboard.js"));
 const UserManagement = lazy(() => import("./pages/admin/UserManagement.js"));
@@ -92,7 +95,9 @@ function App() {
   const dispatch = useAppDispatch();
 
   useEffect(() => {
-    dispatch(handleGoogleLogin());
+    Promise.resolve(dispatch(handleGoogleLogin())).catch(() =>
+      toast.error("Google sign-in didn't finish. Please try again."),
+    );
 
     // Store settings (shipping, payments, maintenance) come from the server
     loadStoreSettings().catch(() => {});
@@ -103,6 +108,8 @@ function App() {
     const socket = connectSocket();
     socket.on("store:settings-updated", applyStoreSettings);
     socket.on("store:promotions-updated", loadSitePromotion);
+    // The store blocked this account while it was open
+    socket.on("auth:blocked", handleAccountBlocked);
 
     const checkTokenStatus = () => {
       const token = localStorage.getItem("token");
@@ -148,6 +155,7 @@ function App() {
       window.removeEventListener("auth:session-expired", handleSessionExpiredEvent);
       socket.off("store:settings-updated", applyStoreSettings);
       socket.off("store:promotions-updated", loadSitePromotion);
+      socket.off("auth:blocked", handleAccountBlocked);
     };
   }, [dispatch]);
   return (
@@ -155,7 +163,7 @@ function App() {
     <BrowserRouter>
       <ScrollToTop />
       <ThemedToastContainer />
-      <Suspense fallback={null}>
+      <Suspense fallback={<div className="min-h-screen bg-[#FDF8ED]" />}>
       <Routes>
         {/* Signed-in users skip the login and sign-up forms */}
         <Route path="/register" element={<GuestOnlyRoute><Register /></GuestOnlyRoute>} />

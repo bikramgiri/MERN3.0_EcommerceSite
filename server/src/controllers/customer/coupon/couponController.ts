@@ -2,6 +2,7 @@ import { Response } from "express";
 import { AuthRequest } from "../../../middleware/authMiddleware";
 import Cart from "../../../database/models/cartModel";
 import Product from "../../../database/models/productModel";
+import { sellingPrice } from "../../../services/productPresenter";
 import Order from "../../../database/models/orderModel";
 import Coupon from "../../../database/models/couponModel";
 import {
@@ -26,10 +27,10 @@ class CouponController {
     // The subtotal comes from the saved cart, never from the request
     const cartItems = await Cart.findAll({
       where: { userId },
-      include: [{ model: Product, attributes: ["productPrice"] }],
+      include: [{ model: Product, attributes: ["productPrice", "productDiscount"] }],
     });
     const subtotal = cartItems.reduce(
-      (sum, item) => sum + (item.product ? Number(item.product.productPrice) * item.quantity : 0),
+      (sum, item) => sum + (item.product ? sellingPrice(item.product) * item.quantity : 0),
       0,
     );
     if (subtotal <= 0) {

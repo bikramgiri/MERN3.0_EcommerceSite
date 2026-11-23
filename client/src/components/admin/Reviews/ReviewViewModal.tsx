@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   X,
   Star,
@@ -41,17 +41,11 @@ const ReviewViewModal: React.FC<ReviewViewModalProps> = ({
   formatDate,
 }) => {
   const dispatch = useAppDispatch();
+  // The page mounts a fresh modal per review, so live list updates never wipe a reply being typed
   const [imageError, setImageError] = useState(false);
-  const [replyText, setReplyText] = useState("");
+  const [replyText, setReplyText] = useState(review?.adminReply || "");
   const [isSavingReply, setIsSavingReply] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-
-  useEffect(() => {
-    setImageError(false);
-    if (review) {
-      setReplyText(review.adminReply || "");
-    }
-  }, [review]);
 
   if (!review) return null;
 
@@ -110,7 +104,7 @@ const ReviewViewModal: React.FC<ReviewViewModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-9999 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150">
       <div className="w-full max-w-xl rounded-2xl border border-[#1A1613]/15 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] p-5 sm:p-6 shadow-xl space-y-4 max-h-[92vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-[#1A1613]/10 dark:border-white/10">

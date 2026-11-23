@@ -9,10 +9,11 @@ const router:Router = express.Router()
 
 router.route("/product")
 .post(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Admin),  upload.single('productImage'), cloudinaryUpload, catchAsyncError(ProductController.addProduct))
-.get(catchAsyncError(ProductController.fetchAllProducts))
+// Every product with its reviews: for the admin panel only (the shop uses the paged GET /api/products)
+.get(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Admin), catchAsyncError(ProductController.fetchAllProducts))
 
 router.route("/product/category/:categoryId")
-.get(catchAsyncError(ProductController.fetchProductsByCategory))
+.get(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Admin), catchAsyncError(ProductController.fetchProductsByCategory))
 
 router.route("/product/user/:userId")
 .get(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Admin), catchAsyncError(ProductController.fetchProductsByUser))

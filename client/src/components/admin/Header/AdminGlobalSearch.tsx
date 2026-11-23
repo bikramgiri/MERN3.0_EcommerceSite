@@ -26,7 +26,6 @@ import {
 import { useAppDispatch, useAppSelector } from "../../../hooks/hooks";
 import { fetchAdminProducts } from "../../../store/admin/productSlice";
 import { fetchAdminCategories } from "../../../store/admin/categorySlice";
-import { fetchAdminOrders } from "../../../store/admin/orderSlice";
 import { fetchDatas } from "../../../store/admin/datasSlice";
 import { useStoreSettings } from "../../../services/storeSettingsService";
 import { APIAuthenticated } from "../../../http";
@@ -63,8 +62,18 @@ export const AdminGlobalSearch: React.FC = () => {
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<SearchCategory>("all");
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem(RECENT_SEARCHES_KEY);
+      return stored ? (JSON.parse(stored) as string[]).slice(0, 4) : [];
+    } catch {
+      return [];
+    }
+  });
+  // Customers matching what's typed, found by the server (not just the first page of accounts)
   const [apiUsers, setApiUsers] = useState<any[]>([]);
+  // Orders matching what's typed, found by the server (the Orders page only keeps one page in memory)
+  const [matchedOrders, setMatchedOrders] = useState<any[]>([]);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -73,22 +82,9 @@ export const AdminGlobalSearch: React.FC = () => {
   // Redux state
   const { products } = useAppSelector((state) => state.adminProduct);
   const { categories } = useAppSelector((state) => state.adminCategory);
-  const { orders } = useAppSelector((state) => state.adminOrder);
   const { recentUsers, recentOrders, orderDistribution } = useAppSelector(
     (state) => state.datas
   );
-
-  // Load recent searches from localStorage
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(RECENT_SEARCHES_KEY);
-      if (stored) {
-        setRecentSearches(JSON.parse(stored).slice(0, 4));
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
 
   // Global Keyboard Shortcut: Ctrl+K / Cmd+K and Esc
   useEffect(() => {
@@ -129,25 +125,22 @@ export const AdminGlobalSearch: React.FC = () => {
       // Preload data if not already present
       if (!products || products.length === 0) dispatch(fetchAdminProducts());
       if (!categories || categories.length === 0) dispatch(fetchAdminCategories());
-      if (!orders || orders.length === 0) dispatch(fetchAdminOrders());
       if (!recentUsers || recentUsers.length === 0) dispatch(fetchDatas());
+    }
+    // Only re-run when the search opens; the lists are checked at that moment
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, dispatch]);
 
-      // Fetch customer accounts from API
-      APIAuthenticated.get("/admin/customer?limit=50")
-        .then((res) => {
-          if (res.status === 200 && res.data?.data) {
-            setApiUsers(res.data.data);
-          }
-        })
-        .catch(() => {
-          // fallback to recentUsers from datas
-        });
-    } else {
+  // Closing the search clears it for next time
+  const [wasOpen, setWasOpen] = useState(isOpen);
+  if (wasOpen !== isOpen) {
+    setWasOpen(isOpen);
+    if (!isOpen) {
       setQuery("");
       setSelectedIndex(0);
       setActiveCategory("all");
     }
-  }, [isOpen, dispatch]);
+  }
 
   // Save to recent searches
   const recordRecentSearch = (text: string) => {
@@ -184,23 +177,46 @@ export const AdminGlobalSearch: React.FC = () => {
     (recentUsers || []).forEach((u: any) => {
       if (u?.id) map.set(u.id, u);
     });
-    (apiUsers || []).forEach((u: any) => {
+    (query.trim().length >= 2 ? apiUsers : []).forEach((u: any) => {
       if (u?.id) map.set(u.id, u);
     });
     return Array.from(map.values());
-  }, [recentUsers, apiUsers]);
+  }, [recentUsers, apiUsers, query]);
 
-  // Combine orders from adminOrder and datasSlice
+  // Ask the server for orders matching the search (after a short pause in typing)
+  useEffect(() => {
+    const q = query.trim();
+    if (!isOpen || q.length < 2) return;
+    let current = true;
+    const timer = setTimeout(() => {
+      APIAuthenticated.get(`/admin/order?search=${encodeURIComponent(q)}&limit=8`)
+        .then((res) => {
+          if (current) setMatchedOrders(res.data?.data || []);
+        })
+        .catch(() => {});
+      APIAuthenticated.get(`/admin/customer?search=${encodeURIComponent(q)}&limit=8`)
+        .then((res) => {
+          if (current) setApiUsers(res.data?.data || []);
+        })
+        .catch(() => {});
+    }, 250);
+    return () => {
+      current = false;
+      clearTimeout(timer);
+    };
+  }, [query, isOpen]);
+
+  // Recent orders from the dashboard plus the server's matches for the current search
   const allOrders = useMemo(() => {
     const map = new Map<string, any>();
     (recentOrders || []).forEach((o: any) => {
       if (o?.id) map.set(o.id, o);
     });
-    (orders || []).forEach((o: any) => {
+    (query.trim().length >= 2 ? matchedOrders : []).forEach((o: any) => {
       if (o?.id) map.set(o.id, o);
     });
     return Array.from(map.values());
-  }, [recentOrders, orders]);
+  }, [recentOrders, matchedOrders, query]);
 
   // Operational real-time stats for Recommended Admin Searches
   const pendingOrdersCount = useMemo(() => {
@@ -691,9 +707,11 @@ export const AdminGlobalSearch: React.FC = () => {
   }, [searchResults]);
 
   // Reset selected index when results change
-  useEffect(() => {
+  const [resultsShown, setResultsShown] = useState(filteredResults);
+  if (resultsShown !== filteredResults) {
+    setResultsShown(filteredResults);
     setSelectedIndex(0);
-  }, [filteredResults]);
+  }
 
   // Scroll active item into view
   useEffect(() => {

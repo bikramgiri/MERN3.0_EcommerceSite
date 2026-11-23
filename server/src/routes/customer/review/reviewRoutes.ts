@@ -1,3 +1,4 @@
+import { reviewRateLimiter } from "../../../middleware/rateLimiter";
 import { Router } from "express";
 import express from 'express';
 import authMiddleware, { Role } from "../../../middleware/authMiddleware";
@@ -9,7 +10,7 @@ import { cloudinaryUpload } from "../../../cloudinary";
 const router:Router = express.Router();
 
 router.route("/review/product/:productId")
-.post(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Customer), upload.single("reviewImage"), cloudinaryUpload, catchAsyncError(ReviewController.addReview))
+.post(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Customer), reviewRateLimiter, upload.single("reviewImage"), cloudinaryUpload, catchAsyncError(ReviewController.addReview))
 .get(catchAsyncError(ReviewController.getProductReviews))
 
 router.route("/review/product/:productId/mine")

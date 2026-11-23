@@ -71,3 +71,15 @@ export const couponRateLimiter = rateLimit({
     field: "couponCode",
   },
 });
+
+// For posting reviews (stops review spam and repeated photo uploads)
+export const reviewRateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    message: "You've posted a lot of reviews in a short time. Please try again later.",
+    field: "general",
+  },
+});

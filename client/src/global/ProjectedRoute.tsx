@@ -10,19 +10,25 @@ interface ProtectedRouteProps {
   allowedRoles: UserRole[];
 }
 
+/** The saved user; a damaged saved value counts as logged out instead of crashing the page */
+const readStoredUser = (): { id?: string; role?: string } | null => {
+  try {
+    return typeof window !== "undefined" ? JSON.parse(localStorage.getItem("user") || "null") : null;
+  } catch {
+    return null;
+  }
+};
+
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
   const { user, token } = useAppSelector((state) => state.auth);
 
   // Persistent login state
   const storedToken =
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
-  const storedUser =
-    typeof window !== "undefined"
-      ? JSON.parse(localStorage.getItem("user") || "null")
-      : null;
+  const storedUser = readStoredUser();
 
   const effectiveToken = token || storedToken;
-  const effectiveUser = user && (user as any).id ? user : storedUser;
+  const effectiveUser = user?.id ? user : storedUser;
 
   // If token is missing or expired, clear session and send to login immediately
   if (!effectiveToken || isTokenExpired(effectiveToken)) {

@@ -7,6 +7,8 @@ import {
   updateAvatar,
   deleteAvatar,
   changePassword,
+  confirmEmailChange,
+  cancelEmailChange,
 } from "../../store/auth/authSlice";
 import { toast } from "react-toastify";
 import axios from "axios";
@@ -94,9 +96,17 @@ const Profile: React.FC = () => {
 
   // Personal Details State
   const [formData, setFormData] = useState({
-    username: "",
-    email: "",
+    username: user?.username || "",
+    email: user?.email || "",
   });
+  // Refill the form only when the saved name or email really changes (not on every profile reload)
+  const savedDetails = `${user?.username ?? ""}
+${user?.email ?? ""}`;
+  const [filledFrom, setFilledFrom] = useState(savedDetails);
+  if (user && savedDetails !== filledFrom) {
+    setFilledFrom(savedDetails);
+    setFormData({ username: user.username || "", email: user.email || "" });
+  }
   const [detailsErrors, setDetailsErrors] = useState<{ [key: string]: string }>({});
 
   // Change Password State
@@ -112,29 +122,10 @@ const Profile: React.FC = () => {
 
   // Fetch Profile on Mount
   useEffect(() => {
-    loadProfile();
-  }, []);
-
-  // Sync Form Data when User Updates
-  useEffect(() => {
-    if (user) {
-      setFormData({
-        username: user.username || "",
-        email: user.email || "",
-      });
-    }
-  }, [user]);
-
-  const loadProfile = async () => {
-    if (!user?.id) setIsInitialLoading(true);
-    try {
-      await dispatch(fetchProfile());
-    } catch (err) {
-      console.error("Failed to load profile:", err);
-    } finally {
-      setIsInitialLoading(false);
-    }
-  };
+    Promise.resolve(dispatch(fetchProfile()))
+      .catch((err) => console.error("Failed to load profile:", err))
+      .finally(() => setIsInitialLoading(false));
+  }, [dispatch]);
 
   // --- Avatar Handlers ---
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -179,7 +170,7 @@ const Profile: React.FC = () => {
       await dispatch(deleteAvatar());
       toast.success("Profile photo removed");
       setShowDeleteAvatarModal(false);
-    } catch (error) {
+    } catch {
       toast.error("Failed to remove photo");
     } finally {
       setIsDeletingAvatar(false);
@@ -226,8 +217,15 @@ const Profile: React.FC = () => {
 
     setIsUpdatingProfile(true);
     try {
-      await dispatch(updateProfile(formData as UserData));
-      toast.success("Profile updated");
+      const result = await dispatch(updateProfile(formData as UserData));
+      if (result?.pendingEmail) {
+        // The account keeps the current email until the code is entered below
+        setFormData((prev) => ({ ...prev, email: user?.email || prev.email }));
+        setEmailCode("");
+        toast.info(result.message);
+      } else {
+        toast.success("Profile updated");
+      }
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const errData = error.response?.data as ApiErrorPayload;
@@ -240,6 +238,43 @@ const Profile: React.FC = () => {
       }
     } finally {
       setIsUpdatingProfile(false);
+    }
+  };
+
+  // --- Email change confirmation ---
+  const [emailCode, setEmailCode] = useState("");
+  const [emailCodeError, setEmailCodeError] = useState("");
+  const [isConfirmingEmail, setIsConfirmingEmail] = useState(false);
+
+  const handleConfirmEmail = async () => {
+    if (!/^\d{6}$/.test(emailCode.trim())) {
+      setEmailCodeError("Enter the 6-digit code from the email");
+      return;
+    }
+    setIsConfirmingEmail(true);
+    try {
+      const result = await dispatch(confirmEmailChange(emailCode.trim()));
+      setEmailCode("");
+      setEmailCodeError("");
+      toast.success(result.message);
+    } catch (error) {
+      const message = axios.isAxiosError(error)
+        ? (error.response?.data as ApiErrorPayload)?.message || "Couldn't confirm the code"
+        : "Couldn't confirm the code";
+      setEmailCodeError(message);
+      dispatch(fetchProfile()); // a cancelled request (too many tries) clears the waiting email
+    } finally {
+      setIsConfirmingEmail(false);
+    }
+  };
+
+  const handleCancelEmailChange = async () => {
+    try {
+      await dispatch(cancelEmailChange());
+      setEmailCode("");
+      setEmailCodeError("");
+    } catch {
+      toast.error("Couldn't cancel the email change");
     }
   };
 
@@ -276,7 +311,7 @@ const Profile: React.FC = () => {
     setIsChangingPassword(true);
     try {
       await dispatch(changePassword(passwordForm));
-      toast.success("Password changed successfully");
+      toast.success("Password changed. You've been signed out on your other devices.");
       setPasswordForm({
         currentPassword: "",
         newPassword: "",
@@ -480,6 +515,53 @@ const Profile: React.FC = () => {
                 )}
               </div>
             </div>
+
+            {/* New email waiting for its code */}
+            {user?.pendingEmail && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3.5 dark:border-amber-500/30 dark:bg-amber-500/10">
+                <p className="text-sm text-amber-900 dark:text-amber-200">
+                  Enter the 6-digit code we sent to <strong className="break-all">{user.pendingEmail}</strong> to finish changing your email.
+                  Until then you keep signing in with {user.email}.
+                </p>
+                <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                  <input
+                    value={emailCode}
+                    onChange={(e) => {
+                      setEmailCode(e.target.value.replace(/\D/g, "").slice(0, 6));
+                      setEmailCodeError("");
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleConfirmEmail();
+                      }
+                    }}
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    placeholder="123456"
+                    aria-label="Code from the email"
+                    className="w-32 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm tracking-widest text-gray-900 focus:border-[#E6540B] focus:outline-none focus:ring-1 focus:ring-[#E6540B] dark:border-white/15 dark:bg-[#14110F] dark:text-[#F5EFE6]"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleConfirmEmail}
+                    disabled={isConfirmingEmail}
+                    className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[#E6540B] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#d44c0a] disabled:opacity-50"
+                  >
+                    {isConfirmingEmail && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                    Confirm
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCancelEmailChange}
+                    className="cursor-pointer text-xs font-medium text-gray-600 hover:text-[#E6540B] hover:underline dark:text-[#F5EFE6]/60"
+                  >
+                    Keep my current email
+                  </button>
+                </div>
+                {emailCodeError && <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{emailCodeError}</p>}
+              </div>
+            )}
 
             {/* Readonly info */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-4 border-t border-gray-100 dark:border-white/10">

@@ -74,6 +74,12 @@ export const {
 export default adminProductSlice.reducer;
 
 // Thunks
+/** Status and message from a failed request */
+const apiError = (error: unknown) => {
+  const response = (error as { response?: { status?: number; data?: { message?: string } } })?.response;
+  return { status: response?.status, message: response?.data?.message };
+};
+
 export function fetchAdminProducts() {
   return async function fetchAdminProductsThunk(dispatch: AppDispatch) {
     dispatch(setStatus(Status.LOADING));
@@ -87,15 +93,15 @@ export function fetchAdminProducts() {
         dispatch(setProducts([]));
         dispatch(setStatus(Status.SUCCESS));
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Fetch products error:", error);
       // 404 from backend means no products created yet, not a fatal failure
-      if (error.response?.status === 404) {
+      if (apiError(error).status === 404) {
         dispatch(setProducts([]));
         dispatch(setStatus(Status.SUCCESS));
       } else {
         const errorMsg =
-          error.response?.data?.message || "Failed to fetch products.";
+          apiError(error).message || "Failed to fetch products.";
         dispatch(setError(errorMsg));
         dispatch(setStatus(Status.ERROR));
         toast.error(errorMsg);
@@ -122,10 +128,10 @@ export function addAdminProduct(formData: FormData) {
       }
       dispatch(setActionLoading(false));
       return { success: false };
-    } catch (error: any) {
+    } catch (error) {
       console.error("Add product error:", error);
       const errorMsg =
-        error.response?.data?.message || "Failed to create product.";
+        apiError(error).message || "Failed to create product.";
       toast.error(errorMsg);
       dispatch(setActionLoading(false));
       return { success: false, error: errorMsg };
@@ -155,10 +161,10 @@ export function updateAdminProduct(id: string, formData: FormData) {
       }
       dispatch(setActionLoading(false));
       return { success: false };
-    } catch (error: any) {
+    } catch (error) {
       console.error("Update product error:", error);
       const errorMsg =
-        error.response?.data?.message || "Failed to update product.";
+        apiError(error).message || "Failed to update product.";
       toast.error(errorMsg);
       dispatch(setActionLoading(false));
       return { success: false, error: errorMsg };
@@ -179,10 +185,10 @@ export function deleteAdminProduct(id: string) {
       }
       dispatch(setActionLoading(false));
       return { success: false };
-    } catch (error: any) {
+    } catch (error) {
       console.error("Delete product error:", error);
       const errorMsg =
-        error.response?.data?.message || "Failed to delete product.";
+        apiError(error).message || "Failed to delete product.";
       toast.error(errorMsg);
       dispatch(setActionLoading(false));
       return { success: false, error: errorMsg };
@@ -203,10 +209,10 @@ export function updateAdminProductStock(id: string, productStock: number) {
         return { success: true, data: response.data.data };
       }
       return { success: false };
-    } catch (error: any) {
+    } catch (error) {
       console.error("Update stock error:", error);
       const errorMsg =
-        error.response?.data?.message || "Failed to update stock.";
+        apiError(error).message || "Failed to update stock.";
       toast.error(errorMsg);
       return { success: false, error: errorMsg };
     }
@@ -230,15 +236,15 @@ export function fetchAdminProductOrders(productId: string) {
         };
       }
       return { success: true, orders: [], totalOrders: 0 };
-    } catch (error: any) {
+    } catch (error) {
       console.error("Fetch product orders error:", error);
       // 404 means no orders exist yet for this product
-      if (error.response?.status === 404) {
+      if (apiError(error).status === 404) {
         return { success: true, orders: [], totalOrders: 0 };
       }
       return {
         success: false,
-        error: error.response?.data?.message || "Failed to fetch product orders",
+        error: apiError(error).message || "Failed to fetch product orders",
         orders: [],
         totalOrders: 0,
       };

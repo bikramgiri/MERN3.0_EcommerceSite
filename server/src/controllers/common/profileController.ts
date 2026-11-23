@@ -4,6 +4,30 @@ import User from "../../database/models/userModel";
 import getFullImageUrl from "../../services/imageHandler";
 import { cloudinary } from "../../cloudinary";
 import { getPublicIdFromAvatar } from "../../services/cloudinaryHelper";
+import crypto from "crypto";
+import generateOtp from "../../services/generateOtp";
+import { sendMail } from "../../services/sendMail";
+import { getStoreSettings } from "../../services/storeSettingsService";
+
+const EMAIL_CODE_MINUTES = 15;
+const EMAIL_CODE_RESEND_SECONDS = 60;
+const MAX_EMAIL_CODE_ATTEMPTS = 5;
+const emailCodeAttempts = new Map<string, number>(); // userId -> wrong codes for the current request
+const hashCode = (code: string) => crypto.createHash("sha256").update(code).digest("hex");
+const PROFILE_FIELDS = ["id", "username", "email", "avatar", "role", "createdAt", "pendingEmail"];
+
+const presentProfile = (user: User) => {
+  const plain = user.toJSON();
+  return {
+    id: plain.id,
+    username: plain.username,
+    email: plain.email,
+    role: plain.role,
+    createdAt: plain.createdAt,
+    pendingEmail: plain.pendingEmail ?? null,
+    avatar: plain.avatar ? getFullImageUrl(plain.avatar) : null,
+  };
+};
 
 class ProfileController {
   // fetch My Profile
@@ -17,23 +41,15 @@ class ProfileController {
       return;
     }
 
-    const profile = await User.findByPk(userId, {
-      attributes: ["id", "username", "email", "avatar", "role", "createdAt"],
-    });
+    const profile = await User.findByPk(userId, { attributes: PROFILE_FIELDS });
     if (!profile) {
       res.status(404).json({ message: "Profile not found", field: "userId" });
       return;
     }
 
-    const plainProfile = profile.toJSON();
-    const profileWithAvatar = {
-      ...plainProfile,
-      avatar: plainProfile.avatar ? getFullImageUrl(plainProfile.avatar) : null,
-    };
-
     res.status(200).json({
       message: "Profile fetched successfully",
-      data: profileWithAvatar,
+      data: presentProfile(profile),
     });
   }
 
@@ -48,17 +64,22 @@ class ProfileController {
       return;
     }
 
-    const user = await User.findByPk(userId, {
-      attributes: ["id", "username", "email", "avatar", "role", "createdAt"],
-    });
+    const user = await User.findByPk(userId);
     if (!user) {
       res.status(404).json({ message: "Profile not found", field: "userId" });
       return;
     }
 
-    const { username, email } = req.body;
+    const username = typeof req.body?.username === "string" ? req.body.username.trim() : undefined;
+    // Saved lowercase, the same way login looks it up (a mixed-case address would lock the user out)
+    const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : undefined;
 
-    if (username && (username.length < 3 || username.length > 20)) {
+    if (email !== undefined && (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) {
+      res.status(400).json({ message: "Please enter a valid email address", field: "email" });
+      return;
+    }
+
+    if (username !== undefined && (username.length < 3 || username.length > 20)) {
       res.status(400).json({
         message: "Username must be between 3 and 20 characters",
         field: "username",
@@ -66,7 +87,8 @@ class ProfileController {
       return;
     }
 
-    if (email) {
+    const emailChanging = email !== undefined && email !== user.email;
+    if (emailChanging) {
       const existingUser = await User.findOne({ where: { email } });
       if (existingUser && existingUser.id !== userId) {
         res
@@ -74,19 +96,125 @@ class ProfileController {
           .json({ message: "Email already in use", field: "email" });
         return;
       }
+      if (
+        user.pendingEmail === email &&
+        user.pendingEmailCodeAt &&
+        Date.now() - user.pendingEmailCodeAt.getTime() < EMAIL_CODE_RESEND_SECONDS * 1000
+      ) {
+        res.status(429).json({ message: "We just sent a code to this address. Please wait a minute before asking for another.", field: "email" });
+        return;
+      }
     }
 
-    const updateProfile = await user.update({ username, email });
-    const plainUpdated = updateProfile.toJSON();
-    const updatedWithAvatar = {
-      ...plainUpdated,
-      avatar: plainUpdated.avatar ? getFullImageUrl(plainUpdated.avatar) : null,
-    };
+    // The name changes straight away
+    if (username !== undefined) user.username = username;
 
+    // A new email only takes effect once the code sent to it is entered (proves the address is theirs
+    // and has no typo, since order emails and password resets go there)
+    let codeSentTo: string | null = null;
+    if (emailChanging) {
+      const code = generateOtp();
+      user.pendingEmail = email!;
+      user.pendingEmailCodeHash = hashCode(code);
+      user.pendingEmailCodeAt = new Date();
+      emailCodeAttempts.delete(user.id);
+      const { storeName } = await getStoreSettings();
+      try {
+        await sendMail({
+          to: email!,
+          subject: `Confirm your new email for ${storeName || "Truvora"}`,
+          text: `Your code to confirm this email address is ${code}. It's valid for ${EMAIL_CODE_MINUTES} minutes.\n\nIf you didn't ask to change your email, you can ignore this message.`,
+        });
+      } catch (error) {
+        console.error("Email change code failed to send:", error);
+        res.status(502).json({ message: "We couldn't send a code to that address. Check it and try again.", field: "email" });
+        return;
+      }
+      codeSentTo = email!;
+    }
+
+    await user.save();
     res.status(200).json({
-      message: "Profile updated successfully",
-      data: updatedWithAvatar,
+      message: codeSentTo
+        ? `We sent a 6-digit code to ${codeSentTo}. Enter it to finish changing your email.`
+        : "Profile updated successfully",
+      data: presentProfile(user),
+      pendingEmail: user.pendingEmail ?? null,
     });
+  }
+
+  // Finish an email change with the code sent to the new address
+  public static async confirmEmailChange(req: AuthRequest, res: Response): Promise<void> {
+    const user = req.user?.id ? await User.findByPk(req.user.id) : null;
+    if (!user) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+    const code = typeof req.body?.code === "string" ? req.body.code.trim() : "";
+    if (!user.pendingEmail || !user.pendingEmailCodeHash || !user.pendingEmailCodeAt) {
+      res.status(400).json({ message: "There's no email change waiting to be confirmed.", field: "code" });
+      return;
+    }
+    if (Date.now() - user.pendingEmailCodeAt.getTime() > EMAIL_CODE_MINUTES * 60 * 1000) {
+      res.status(400).json({ message: "This code has expired. Save the new email again to get a new code.", field: "code" });
+      return;
+    }
+    if (!/^\d{6}$/.test(code) || hashCode(code) !== user.pendingEmailCodeHash) {
+      const attempts = (emailCodeAttempts.get(user.id) ?? 0) + 1;
+      if (attempts >= MAX_EMAIL_CODE_ATTEMPTS) {
+        emailCodeAttempts.delete(user.id);
+        user.pendingEmail = null;
+        user.pendingEmailCodeHash = null;
+        user.pendingEmailCodeAt = null;
+        await user.save();
+        res.status(400).json({ message: "Too many wrong codes. Save the new email again to get a new code.", field: "code" });
+        return;
+      }
+      emailCodeAttempts.set(user.id, attempts);
+      res.status(400).json({ message: "That code isn't right. Check the email and try again.", field: "code" });
+      return;
+    }
+
+    // Someone may have taken the address since the code was sent
+    const taken = await User.findOne({ where: { email: user.pendingEmail } });
+    if (taken && taken.id !== user.id) {
+      res.status(409).json({ message: "This email is now used by another account.", field: "code" });
+      return;
+    }
+
+    const oldEmail = user.email;
+    user.email = user.pendingEmail;
+    user.isVerified = true;
+    user.pendingEmail = null;
+    user.pendingEmailCodeHash = null;
+    user.pendingEmailCodeAt = null;
+    await user.save();
+    emailCodeAttempts.delete(user.id);
+
+    // Tell the old address, in case the change wasn't the owner's doing
+    const { storeName, supportEmail } = await getStoreSettings();
+    sendMail({
+      to: oldEmail,
+      subject: `Your ${storeName || "Truvora"} email was changed`,
+      text: `The email on your account was changed to ${user.email}.\n\nIf you didn't do this, contact us${supportEmail ? ` at ${supportEmail}` : ""} straight away.`,
+    }).catch((error) => console.error("Email change notice failed to send:", error));
+
+    res.status(200).json({ message: "Your email has been changed.", data: presentProfile(user) });
+  }
+
+  // Drop an email change that hasn't been confirmed
+  public static async cancelEmailChange(req: AuthRequest, res: Response): Promise<void> {
+    const user = req.user?.id ? await User.findByPk(req.user.id) : null;
+    if (!user) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+    user.pendingEmail = null;
+    user.pendingEmailCodeHash = null;
+    user.pendingEmailCodeAt = null;
+    await user.save();
+    emailCodeAttempts.delete(user.id);
+    res.status(200).json({ message: "Email change cancelled.", data: presentProfile(user) });
   }
 
   // Update My Avatar

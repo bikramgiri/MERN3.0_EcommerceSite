@@ -1,991 +1,706 @@
-import React, { useEffect, useState, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
-import {
-  Search,
-  RefreshCw,
-  Eye,
-  Trash2,
-  Mail,
-  ShieldCheck,
-  CheckCircle2,
-  Clock,
-  X,
-  AlertTriangle,
-  Copy,
-  Check,
-} from "lucide-react";
-import { APIAuthenticated } from "../../http";
+import React, { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import axios from "axios";
 import { toast } from "react-toastify";
-import { useAppDispatch, useAppSelector } from "../../hooks/hooks";
-import { fetchDatas } from "../../store/admin/datasSlice";
+import { Ban, Check, CheckCircle2, Copy, Eye, Loader2, Mail, RefreshCw, Search, ShieldCheck, Trash2, X } from "lucide-react";
+import { APIAuthenticated } from "../../http";
+import { Skeleton } from "../../global/Skeleton";
+import { formatOrderNumber } from "../../services/storeSettingsService";
+import { hideBrokenImage } from "../../utils/helpers";
 
-export interface ManagedUser {
+interface ManagedUser {
   id: string;
   username: string;
   email: string;
-  avatar?: string;
-  role?: "customer" | "admin";
-  isVerified?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-  orderCount?: number;
+  avatar?: string | null;
+  role: "customer" | "admin";
+  isVerified: boolean;
+  isBlocked: boolean;
+  blockedAt: string | null;
+  createdAt: string;
+  orderCount: number;
+  totalSpent: number;
+  lastOrderAt: string | null;
 }
 
-function formatDate(dateStr?: string) {
-  if (!dateStr) return "Recently";
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    month: "numeric",
-    day: "numeric",
-    year: "numeric",
-  });
+interface UserDetails extends ManagedUser {
+  reviewCount: number;
+  recentOrders: {
+    id: string;
+    totalAmount: number | string;
+    orderStatus: string;
+    createdAt: string;
+    Payment?: { paymentMethod: string; paymentStatus: string };
+  }[];
 }
 
-function initials(name?: string) {
-  return name?.trim()?.[0]?.toUpperCase() || "U";
-}
+type RoleTab = "ALL" | "customer" | "admin";
+
+const PAGE_SIZE = 10;
+const card = "rounded-2xl border border-[#1A1613]/10 bg-[#FFFDF8] dark:border-white/10 dark:bg-[#1E1A17]";
+const muted = "text-[#1A1613]/60 dark:text-[#F5EFE6]/55";
+const strong = "text-[#1A1613] dark:text-[#F5EFE6]";
+const control =
+  "rounded-lg border border-[#1A1613]/15 bg-white px-3 py-2 text-sm text-[#1A1613] focus:outline-none focus:ring-2 focus:ring-[#E6540B]/30 dark:border-white/10 dark:bg-[#1E1A17] dark:text-[#F5EFE6]";
+const iconButton =
+  "inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-[#1A1613]/60 hover:bg-[#F4EEDF] hover:text-[#1A1613] disabled:cursor-not-allowed disabled:opacity-30 dark:text-[#F5EFE6]/60 dark:hover:bg-[#2A2420] dark:hover:text-[#F5EFE6]";
+
+const formatDate = (iso?: string | null) =>
+  iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
+const rs = (n: number) => `Rs ${Math.round(n).toLocaleString()}`;
+const errorMessage = (error: unknown, fallback: string) =>
+  axios.isAxiosError(error) ? (error.response?.data as { message?: string } | undefined)?.message || fallback : fallback;
+
+/** Profile picture, or the first letter when there's none (or it fails to load) */
+const Avatar = ({ user, size = "h-9 w-9 text-sm" }: { user: ManagedUser; size?: string }) => (
+  <span
+    className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-full font-semibold text-white ${size} ${
+      user.role === "admin" ? "bg-violet-600" : "bg-[#E6540B]"
+    }`}
+  >
+    {user.username?.trim()?.[0]?.toUpperCase() || "U"}
+    {user.avatar && (
+      <img src={user.avatar} alt="" onError={hideBrokenImage} className="absolute inset-0 h-full w-full object-cover" />
+    )}
+  </span>
+);
+
+const Verified = ({ yes }: { yes: boolean }) =>
+  yes ? (
+    <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+      <CheckCircle2 className="h-3.5 w-3.5" /> Verified
+    </span>
+  ) : (
+    <span className="text-xs font-medium text-amber-700 dark:text-amber-400">Not verified</span>
+  );
+
+const RoleBadge = ({ role }: { role: ManagedUser["role"] }) =>
+  role === "admin" ? (
+    <span className="rounded-full bg-violet-500/10 px-2 py-0.5 text-xs font-semibold text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">
+      Admin
+    </span>
+  ) : (
+    <span className={`text-xs ${muted}`}>Customer</span>
+  );
+
+const BlockedBadge = () => (
+  <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-500/15 dark:text-red-400">
+    Blocked
+  </span>
+);
 
 const UserManagement: React.FC = () => {
-  const dispatch = useAppDispatch();
-  const { recentUsers, recentOrders } = useAppSelector(
-    (state) => state.datas
-  );
-  const { user: currentAdmin } = useAppSelector((state) => state.auth);
+  const [searchParams] = useSearchParams();
+  // Deep links from the header search: ?search=sita or ?role=admin
+  const linkedSearch = searchParams.get("search") || "";
+  const linkedRole = searchParams.get("role");
+
+  const [role, setRole] = useState<RoleTab>(linkedRole === "customer" || linkedRole === "admin" ? linkedRole : "ALL");
+  const [searchInput, setSearchInput] = useState(linkedSearch);
+  const [search, setSearch] = useState(linkedSearch);
+  const [status, setStatus] = useState<"ALL" | "verified" | "unverified" | "blocked">("ALL");
+  const [sort, setSort] = useState("newest");
+  const [page, setPage] = useState(1);
 
   const [users, setUsers] = useState<ManagedUser[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [searchParams] = useSearchParams();
-  const [searchTerm, setSearchTerm] = useState("");
+  const [counts, setCounts] = useState({ all: 0, customer: 0, admin: 0 });
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [reloadKey, setReloadKey] = useState(0);
+  // Which request the data on screen belongs to; anything else means we're loading
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
 
-  useEffect(() => {
-    const q = searchParams.get("search");
-    if (q) {
-      const lower = q.trim().toLowerCase();
-      if (lower === "customer" || lower === "customers") {
-        setRoleFilter("customer");
-      } else if (lower === "admin" || lower === "admins") {
-        setRoleFilter("admin");
-      } else {
-        setSearchTerm(q);
-      }
-      setCurrentPage(1);
-    }
-
-    const roleParam = searchParams.get("role");
-    if (roleParam && (roleParam === "customer" || roleParam === "admin" || roleParam === "ALL")) {
-      setRoleFilter(roleParam);
-      setCurrentPage(1);
-    }
-  }, [searchParams]);
-  const [roleFilter, setRoleFilter] = useState<string>("ALL");
-  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "name_asc" | "name_desc">("newest");
-  const [selectedUser, setSelectedUser] = useState<ManagedUser | null>(null);
-  const [userToDelete, setUserToDelete] = useState<ManagedUser | null>(null);
+  const [details, setDetails] = useState<UserDetails | null>(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [toDelete, setToDelete] = useState<ManagedUser | null>(null);
+  const [toBlock, setToBlock] = useState<ManagedUser | null>(null);
+  const [blockingId, setBlockingId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [batchDeleteModal, setBatchDeleteModal] = useState(false);
-  const [batchDeleting, setBatchDeleting] = useState(false);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 8;
+  const [copied, setCopied] = useState<string | null>(null);
 
-  // Fetch users from API
-  const fetchUsers = async () => {
-    setLoading(true);
-    try {
-      const response = await APIAuthenticated.get("/admin/customer?limit=100");
-      if (response.status === 200 && response.data.data) {
-        let fetchedUsers: ManagedUser[] = response.data.data;
+  // Wait until typing pauses before searching
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(searchInput.trim());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
-        // Fallback: include current admin if not returned by backend
-        if (currentAdmin?.id && !fetchedUsers.some((u) => u.id === currentAdmin.id)) {
-          fetchedUsers = [
-            {
-              id: currentAdmin.id,
-              username: currentAdmin.username || "Admin",
-              email: currentAdmin.email || "",
-              avatar: currentAdmin.avatar,
-              role: "admin",
-              isVerified: true,
-              createdAt: currentAdmin.createdAt || new Date().toISOString(),
-              orderCount: 0,
-            },
-            ...fetchedUsers,
-          ];
-        }
-
-        setUsers(fetchedUsers);
-      } else {
-        fallbackToDatas();
-      }
-    } catch (error) {
-      console.log("Using dashboard users as fallback:", error);
-      fallbackToDatas();
-    } finally {
-      setLoading(false);
-      setInitialLoading(false);
-    }
-  };
-
-  const fallbackToDatas = () => {
-    let combined: ManagedUser[] = [...recentUsers].map((u) => ({
-      ...u,
-      role: (u as any).role || "customer",
-      isVerified: (u as any).isVerified ?? true,
-    }));
-
-    if (currentAdmin?.id && !combined.some((u) => u.id === currentAdmin.id)) {
-      combined = [
-        {
-          id: currentAdmin.id,
-          username: currentAdmin.username || "Admin",
-          email: currentAdmin.email || "",
-          avatar: currentAdmin.avatar,
-          role: "admin",
-          isVerified: true,
-          createdAt: new Date().toISOString(),
-        },
-        ...combined,
-      ];
-    }
-    setUsers(combined);
-  };
+  const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE), role, status, sort });
+  if (search) params.set("search", search);
+  const requestKey = `${params.toString()}#${reloadKey}`;
+  const loading = loadedKey !== requestKey;
+  const load = () => setReloadKey((k) => k + 1);
 
   useEffect(() => {
-    fetchUsers();
-    dispatch(fetchDatas());
-  }, [dispatch]);
+    let current = true;
+    const [query] = requestKey.split("#");
+    APIAuthenticated.get(`/admin/customer?${query}`)
+      .then((response) => {
+        if (!current) return; // a newer search replaced this one
+        setUsers(response.data.data || []);
+        setCounts(response.data.counts || { all: 0, customer: 0, admin: 0 });
+        setTotal(response.data.total || 0);
+        setTotalPages(response.data.totalPages || 1);
+        setLoadFailed(false);
+        setLoadedKey(requestKey);
+      })
+      .catch(() => {
+        if (!current) return;
+        setLoadFailed(true);
+        setLoadedKey(requestKey);
+      });
+    return () => {
+      current = false;
+    };
+  }, [requestKey]);
 
-  const handleRefresh = async () => {
-    await fetchUsers();
-    await dispatch(fetchDatas());
+  const openDetails = async (user: ManagedUser) => {
+    setDetails({ ...user, reviewCount: 0, recentOrders: [] });
+    setDetailsLoading(true);
+    try {
+      const response = await APIAuthenticated.get(`/admin/customer/${user.id}`);
+      setDetails(response.data.data);
+    } catch (error) {
+      toast.error(errorMessage(error, "Couldn't load this user's details."));
+    } finally {
+      setDetailsLoading(false);
+    }
   };
 
-  // Delete customer handler
-  const handleDeleteUser = async () => {
-    if (!userToDelete) return;
+  const confirmDelete = async () => {
+    if (!toDelete || deleting) return;
     setDeleting(true);
     try {
-      const response = await APIAuthenticated.delete(`/admin/customer/${userToDelete.id}`);
-      if (response.status === 200) {
-        toast.success(`User ${userToDelete.username} deleted successfully.`);
-        setUsers((prev) => prev.filter((u) => u.id !== userToDelete.id));
-        setUserToDelete(null);
-      }
-    } catch (error: any) {
-      console.error("Delete user error:", error);
-      toast.error(error.response?.data?.message || "Failed to delete user.");
+      await APIAuthenticated.delete(`/admin/customer/${toDelete.id}`);
+      toast.success(`${toDelete.username}'s account was deleted`);
+      if (details?.id === toDelete.id) setDetails(null);
+      setToDelete(null);
+      // Step back a page if that was the last user on it
+      if (users.length === 1 && page > 1) setPage(page - 1);
+      else load();
+    } catch (error) {
+      toast.error(errorMessage(error, "Couldn't delete this account."));
+      setToDelete(null);
     } finally {
       setDeleting(false);
     }
   };
 
-  const handleCopy = (text: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(text);
-    setCopiedId(text);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  // Filter and sort users
-  const filteredUsers = useMemo(() => {
-    return users
-      .filter((user) => {
-        // Role filter
-        if (roleFilter !== "ALL" && user.role !== roleFilter) {
-          return false;
-        }
-
-        // Search term
-        if (searchTerm.trim()) {
-          const q = searchTerm.toLowerCase();
-          const matchName = user.username?.toLowerCase().includes(q);
-          const matchEmail = user.email?.toLowerCase().includes(q);
-          const matchId = user.id?.toLowerCase().includes(q);
-          if (!matchName && !matchEmail && !matchId) {
-            return false;
-          }
-        }
-
-        return true;
-      })
-      .sort((a, b) => {
-        if (sortBy === "newest") {
-          return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-        }
-        if (sortBy === "oldest") {
-          return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
-        }
-        if (sortBy === "name_asc") {
-          return (a.username || "").localeCompare(b.username || "");
-        }
-        if (sortBy === "name_desc") {
-          return (b.username || "").localeCompare(a.username || "");
-        }
-        return 0;
-      });
-  }, [users, roleFilter, searchTerm, sortBy]);
-
-  // Non-admin selectable users
-  const selectableUsers = useMemo(
-    () => filteredUsers.filter((u) => u.role !== "admin"),
-    [filteredUsers]
-  );
-
-  const isAllSelected =
-    selectableUsers.length > 0 &&
-    selectableUsers.every((u) => selectedIds.includes(u.id));
-
-  // Select all or toggle row (excluding admins)
-  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.checked) {
-      setSelectedIds(selectableUsers.map((u) => u.id));
-    } else {
-      setSelectedIds([]);
-    }
-  };
-
-  const handleToggleRow = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
-
-  // Batch delete customers handler
-  const handleBatchDelete = async () => {
-    const customerIdsToDelete = selectedIds.filter((id) => {
-      const u = users.find((user) => user.id === id);
-      return u && u.role !== "admin";
-    });
-
-    if (customerIdsToDelete.length === 0) {
-      toast.warning("No deletable customer accounts selected.");
-      setBatchDeleteModal(false);
-      return;
-    }
-
-    setBatchDeleting(true);
+  /** Block (after confirming) or unblock a customer, updating the list and the details panel */
+  const setBlocked = async (user: ManagedUser, blocked: boolean) => {
+    if (blockingId) return;
+    setBlockingId(user.id);
     try {
-      const results = await Promise.allSettled(
-        customerIdsToDelete.map((id) =>
-          APIAuthenticated.delete(`/admin/customer/${id}`)
-        )
-      );
-
-      const successfulIds = customerIdsToDelete.filter(
-        (_, idx) => results[idx].status === "fulfilled"
-      );
-
-      if (successfulIds.length > 0) {
-        setUsers((prev) => prev.filter((u) => !successfulIds.includes(u.id)));
-        setSelectedIds((prev) =>
-          prev.filter((id) => !successfulIds.includes(id))
-        );
-        toast.success(
-          `Successfully deleted ${successfulIds.length} customer account${
-            successfulIds.length > 1 ? "s" : ""
-          }.`
-        );
-      }
-
-      const failedCount = customerIdsToDelete.length - successfulIds.length;
-      if (failedCount > 0) {
-        toast.error(`Failed to delete ${failedCount} customer(s).`);
-      }
-
-      setBatchDeleteModal(false);
-      dispatch(fetchDatas());
-    } catch (err) {
-      console.error("Batch delete error:", err);
-      toast.error("Failed to delete selected customers.");
+      const response = await APIAuthenticated.patch(`/admin/customer/${user.id}/block`, { blocked });
+      const { isBlocked, blockedAt } = response.data.data;
+      setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, isBlocked, blockedAt } : u)));
+      setDetails((prev) => (prev && prev.id === user.id ? { ...prev, isBlocked, blockedAt } : prev));
+      toast.success(response.data.message);
+      setToBlock(null);
+      if (status === "blocked" && !blocked) load();
+    } catch (error) {
+      toast.error(errorMessage(error, "Couldn't update this account."));
     } finally {
-      setBatchDeleting(false);
+      setBlockingId(null);
     }
   };
 
-  // Pagination calculation
-  const totalPages = Math.ceil(filteredUsers.length / pageSize) || 1;
-  const paginatedUsers = filteredUsers.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
+  const copyEmail = async (email: string) => {
+    try {
+      await navigator.clipboard.writeText(email);
+      setCopied(email);
+      setTimeout(() => setCopied(null), 1500);
+    } catch {
+      toast.error("Couldn't copy to the clipboard");
+    }
+  };
 
-  // Stats calculation
-  const customerCount = users.filter((u) => u.role !== "admin").length;
-  const adminCount = users.filter((u) => u.role === "admin").length;
+  const tabs: { key: RoleTab; label: string; count: number }[] = [
+    { key: "ALL", label: "All", count: counts.all },
+    { key: "customer", label: "Customers", count: counts.customer },
+    { key: "admin", label: "Admins", count: counts.admin },
+  ];
+
+  const hasHistory = (u: { orderCount: number; reviewCount?: number }) => u.orderCount > 0 || (u.reviewCount ?? 0) > 0;
+  const firstLoad = loading && users.length === 0 && !loadFailed;
+
+  const actions = (user: ManagedUser) => (
+    <div className="flex items-center justify-end gap-0.5">
+      <button type="button" onClick={() => openDetails(user)} className={iconButton} aria-label={`View ${user.username}`} title="View details">
+        <Eye className="h-4 w-4" />
+      </button>
+      <a href={`mailto:${user.email}`} className={iconButton} aria-label={`Email ${user.username}`} title="Send email">
+        <Mail className="h-4 w-4" />
+      </a>
+      {user.role === "customer" && (
+        <button
+          type="button"
+          onClick={() => (user.isBlocked ? setBlocked(user, false) : setToBlock(user))}
+          disabled={blockingId === user.id}
+          className={iconButton}
+          aria-label={user.isBlocked ? `Unblock ${user.username}` : `Block ${user.username}`}
+          title={user.isBlocked ? "Unblock account" : "Block account"}
+        >
+          {user.isBlocked ? <ShieldCheck className="h-4 w-4 text-emerald-600" /> : <Ban className="h-4 w-4" />}
+        </button>
+      )}
+      {user.role === "customer" && (
+        <button
+          type="button"
+          onClick={() => setToDelete(user)}
+          disabled={user.orderCount > 0}
+          className={`${iconButton} hover:text-red-700 dark:hover:text-red-400`}
+          aria-label={`Delete ${user.username}`}
+          title={user.orderCount > 0 ? "Customers with orders can't be deleted" : "Delete account"}
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  );
 
   return (
     <div className="space-y-6">
-      {/* 1. Header Bar matching HamroTask design */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[#1A1613] dark:text-[#F5EFE6] sm:text-3xl">
-            User Management
-          </h1>
-          <p className="mt-1 text-xs text-[#1A1613]/60 dark:text-[#F5EFE6]/50 sm:text-sm">
-            Manage customers, verified accounts, and admin permissions.
+          <h1 className={`text-2xl font-bold sm:text-3xl ${strong}`}>Users</h1>
+          <p className={`mt-1 text-sm ${muted}`}>
+            {counts.customer} {counts.customer === 1 ? "customer" : "customers"} · {counts.admin} {counts.admin === 1 ? "admin" : "admins"}
           </p>
         </div>
-
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={handleRefresh}
-            disabled={loading}
-            className="inline-flex items-center gap-2 rounded-xl border border-[#1A1613]/15 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] px-4 py-2 text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] shadow-xs hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] transition-all active:scale-95 disabled:opacity-50"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[#E6540B]" : ""}`} />
-            <span>Refresh</span>
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={load}
+          disabled={loading}
+          className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-[#1A1613]/15 bg-[#FFFDF8] px-3 py-1.5 text-sm font-medium text-[#1A1613] hover:bg-[#F4EEDF] disabled:opacity-60 dark:border-white/10 dark:bg-[#1E1A17] dark:text-[#F5EFE6] dark:hover:bg-[#2A2420]"
+        >
+          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
+        </button>
       </div>
 
-      {/* 2. Unified User Management Block: Search + Filters + Batch Actions + Table (Matching HamroTask) */}
-      <div className="rounded-xl border border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs overflow-hidden">
-        {/* Search & Filter Top Bar */}
-        <div className="p-4 sm:p-5 border-b border-[#1A1613]/10 dark:border-white/10">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            {/* Search Box */}
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#1A1613]/40 dark:text-[#F5EFE6]/50 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Search users by name or email..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full h-10 pl-10 pr-9 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] text-xs text-[#1A1613] dark:text-[#F5EFE6] placeholder:text-[#1A1613]/40 dark:placeholder:text-[#F5EFE6]/40 focus:outline-none focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
-              />
-              {searchTerm && (
+      <section className={card}>
+        {/* Filters */}
+        <div className="flex flex-col gap-3 border-b border-[#1A1613]/10 p-4 dark:border-white/10 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex gap-1 overflow-x-auto" role="tablist" aria-label="Filter by role">
+            {tabs.map((tab) => {
+              const active = role === tab.key;
+              return (
                 <button
-                  onClick={() => setSearchTerm("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1A1613]/40 dark:text-[#F5EFE6]/50 hover:text-[#1A1613] dark:hover:text-[#F5EFE6]"
+                  key={tab.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => {
+                    setRole(tab.key);
+                    setPage(1);
+                  }}
+                  className={`shrink-0 cursor-pointer rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                    active
+                      ? "bg-[#1A1613] text-white dark:bg-[#F5EFE6] dark:text-[#1A1613]"
+                      : "text-[#1A1613]/70 hover:bg-[#F4EEDF] dark:text-[#F5EFE6]/70 dark:hover:bg-[#2A2420]"
+                  }`}
                 >
-                  <X className="w-3.5 h-3.5" />
+                  {tab.label} <span className="opacity-60">{tab.count}</span>
                 </button>
-              )}
+              );
+            })}
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <div className="relative sm:w-64">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1A1613]/40 dark:text-[#F5EFE6]/40" />
+              <input
+                type="search"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Search name or email"
+                aria-label="Search users"
+                className={`${control} w-full pl-9`}
+              />
             </div>
-
-            {/* Filter Pills matching screenshot */}
-            <div className="flex flex-wrap items-center gap-1.5">
-              <button
-                onClick={() => {
-                  setRoleFilter("ALL");
-                  setCurrentPage(1);
-                }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                  roleFilter === "ALL"
-                    ? "bg-[#E6540B] text-white shadow-xs"
-                    : "bg-[#F4EEDF] dark:bg-[#2A2420] text-[#1A1613]/70 dark:text-[#F5EFE6]/70 hover:bg-[#EDE5D0] dark:hover:bg-white/10"
-                }`}
-              >
-                <span>All</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${roleFilter === "ALL" ? "bg-white/25 text-white" : "bg-[#1A1613]/10 dark:bg-white/10"}`}>
-                  {initialLoading ? (
-                    <span className="inline-block w-2.5 h-2 rounded bg-current opacity-30 animate-pulse" />
-                  ) : (
-                    users.length
-                  )}
-                </span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setRoleFilter("customer");
-                  setCurrentPage(1);
-                }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                  roleFilter === "customer"
-                    ? "bg-[#E6540B] text-white shadow-xs"
-                    : "bg-[#F4EEDF] dark:bg-[#2A2420] text-[#1A1613]/70 dark:text-[#F5EFE6]/70 hover:bg-[#EDE5D0] dark:hover:bg-white/10"
-                }`}
-              >
-                <span>Customer</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${roleFilter === "customer" ? "bg-white/25 text-white" : "bg-[#1A1613]/10 dark:bg-white/10"}`}>
-                  {initialLoading ? (
-                    <span className="inline-block w-2.5 h-2 rounded bg-current opacity-30 animate-pulse" />
-                  ) : (
-                    customerCount
-                  )}
-                </span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setRoleFilter("admin");
-                  setCurrentPage(1);
-                }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                  roleFilter === "admin"
-                    ? "bg-[#E6540B] text-white shadow-xs"
-                    : "bg-[#F4EEDF] dark:bg-[#2A2420] text-[#1A1613]/70 dark:text-[#F5EFE6]/70 hover:bg-[#EDE5D0] dark:hover:bg-white/10"
-                }`}
-              >
-                <span>Admin</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${roleFilter === "admin" ? "bg-white/25 text-white" : "bg-[#1A1613]/10 dark:bg-white/10"}`}>
-                  {initialLoading ? (
-                    <span className="inline-block w-2.5 h-2 rounded bg-current opacity-30 animate-pulse" />
-                  ) : (
-                    adminCount
-                  )}
-                </span>
-              </button>
-
-              {/* Sort Dropdown */}
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                className="h-8 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] px-2.5 text-xs font-medium text-[#1A1613] dark:text-[#F5EFE6] focus:outline-none focus:border-[#E6540B]"
-              >
-                <option value="newest">Newest</option>
-                <option value="oldest">Oldest</option>
-                <option value="name_asc">Name (A-Z)</option>
-                <option value="name_desc">Name (Z-A)</option>
-              </select>
-            </div>
+            <select
+              value={status}
+              onChange={(e) => {
+                setStatus(e.target.value as typeof status);
+                setPage(1);
+              }}
+              aria-label="Account status"
+              className={`${control} cursor-pointer`}
+            >
+              <option value="ALL">Any status</option>
+              <option value="verified">Verified email</option>
+              <option value="unverified">Not verified</option>
+              <option value="blocked">Blocked</option>
+            </select>
+            <select
+              value={sort}
+              onChange={(e) => {
+                setSort(e.target.value);
+                setPage(1);
+              }}
+              aria-label="Sort users"
+              className={`${control} cursor-pointer`}
+            >
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="name_asc">Name A–Z</option>
+              <option value="name_desc">Name Z–A</option>
+            </select>
           </div>
         </div>
 
-        {/* Batch Action Bar inside the unified block when users are selected */}
-        {selectedIds.length > 0 && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-red-200 dark:border-red-500/30 bg-red-50/95 dark:bg-red-500/15 px-4 py-3 text-xs shadow-inner animate-fade-in">
-            <div className="flex items-center gap-3">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-white font-bold text-xs shadow-xs">
-                {selectedIds.length}
-              </span>
-              <span className="font-semibold text-red-950 dark:text-red-300">
-                {selectedIds.length} customer{selectedIds.length > 1 ? "s" : ""} selected
-              </span>
-              <span className="text-red-300">|</span>
+        {firstLoad ? (
+          <div className="divide-y divide-[#1A1613]/8 dark:divide-white/10">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 p-4">
+                <Skeleton className="h-9 w-9 rounded-full" />
+                <div className="flex-1 space-y-1.5">
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-3 w-56" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : loadFailed && users.length === 0 ? (
+          <div className={`p-10 text-center text-sm ${muted}`}>
+            Couldn't load users.{" "}
+            <button type="button" onClick={load} className="cursor-pointer font-semibold text-[#E6540B] hover:underline">
+              Try again
+            </button>
+          </div>
+        ) : users.length === 0 ? (
+          <div className={`p-10 text-center text-sm ${muted}`}>
+            No users match.{" "}
+            {(search || status !== "ALL" || role !== "ALL") && (
               <button
-                onClick={() => setSelectedIds([])}
-                className="font-medium text-red-700 dark:text-red-400 underline hover:text-red-900 dark:hover:text-red-300 transition-colors"
+                type="button"
+                onClick={() => {
+                  setSearchInput("");
+                  setStatus("ALL");
+                  setRole("ALL");
+                  setPage(1);
+                }}
+                className="cursor-pointer font-semibold text-[#E6540B] hover:underline"
               >
-                Deselect all
+                Clear filters
               </button>
-            </div>
+            )}
+          </div>
+        ) : (
+          <div className={loading ? "opacity-60 transition-opacity" : ""}>
+            {/* Phones: one card per user */}
+            <ul className="divide-y divide-[#1A1613]/8 md:hidden dark:divide-white/10">
+              {users.map((user) => (
+                <li key={user.id} className="flex items-start gap-3 p-4">
+                  <Avatar user={user} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className={`truncate font-semibold ${strong}`}>{user.username}</p>
+                      {user.role === "admin" && <RoleBadge role="admin" />}
+                      {user.isBlocked && <BlockedBadge />}
+                    </div>
+                    <p className={`truncate text-sm ${muted}`}>{user.email}</p>
+                    <p className={`mt-1 text-xs ${muted}`}>
+                      {user.orderCount} {user.orderCount === 1 ? "order" : "orders"} · {rs(user.totalSpent)} · joined {formatDate(user.createdAt)}
+                    </p>
+                    <div className="mt-1">
+                      <Verified yes={user.isVerified} />
+                    </div>
+                  </div>
+                  {actions(user)}
+                </li>
+              ))}
+            </ul>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setBatchDeleteModal(true)}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-red-700 active:scale-95 transition-all"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Delete Selected ({selectedIds.length})</span>
-              </button>
+            {/* Larger screens: table */}
+            <table className="hidden w-full text-sm md:table">
+              <thead>
+                <tr className={`border-b border-[#1A1613]/10 text-left text-xs font-semibold dark:border-white/10 ${muted}`}>
+                  <th className="px-4 py-3">User</th>
+                  <th className="px-4 py-3">Role</th>
+                  <th className="px-4 py-3">Email</th>
+                  <th className="px-4 py-3 text-right">Orders</th>
+                  <th className="px-4 py-3 text-right">Spent</th>
+                  <th className="px-4 py-3">Joined</th>
+                  <th className="px-4 py-3">
+                    <span className="sr-only">Actions</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#1A1613]/8 dark:divide-white/10">
+                {users.map((user) => (
+                  <tr key={user.id} className="hover:bg-[#F4EEDF]/40 dark:hover:bg-white/5">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <Avatar user={user} />
+                        <div className="min-w-0">
+                          <button
+                            type="button"
+                            onClick={() => openDetails(user)}
+                            className={`block max-w-[220px] cursor-pointer truncate text-left font-semibold hover:text-[#E6540B] ${strong}`}
+                          >
+                            {user.username}
+                          </button>
+                          <span className={`flex items-center gap-1 ${muted}`}>
+                            <span className="max-w-[220px] truncate">{user.email}</span>
+                            <button
+                              type="button"
+                              onClick={() => copyEmail(user.email)}
+                              className="cursor-pointer rounded p-0.5 hover:text-[#E6540B]"
+                              aria-label={`Copy ${user.email}`}
+                              title="Copy email"
+                            >
+                              {copied === user.email ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                            </button>
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <RoleBadge role={user.role} />
+                        {user.isBlocked && <BlockedBadge />}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3"><Verified yes={user.isVerified} /></td>
+                    <td className={`px-4 py-3 text-right ${strong}`}>{user.orderCount}</td>
+                    <td className={`px-4 py-3 text-right ${strong}`}>{user.totalSpent > 0 ? rs(user.totalSpent) : "—"}</td>
+                    <td className={`px-4 py-3 ${muted}`}>{formatDate(user.createdAt)}</td>
+                    <td className="px-4 py-3">{actions(user)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div className={`flex flex-wrap items-center justify-between gap-2 border-t border-[#1A1613]/10 px-4 py-3 text-sm dark:border-white/10 ${muted}`}>
+              <span>
+                {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} of {total}
+              </span>
+              {totalPages > 1 && (
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => setPage(page - 1)} disabled={page === 1 || loading} className={`${control} cursor-pointer disabled:cursor-not-allowed disabled:opacity-40`}>
+                    Previous
+                  </button>
+                  <span>
+                    Page {page} of {totalPages}
+                  </span>
+                  <button type="button" onClick={() => setPage(page + 1)} disabled={page >= totalPages || loading} className={`${control} cursor-pointer disabled:cursor-not-allowed disabled:opacity-40`}>
+                    Next
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
+      </section>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-[#1A1613] dark:text-[#F5EFE6]">
-            <thead className="bg-[#F4EEDF]/80 dark:bg-[#2A2420] text-[11px] uppercase tracking-wider text-[#1A1613]/65 dark:text-[#F5EFE6]/70 font-bold border-b border-[#1A1613]/10 dark:border-white/10">
-              <tr>
-                <th className="py-3 px-4 w-10">
-                  <input
-                    type="checkbox"
-                    checked={isAllSelected}
-                    disabled={initialLoading || selectableUsers.length === 0}
-                    onChange={handleSelectAll}
-                    className="rounded border-[#1A1613]/20 dark:border-white/15 accent-[#E6540B] cursor-pointer disabled:opacity-40"
-                    title={selectableUsers.length === 0 ? "No selectable customers" : "Select all customers"}
-                  />
-                </th>
-                <th className="py-3 px-4">Name</th>
-                <th className="py-3 px-4">Email</th>
-                <th className="py-3 px-4">Role</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4">Email Verified</th>
-                <th className="py-3 px-4">Registered</th>
-                <th className="py-3 px-4 text-right pr-6">Actions</th>
-              </tr>
-            </thead>
-
-            <tbody className="divide-y divide-[#1A1613]/10 dark:divide-white/10">
-              {initialLoading ? (
-                Array.from({ length: pageSize }).map((_, idx) => (
-                  <tr key={`skeleton-${idx}`} className="animate-pulse">
-                    {/* Checkbox */}
-                    <td className="py-3.5 px-4">
-                      <div className="w-4 h-4 rounded border border-[#1A1613]/10 dark:border-white/10 bg-[#1A1613]/5 dark:bg-[#2A2420]" />
-                    </td>
-
-                    {/* Name & Avatar */}
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-[#1A1613]/10 dark:bg-white/10 shrink-0" />
-                        <div className="space-y-1.5 flex-1 min-w-0">
-                          <div
-                            className="h-3.5 rounded bg-[#1A1613]/15 dark:bg-white/10"
-                            style={{ width: `${80 + (idx % 4) * 20}px` }}
-                          />
-                          {idx === 0 && (
-                            <div className="h-2 rounded bg-purple-200/70 dark:bg-purple-500/25 w-16" />
-                          )}
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Email */}
-                    <td className="py-3.5 px-4">
-                      <div
-                        className="h-3.5 rounded bg-[#1A1613]/10 dark:bg-white/10"
-                        style={{ width: `${140 + (idx % 3) * 25}px` }}
-                      />
-                    </td>
-
-                    {/* Role */}
-                    <td className="py-3.5 px-4">
-                      <div className="h-5 w-16 rounded-md bg-[#1A1613]/10 dark:bg-white/10" />
-                    </td>
-
-                    {/* Status */}
-                    <td className="py-3.5 px-4">
-                      <div className="h-5 w-14 rounded-full bg-emerald-100/60 dark:bg-emerald-500/10" />
-                    </td>
-
-                    {/* Email Verified */}
-                    <td className="py-3.5 px-4">
-                      <div className="h-4 w-16 rounded bg-[#1A1613]/10 dark:bg-white/10" />
-                    </td>
-
-                    {/* Registered */}
-                    <td className="py-3.5 px-4">
-                      <div className="h-3.5 w-20 rounded bg-[#1A1613]/10 dark:bg-white/10" />
-                    </td>
-
-                    {/* Actions */}
-                    <td className="py-3.5 px-4 text-right pr-6">
-                      <div className="flex items-center justify-end gap-2 pr-1">
-                        <div className="w-6 h-6 rounded-md bg-[#1A1613]/10 dark:bg-white/10" />
-                        <div className="w-6 h-6 rounded-md bg-[#1A1613]/10 dark:bg-white/10" />
-                        <div className="w-6 h-6 rounded-md bg-[#1A1613]/10 dark:bg-white/10" />
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : paginatedUsers.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-12 text-center text-[#1A1613]/50 dark:text-[#F5EFE6]/50">
-                    <p className="font-semibold text-sm">No users found</p>
-                    <p className="text-xs mt-1">Try modifying your search or filter options.</p>
-                  </td>
-                </tr>
-              ) : (
-                paginatedUsers.map((user) => {
-                  const isSelected = selectedIds.includes(user.id);
-                  const isAdmin = user.role === "admin";
-
-                  return (
-                    <tr
-                      key={user.id}
-                      onClick={() => setSelectedUser(user)}
-                      className={`group cursor-pointer hover:bg-[#F4EEDF]/50 dark:hover:bg-white/5 transition-colors ${
-                        isSelected ? "bg-[#E6540B]/5 dark:bg-[#E6540B]/10" : ""
-                      }`}
-                    >
-                      {/* Checkbox */}
-                      <td
-                        className="py-3.5 px-4"
-                        onClick={(e) => {
-                          if (!isAdmin) {
-                            handleToggleRow(user.id, e);
-                          } else {
-                            e.stopPropagation();
-                          }
-                        }}
-                      >
-                        {isAdmin ? (
-                          <div title="Admin accounts cannot be deleted" className="cursor-not-allowed">
-                            <ShieldCheck className="w-4 h-4 text-purple-600 dark:text-purple-400 opacity-60" />
-                          </div>
-                        ) : (
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => {}}
-                            className="rounded border-[#1A1613]/20 dark:border-white/15 accent-[#E6540B] cursor-pointer"
-                          />
-                        )}
-                      </td>
-
-                      {/* Name & Avatar */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-3">
-                          {user.avatar ? (
-                            <img
-                              src={user.avatar}
-                              alt=""
-                              className="w-8 h-8 rounded-full object-cover border border-[#1A1613]/10 dark:border-white/10 flex-shrink-0"
-                            />
-                          ) : (
-                            <div
-                              className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs text-white flex-shrink-0 ${
-                                isAdmin ? "bg-purple-600" : "bg-[#E6540B]"
-                              }`}
-                            >
-                              {initials(user.username)}
-                            </div>
-                          )}
-                          <div className="min-w-0">
-                            <p className="font-semibold text-xs text-[#1A1613] dark:text-[#F5EFE6] truncate max-w-[150px]">
-                              {user.username}
-                            </p>
-                            {isAdmin && (
-                              <span className="inline-block text-[10px] text-purple-700 dark:text-purple-400 font-bold">
-                                Administrator
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Email */}
-                      <td className="py-3.5 px-4 text-[#1A1613]/75 dark:text-[#F5EFE6]/70 font-medium">
-                        <div className="flex items-center gap-1.5">
-                          <span className="truncate max-w-[180px]">{user.email}</span>
-                          <button
-                            onClick={(e) => handleCopy(user.email, e)}
-                            className="text-[#1A1613]/30 dark:text-[#F5EFE6]/40 hover:text-[#E6540B] p-0.5 rounded transition-colors"
-                            title="Copy email"
-                          >
-                            {copiedId === user.email ? (
-                              <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                            ) : (
-                              <Copy className="w-3 h-3" />
-                            )}
-                          </button>
-                        </div>
-                      </td>
-
-                      {/* Role */}
-                      <td className="py-3.5 px-4">
-                        <span
-                          className={`inline-flex items-center rounded-md px-2.5 py-0.5 text-[11px] font-semibold ${
-                            isAdmin
-                              ? "bg-purple-50 dark:bg-purple-500/15 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-500/30"
-                              : "bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30"
-                          }`}
-                        >
-                          {isAdmin ? "Admin" : "Customer"}
-                        </span>
-                      </td>
-
-                      {/* Status */}
-                      <td className="py-3.5 px-4">
-                        <span className="inline-flex items-center rounded-full bg-emerald-50 dark:bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30">
-                          Active
-                        </span>
-                      </td>
-
-                      {/* Email Verified */}
-                      <td className="py-3.5 px-4">
-                        {user.isVerified !== false ? (
-                          <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-semibold text-[11px]">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                            Verified
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400 font-medium text-[11px]">
-                            <Clock className="w-3.5 h-3.5 text-amber-500" />
-                            Pending
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Created Date */}
-                      <td className="py-3.5 px-4 text-[#1A1613]/60 dark:text-[#F5EFE6]/50 font-medium">
-                        {formatDate(user.createdAt)}
-                      </td>
-
-                      {/* Actions */}
-                      <td className="py-3.5 px-4 text-right pr-6">
-                        <div
-                          className="flex items-center justify-end gap-1.5"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {/* View details */}
-                          <button
-                            onClick={() => setSelectedUser(user)}
-                            className="p-1.5 rounded-md hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] text-[#1A1613]/60 dark:text-[#F5EFE6]/50 hover:text-[#1A1613] dark:hover:text-[#F5EFE6] transition-colors"
-                            title="View user details"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-
-                          {/* Mail user */}
-                          <a
-                            href={`mailto:${user.email}`}
-                            className="p-1.5 rounded-md hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] text-[#1A1613]/60 dark:text-[#F5EFE6]/50 hover:text-[#E6540B] transition-colors"
-                            title="Send email"
-                          >
-                            <Mail className="w-4 h-4" />
-                          </a>
-
-                          {/* Delete user (non-admin only) */}
-                          {!isAdmin && (
-                            <button
-                              onClick={() => setUserToDelete(user)}
-                              className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-500/15 text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors"
-                              title="Delete customer"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination Footer */}
-        <div className="flex items-center justify-between p-4 border-t border-[#1A1613]/10 dark:border-white/10 text-xs text-[#1A1613]/60 dark:text-[#F5EFE6]/50 bg-[#FDF8ED]/30 dark:bg-white/5">
-          <div>
-            {initialLoading ? (
-              <div className="h-3.5 w-24 rounded bg-[#1A1613]/10 dark:bg-white/10 animate-pulse" />
-            ) : (
-              `Page ${currentPage} of ${totalPages}`
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              disabled={initialLoading || currentPage === 1}
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              className="px-3.5 py-1.5 rounded-lg border border-[#1A1613]/15 dark:border-white/10 text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] disabled:opacity-40 transition-colors"
-            >
-              Previous
-            </button>
-            <button
-              disabled={initialLoading || currentPage === totalPages}
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              className="px-3.5 py-1.5 rounded-lg border border-[#1A1613]/15 dark:border-white/10 text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] disabled:opacity-40 transition-colors"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* 5. User Details Modal */}
-      {selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in">
-          <div className="relative w-full max-w-md rounded-2xl border border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] p-6 shadow-2xl">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-[#1A1613]/10 dark:border-white/10">
-              <h3 className="text-base font-bold text-[#1A1613] dark:text-[#F5EFE6]">User Profile</h3>
-              <button
-                onClick={() => setSelectedUser(null)}
-                className="p-1 rounded-full hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] text-[#1A1613]/60 dark:text-[#F5EFE6]/50 transition-colors"
-              >
-                <X className="w-4 h-4" />
+      {/* Details panel */}
+      {details && (
+        <div className="fixed inset-0 z-[9999] flex justify-end bg-black/40" role="dialog" aria-modal="true" onClick={() => setDetails(null)}>
+          <aside
+            onClick={(e) => e.stopPropagation()}
+            className="h-full w-full max-w-md overflow-y-auto bg-[#FFFDF8] p-5 shadow-xl dark:bg-[#1E1A17]"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <Avatar user={details} size="h-12 w-12 text-lg" />
+                <div className="min-w-0">
+                  <p className={`truncate text-lg font-bold ${strong}`}>{details.username}</p>
+                  <p className={`truncate text-sm ${muted}`}>{details.email}</p>
+                </div>
+              </div>
+              <button type="button" onClick={() => setDetails(null)} className={iconButton} aria-label="Close">
+                <X className="h-5 w-5" />
               </button>
             </div>
 
-            {/* Profile Info */}
-            <div className="mt-5 flex flex-col items-center text-center">
-              {selectedUser.avatar ? (
-                <img
-                  src={selectedUser.avatar}
-                  alt=""
-                  className="w-16 h-16 rounded-full object-cover border-2 border-[#E6540B]/20 shadow-xs"
-                />
-              ) : (
-                <div
-                  className={`w-16 h-16 rounded-full flex items-center justify-center font-bold text-2xl text-white shadow-xs ${
-                    selectedUser.role === "admin" ? "bg-purple-600" : "bg-[#E6540B]"
-                  }`}
-                >
-                  {initials(selectedUser.username)}
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <RoleBadge role={details.role} />
+              {details.isBlocked && <BlockedBadge />}
+              <Verified yes={details.isVerified} />
+              <span className={`text-xs ${muted}`}>Joined {formatDate(details.createdAt)}</span>
+            </div>
+
+            <dl className="mt-5 grid grid-cols-3 gap-3 text-center">
+              {[
+                { label: "Orders", value: String(details.orderCount) },
+                { label: "Spent", value: rs(details.totalSpent) },
+                { label: "Reviews", value: detailsLoading ? "…" : String(details.reviewCount) },
+              ].map((item) => (
+                <div key={item.label} className="rounded-xl border border-[#1A1613]/10 p-3 dark:border-white/10">
+                  <dt className={`text-xs ${muted}`}>{item.label}</dt>
+                  <dd className={`mt-0.5 font-bold ${strong}`}>{item.value}</dd>
                 </div>
-              )}
+              ))}
+            </dl>
 
-              <h4 className="mt-3 text-lg font-bold text-[#1A1613] dark:text-[#F5EFE6]">
-                {selectedUser.username}
-              </h4>
-              <p className="text-xs text-[#1A1613]/60 dark:text-[#F5EFE6]/50">{selectedUser.email}</p>
-
-              <div className="mt-3 flex items-center gap-2">
-                <span
-                  className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                    selectedUser.role === "admin"
-                      ? "bg-purple-50 dark:bg-purple-500/15 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-500/30"
-                      : "bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30"
-                  }`}
-                >
-                  {selectedUser.role === "admin" ? "Administrator" : "Customer"}
-                </span>
-
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 px-2.5 py-0.5 text-xs font-semibold">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  Verified
-                </span>
+            <h3 className={`mt-6 text-sm font-semibold ${strong}`}>Latest orders</h3>
+            {detailsLoading ? (
+              <div className="mt-2 space-y-2">
+                <Skeleton className="h-12 rounded-lg" />
+                <Skeleton className="h-12 rounded-lg" />
               </div>
-            </div>
-
-            {/* Detailed Metadata */}
-            <div className="mt-6 space-y-2.5 bg-[#FDF8ED] dark:bg-[#1E1A17] p-4 rounded-xl border border-[#1A1613]/10 dark:border-white/10 text-xs">
-              <div className="flex justify-between">
-                <span className="text-[#1A1613]/60 dark:text-[#F5EFE6]/50">User ID:</span>
-                <span className="font-mono font-medium text-[#1A1613] dark:text-[#F5EFE6] truncate max-w-[180px]">
-                  #{selectedUser.id}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[#1A1613]/60 dark:text-[#F5EFE6]/50">Registered on:</span>
-                <span className="font-medium text-[#1A1613] dark:text-[#F5EFE6]">
-                  {formatDate(selectedUser.createdAt)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[#1A1613]/60 dark:text-[#F5EFE6]/50">Total Orders:</span>
-                <span className="font-bold text-[#E6540B] inline-flex items-center gap-1">
-                  <span>
-                    {selectedUser.orderCount !== undefined
-                      ? selectedUser.orderCount
-                      : recentOrders.filter(
-                          (o) =>
-                            o.userId === selectedUser.id ||
-                            o.User?.email === selectedUser.email
-                        ).length}
-                  </span>
-                  <span className="font-normal text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
-                    {(selectedUser.orderCount ??
-                      recentOrders.filter(
-                        (o) =>
-                          o.userId === selectedUser.id ||
-                          o.User?.email === selectedUser.email
-                      ).length) === 1
-                      ? "order"
-                      : "orders"}
-                  </span>
-                </span>
-              </div>
-            </div>
-
-            {/* Modal Actions */}
-            <div className="mt-6 flex justify-end gap-2 pt-3 border-t border-[#1A1613]/10 dark:border-white/10">
-              <a
-                href={`mailto:${selectedUser.email}`}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#E6540B] text-white text-xs font-semibold hover:bg-[#d44c0a] transition-colors"
+            ) : details.recentOrders.length === 0 ? (
+              <p className={`mt-2 text-sm ${muted}`}>No orders yet.</p>
+            ) : (
+              <ul className="mt-2 divide-y divide-[#1A1613]/8 rounded-xl border border-[#1A1613]/10 dark:divide-white/10 dark:border-white/10">
+                {details.recentOrders.map((order) => {
+                  const label = formatOrderNumber(order.id);
+                  return (
+                    <li key={order.id}>
+                      <Link
+                        to={`/admin-dashboard/orders?search=${encodeURIComponent(label)}`}
+                        className="flex items-center justify-between gap-3 px-3 py-2.5 text-sm hover:bg-[#F4EEDF]/60 dark:hover:bg-white/5"
+                      >
+                        <span className="min-w-0">
+                          <span className={`block font-medium ${strong}`}>{label}</span>
+                          <span className={`block text-xs ${muted}`}>
+                            {formatDate(order.createdAt)} · {order.orderStatus} · {order.Payment?.paymentMethod ?? "—"}
+                          </span>
+                        </span>
+                        <span className={`shrink-0 font-semibold ${strong}`}>{rs(Number(order.totalAmount))}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            {details.orderCount > details.recentOrders.length && !detailsLoading && (
+              <Link
+                to={`/admin-dashboard/orders?search=${encodeURIComponent(details.email)}`}
+                className="mt-2 inline-block text-sm font-semibold text-[#E6540B] hover:underline"
               >
-                <Mail className="w-3.5 h-3.5" />
-                <span>Send Email</span>
+                See all {details.orderCount} orders
+              </Link>
+            )}
+
+            <div className="mt-6 flex flex-wrap gap-2">
+              <a
+                href={`mailto:${details.email}`}
+                className="inline-flex items-center gap-2 rounded-lg bg-[#E6540B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#c94806]"
+              >
+                <Mail className="h-4 w-4" /> Email
               </a>
               <button
-                onClick={() => setSelectedUser(null)}
-                className="px-4 py-2 rounded-lg bg-[#F4EEDF] dark:bg-[#2A2420] text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#EDE5D0] dark:hover:bg-white/10 transition-colors"
+                type="button"
+                onClick={() => copyEmail(details.email)}
+                className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-[#1A1613]/15 px-4 py-2 text-sm font-semibold text-[#1A1613] hover:bg-[#F4EEDF] dark:border-white/10 dark:text-[#F5EFE6] dark:hover:bg-[#2A2420]"
               >
-                Close
+                {copied === details.email ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />} Copy email
               </button>
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* 6. Delete Confirmation Modal */}
-      {userToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in">
-          <div className="relative w-full max-w-sm rounded-2xl border border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] p-6 shadow-2xl text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-500/15 text-red-600 dark:text-red-400">
-              <AlertTriangle className="w-6 h-6" />
-            </div>
-
-            <h3 className="mt-3 text-base font-bold text-[#1A1613] dark:text-[#F5EFE6]">
-              Delete Customer?
-            </h3>
-            <p className="mt-2 text-xs text-[#1A1613]/65 dark:text-[#F5EFE6]/70 leading-relaxed">
-              Are you sure you want to delete{" "}
-              <span className="font-bold text-[#1A1613] dark:text-[#F5EFE6]">{userToDelete.username}</span>?
-              This will remove their profile and Cloudinary avatar permanently.
-            </p>
-
-            <div className="mt-5 flex items-center justify-center gap-2.5">
-              <button
-                onClick={() => setUserToDelete(null)}
-                disabled={deleting}
-                className="px-4 py-2 rounded-lg bg-[#F4EEDF] dark:bg-[#2A2420] text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#EDE5D0] dark:hover:bg-white/10 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteUser}
-                disabled={deleting}
-                className="px-4 py-2 rounded-lg bg-red-600 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-50 transition-colors shadow-xs"
-              >
-                {deleting ? "Deleting..." : "Yes, Delete"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 7. Batch Delete Confirmation Modal */}
-      {batchDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in">
-          <div className="relative w-full max-w-md rounded-2xl border border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] p-6 shadow-2xl">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-500/15 text-red-600 dark:text-red-400">
-              <Trash2 className="w-6 h-6" />
-            </div>
-
-            <div className="mt-3 text-center">
-              <h3 className="text-base font-bold text-[#1A1613] dark:text-[#F5EFE6]">
-                Delete {selectedIds.length} Selected Customer{selectedIds.length > 1 ? "s" : ""}?
-              </h3>
-              <p className="mt-2 text-xs text-[#1A1613]/65 dark:text-[#F5EFE6]/70 leading-relaxed">
-                Are you sure you want to permanently delete these{" "}
-                <span className="font-bold text-[#1A1613] dark:text-[#F5EFE6]">{selectedIds.length}</span> customer accounts? This action cannot be undone.
-              </p>
-            </div>
-
-            {/* List preview of users to be deleted */}
-            <div className="mt-4 max-h-44 overflow-y-auto rounded-xl border border-[#1A1613]/10 dark:border-white/10 bg-[#FDF8ED] dark:bg-[#1E1A17] p-3 space-y-2">
-              {users
-                .filter((u) => selectedIds.includes(u.id))
-                .map((u) => (
-                  <div key={u.id} className="flex items-center justify-between text-xs py-0.5">
-                    <div className="flex items-center gap-2 truncate pr-2">
-                      <div className="w-6 h-6 rounded-full bg-[#E6540B] text-white flex items-center justify-center text-[10px] font-bold shrink-0">
-                        {initials(u.username)}
-                      </div>
-                      <span className="font-semibold text-[#1A1613] dark:text-[#F5EFE6] truncate">{u.username}</span>
-                      <span className="text-[#1A1613]/50 dark:text-[#F5EFE6]/50 truncate text-[11px]">({u.email})</span>
-                    </div>
-                    <span className="text-[10px] font-semibold text-red-600 dark:text-red-400 shrink-0">Delete</span>
-                  </div>
-                ))}
-            </div>
-
-            <div className="mt-5 flex items-center justify-end gap-2.5">
-              <button
-                onClick={() => setBatchDeleteModal(false)}
-                disabled={batchDeleting}
-                className="px-4 py-2 rounded-lg bg-[#F4EEDF] dark:bg-[#2A2420] text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#EDE5D0] dark:hover:bg-white/10 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleBatchDelete}
-                disabled={batchDeleting}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-red-600 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-50 transition-colors shadow-xs"
-              >
-                {batchDeleting ? (
+            {details.role === "customer" && (
+              <div className="mt-6 rounded-xl border border-[#1A1613]/10 p-4 dark:border-white/10">
+                {details.isBlocked ? (
                   <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>Deleting...</span>
+                    <p className={`text-sm font-semibold ${strong}`}>Blocked since {formatDate(details.blockedAt)}</p>
+                    <p className={`mt-1 text-xs ${muted}`}>They can't sign in or place orders. Their orders and reviews are kept.</p>
+                    <button
+                      type="button"
+                      onClick={() => setBlocked(details, false)}
+                      disabled={blockingId === details.id}
+                      className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-lg border border-[#1A1613]/15 px-3 py-1.5 text-sm font-semibold text-[#1A1613] hover:bg-[#F4EEDF] disabled:opacity-60 dark:border-white/10 dark:text-[#F5EFE6] dark:hover:bg-[#2A2420]"
+                    >
+                      {blockingId === details.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />} Unblock
+                    </button>
                   </>
                 ) : (
                   <>
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>Yes, Delete All</span>
+                    <p className={`text-sm font-semibold ${strong}`}>Block this account</p>
+                    <p className={`mt-1 text-xs ${muted}`}>
+                      Stops them signing in and signs them out right away. Nothing is deleted, and you can unblock them later.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setToBlock(details)}
+                      className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-lg border border-red-300 px-3 py-1.5 text-sm font-semibold text-red-700 hover:bg-red-50 dark:border-red-500/40 dark:text-red-400 dark:hover:bg-red-500/10"
+                    >
+                      <Ban className="h-4 w-4" /> Block
+                    </button>
                   </>
                 )}
+              </div>
+            )}
+
+            {details.role === "customer" && !detailsLoading && (
+              <div className="mt-6 border-t border-[#1A1613]/10 pt-4 dark:border-white/10">
+                {hasHistory(details) ? (
+                  <p className={`text-xs ${muted}`}>
+                    This account can't be deleted because it has orders or reviews, which are part of the store's records.
+                  </p>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setToDelete(details)}
+                    className="inline-flex cursor-pointer items-center gap-2 text-sm font-semibold text-red-700 hover:underline dark:text-red-400"
+                  >
+                    <Trash2 className="h-4 w-4" /> Delete this account
+                  </button>
+                )}
+              </div>
+            )}
+          </aside>
+        </div>
+      )}
+
+      {/* Block confirmation */}
+      {toBlock && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 p-4" role="alertdialog" aria-modal="true">
+          <div className="w-full max-w-sm rounded-2xl bg-[#FFFDF8] p-5 dark:bg-[#1E1A17]">
+            <h2 className={`text-lg font-bold ${strong}`}>Block {toBlock.username}?</h2>
+            <p className={`mt-2 text-sm ${muted}`}>
+              They're signed out straight away and can't sign in or place orders until you unblock them. Their orders, reviews
+              and details stay as they are. Orders already placed aren't cancelled automatically.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setToBlock(null)}
+                disabled={!!blockingId}
+                className="cursor-pointer rounded-lg border border-[#1A1613]/15 px-4 py-2 text-sm font-semibold text-[#1A1613] hover:bg-[#F4EEDF] dark:border-white/10 dark:text-[#F5EFE6] dark:hover:bg-[#2A2420]"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => setBlocked(toBlock, true)}
+                disabled={!!blockingId}
+                className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+              >
+                {blockingId && <Loader2 className="h-4 w-4 animate-spin" />} Block account
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirmation */}
+      {toDelete && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 p-4" role="alertdialog" aria-modal="true">
+          <div className="w-full max-w-sm rounded-2xl bg-[#FFFDF8] p-5 dark:bg-[#1E1A17]">
+            <h2 className={`text-lg font-bold ${strong}`}>Delete {toDelete.username}?</h2>
+            <p className={`mt-2 text-sm ${muted}`}>
+              Their account, cart, wishlist and notifications are removed for good. They can sign up again with the same email.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setToDelete(null)}
+                disabled={deleting}
+                className="cursor-pointer rounded-lg border border-[#1A1613]/15 px-4 py-2 text-sm font-semibold text-[#1A1613] hover:bg-[#F4EEDF] dark:border-white/10 dark:text-[#F5EFE6] dark:hover:bg-[#2A2420]"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                disabled={deleting}
+                className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+              >
+                {deleting && <Loader2 className="h-4 w-4 animate-spin" />} Delete
               </button>
             </div>
           </div>

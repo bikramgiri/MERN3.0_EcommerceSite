@@ -7,13 +7,13 @@ import getFullImageUrl from "../../../services/imageHandler";
 import Review from "../../../database/models/reviewModel";
 import Wishlist from "../../../database/models/wishlistModel";
 import { UniqueConstraintError } from "sequelize";
-import { approvedReviewsOnly } from "../../../services/productPresenter";
+import { approvedReviewsOnly, withPrices } from "../../../services/productPresenter";
 
 // What the cart page needs about each product: price, stock, image and the
 // approved ratings (no review text, reviewer details or the account's own data)
 const cartProductInclude = {
   model: Product,
-  attributes: ["id", "productName", "productStock", "productPrice", "productImage"],
+  attributes: ["id", "productName", "productStock", "productPrice", "productDiscount", "productImage"],
   include: [
     { model: Category, attributes: ["id", "categoryName"] },
     {
@@ -30,7 +30,7 @@ const presentCartItem = (cartItem: Cart) => {
   const data = cartItem.toJSON();
   return {
     ...data,
-    product: { ...data.product, productImage: getFullImageUrl(data.product.productImage) },
+    product: withPrices({ ...data.product, productImage: getFullImageUrl(data.product.productImage) }),
   };
 };
 

@@ -5,7 +5,7 @@ import Category from "../../../database/models/categoryModel";
 import Review from "../../../database/models/reviewModel";
 import User from "../../../database/models/userModel";
 import getFullImageUrl from "../../../services/imageHandler";
-import { approvedReviewsOnly, formatReviewImages } from "../../../services/productPresenter";
+import { approvedReviewsOnly, formatReviewImages, SELLING_PRICE_SQL, withPrices } from "../../../services/productPresenter";
 
 const DEFAULT_LIMIT = 12;
 const MAX_LIMIT = 48;
@@ -15,14 +15,20 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 const visibleReviews = `FROM "reviews" AS r WHERE r."productId" = "Product"."id" AND (r."status" = 'APPROVED' OR r."status" IS NULL)`;
 const AVG_RATING = literal(`(SELECT COALESCE(AVG(r."rating"), 0) ${visibleReviews})`);
 const REVIEW_COUNT = literal(`(SELECT COUNT(*) ${visibleReviews})`);
+// Weighted rating: pulls products with few reviews towards 3 stars, so one 5-star review
+// doesn't outrank fifty 4.8-star reviews (used for "Popular products" on the home page)
+const WEIGHTED_RATING = literal(`(SELECT (COALESCE(SUM(r."rating"), 0) + 9.0) / (COUNT(*) + 3) ${visibleReviews})`);
+// Price after the product discount (what the shopper pays)
+const SELLING_PRICE = literal(SELLING_PRICE_SQL);
 
 const SORTS: Record<string, Order> = {
   relevance: [[AVG_RATING, "DESC"], [REVIEW_COUNT, "DESC"]],
   newest: [["createdAt", "DESC"]],
-  price_asc: [["productPrice", "ASC"]],
-  price_desc: [["productPrice", "DESC"]],
+  price_asc: [[SELLING_PRICE, "ASC"]],
+  price_desc: [[SELLING_PRICE, "DESC"]],
   rating_high: [[AVG_RATING, "DESC"], [REVIEW_COUNT, "DESC"]],
   popular: [[REVIEW_COUNT, "DESC"], [AVG_RATING, "DESC"]],
+  top: [[WEIGHTED_RATING, "DESC"], ["createdAt", "DESC"]],
 };
 
 const toNumber = (value: unknown) => {
@@ -66,8 +72,8 @@ class StoreProductController {
       });
     }
     if (category && category !== "all") conditions.push({ categoryId: category });
-    if (minPrice !== undefined) conditions.push({ productPrice: { [Op.gte]: minPrice } });
-    if (maxPrice !== undefined) conditions.push({ productPrice: { [Op.lte]: maxPrice } });
+    if (minPrice !== undefined) conditions.push(sqlWhere(SELLING_PRICE, Op.gte, minPrice));
+    if (maxPrice !== undefined) conditions.push(sqlWhere(SELLING_PRICE, Op.lte, maxPrice));
     if (minRating !== undefined && minRating > 0) conditions.push(sqlWhere(AVG_RATING, Op.gte, minRating));
 
     const where: WhereOptions = conditions.length ? { [Op.and]: conditions } : {};
@@ -118,11 +124,13 @@ class StoreProductController {
     const data = ids
       .map((id) => byId.get(id))
       .filter(Boolean)
-      .map((p) => ({
-        ...p,
-        productImage: getFullImageUrl(p.productImage),
-        reviews: (p.reviews || []).map(formatReviewImages),
-      }));
+      .map((p) =>
+        withPrices({
+          ...p,
+          productImage: getFullImageUrl(p.productImage),
+          reviews: (p.reviews || []).map(formatReviewImages),
+        }),
+      );
 
     res.status(200).json({ message: "Products fetched successfully", data, total, page, limit, totalPages });
   }

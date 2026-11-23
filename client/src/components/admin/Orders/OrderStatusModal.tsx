@@ -1,5 +1,5 @@
 import { formatOrderNumber } from "../../../services/storeSettingsService";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   X,
   Clock,
@@ -71,15 +71,18 @@ const OrderStatusModal: React.FC<OrderStatusModalProps> = ({
   onSubmit,
   loading,
 }) => {
-  const [selectedStatus, setSelectedStatus] = useState<AdminOrderStatus>("Pending");
-
-  useEffect(() => {
-    if (order) {
-      setSelectedStatus(order.orderStatus);
-    }
-  }, [order, isOpen]);
+  // Starts from the order's current status; the page mounts a fresh dialog per order,
+  // so live order updates don't reset what the admin has picked
+  const [selectedStatus, setSelectedStatus] = useState<AdminOrderStatus>(order?.orderStatus ?? "Pending");
 
   if (!isOpen || !order) return null;
+
+  // Unpaid Khalti/eSewa orders can't be prepared or shipped until they're paid
+  const awaitingPayment =
+    !!order.Payment && order.Payment.paymentMethod !== "COD" && order.Payment.paymentStatus !== "Paid";
+  const paidOnline = !!order.Payment && order.Payment.paymentMethod !== "COD" && order.Payment.paymentStatus === "Paid";
+  const blocked = (status: AdminOrderStatus) =>
+    awaitingPayment && (status === "Preparation" || status === "In Transit" || status === "Delivered");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,17 +125,27 @@ const OrderStatusModal: React.FC<OrderStatusModalProps> = ({
 
         {/* Form Options */}
         <form onSubmit={handleSubmit} className="space-y-4">
+          {awaitingPayment && (
+            <p className="rounded-lg bg-amber-50 p-2.5 text-xs text-amber-900 dark:bg-amber-500/10 dark:text-amber-300">
+              Waiting for the customer's {order.Payment?.paymentMethod} payment. It can't be prepared or shipped until it's paid;
+              unpaid online orders are cancelled automatically after 24 hours.
+            </p>
+          )}
           <div className="space-y-2">
             {statusOptions.map((opt) => {
               const Icon = opt.icon;
               const isSelected = selectedStatus === opt.value;
               const isCurrent = order.orderStatus === opt.value;
+              const disabled = blocked(opt.value);
 
               return (
                 <label
                   key={opt.value}
-                  onClick={() => setSelectedStatus(opt.value)}
-                  className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                  onClick={() => !disabled && setSelectedStatus(opt.value)}
+                  aria-disabled={disabled}
+                  className={`flex items-start gap-3 p-3 rounded-xl border transition-all ${
+                    disabled ? "cursor-not-allowed opacity-45" : "cursor-pointer"
+                  } ${
                     isSelected
                       ? "border-[#E6540B] bg-[#E6540B]/5 dark:bg-[#E6540B]/10 shadow-xs"
                       : "border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] hover:bg-[#FDF8ED]/50 dark:hover:bg-[#2A2420]"
@@ -143,6 +156,7 @@ const OrderStatusModal: React.FC<OrderStatusModalProps> = ({
                     name="orderStatus"
                     value={opt.value}
                     checked={isSelected}
+                    disabled={disabled}
                     onChange={() => setSelectedStatus(opt.value)}
                     className="mt-0.5 text-[#E6540B] focus:ring-[#E6540B]"
                   />
@@ -167,6 +181,13 @@ const OrderStatusModal: React.FC<OrderStatusModalProps> = ({
               );
             })}
           </div>
+
+          {selectedStatus === "Cancelled" && order.orderStatus !== "Cancelled" && (
+            <p className="rounded-lg bg-[#1A1613]/5 p-2.5 text-xs text-[#1A1613]/75 dark:bg-white/5 dark:text-[#F5EFE6]/70">
+              The items go back into stock and the customer is notified.
+              {paidOnline && <strong> It was paid online, so you'll need to refund the customer.</strong>}
+            </p>
+          )}
 
           {/* Action Buttons */}
           <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#1A1613]/10 dark:border-white/10">

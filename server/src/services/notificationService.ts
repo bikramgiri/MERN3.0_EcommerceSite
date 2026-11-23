@@ -3,6 +3,28 @@ import Wishlist from "../database/models/wishlistModel";
 import { emitToAdmin, emitToUser } from "./socketService";
 import { getStoreSettings } from "./storeSettingsService";
 import { describeDiscount, findWelcomeCoupon } from "./couponService";
+import User from "../database/models/userModel";
+import { sendMail } from "./sendMail";
+import { envConfig } from "../config/config";
+
+// Admin alerts that the Settings > Notifications switches control
+const EMAIL_SETTING_BY_TYPE: Record<string, "orderNotificationsEmail" | "lowStockAlertsEmail"> = {
+  "new-order": "orderNotificationsEmail",
+  "low-stock": "lowStockAlertsEmail",
+  "out-of-stock": "lowStockAlertsEmail",
+};
+const SOUND_TYPES = new Set(["new-order", "new-review", "low-stock", "out-of-stock"]);
+
+/** Emails every admin account about an alert (in the background; a failed email is only logged) */
+const emailAdmins = async (storeName: string, input: NotifyInput) => {
+  const admins = await User.findAll({ where: { role: "admin", isBlocked: false }, attributes: ["email"] });
+  const link = input.link ? `\n\nOpen: ${(envConfig.clientUrl || "").replace(/\/$/, "")}${input.link}` : "";
+  await Promise.allSettled(
+    admins.map((admin) =>
+      sendMail({ to: admin.email, subject: `[${storeName}] ${input.title}`, text: `${input.message}${link}` }),
+    ),
+  );
+};
 
 interface NotifyInput {
   type: string;
@@ -82,8 +104,23 @@ export const notifyNewCustomer = async (
 /** Save a notification for the admin team and push it to every connected admin. */
 export const notifyAdmins = async (input: NotifyInput) => {
   try {
+    const settings = await getStoreSettings();
+    // "Customer review alerts" off: new reviews don't create alerts (they still appear on the Reviews page)
+    if (input.type === "new-review" && !settings.customerReviewAlerts) return;
+
     const saved = await Notification.create({ audience: "admin", userId: null, ...input });
-    emitToAdmin("notification:new", saved.toJSON());
+    // playSound tells open dashboards to chime ("Dashboard sound alerts")
+    emitToAdmin("notification:new", {
+      ...saved.toJSON(),
+      playSound: settings.dashboardSoundAlerts && SOUND_TYPES.has(input.type),
+    });
+
+    const emailSetting = EMAIL_SETTING_BY_TYPE[input.type];
+    if (emailSetting && settings[emailSetting]) {
+      emailAdmins(settings.storeName || "Truvora", input).catch((error) =>
+        console.error("Failed to email admins:", error),
+      );
+    }
   } catch (error) {
     console.error("Failed to create admin notification:", error);
   }

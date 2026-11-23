@@ -1,16 +1,29 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import {
   AdminReview,
+  AdminReviewQuery,
   AdminReviewState,
+  AdminReviewStats,
+  AdminReviewTab,
   ReviewModerationStatus,
 } from "../../types/admin/reviewTypes";
 import { Status } from "../../global/statuses";
 import { AppDispatch } from "../store";
 import { APIAuthenticated } from "../../http";
 import { toast } from "react-toastify";
+import axios from "axios";
+
+/** The server's message for a failed request, if it sent one */
+const apiMessage = (err: unknown): string | undefined =>
+  axios.isAxiosError(err) ? (err.response?.data as { message?: string } | undefined)?.message : undefined;
 
 const initialState: AdminReviewState = {
   reviews: [],
+  total: 0,
+  totalPages: 1,
+  currentPage: 1,
+  counts: null,
+  stats: null,
   status: Status.IDLE,
   actionLoading: false,
   error: null,
@@ -31,6 +44,19 @@ const adminReviewSlice = createSlice({
     },
     setReviews: (state, action: PayloadAction<AdminReview[]>) => {
       state.reviews = action.payload;
+    },
+    setReviewPage: (
+      state,
+      action: PayloadAction<{
+        reviews: AdminReview[];
+        total: number;
+        totalPages: number;
+        currentPage: number;
+        counts: Record<AdminReviewTab, number>;
+        stats: AdminReviewStats;
+      }>,
+    ) => {
+      Object.assign(state, action.payload);
     },
     updateReviewInList: (state, action: PayloadAction<AdminReview>) => {
       const index = state.reviews.findIndex((r) => r.id === action.payload.id);
@@ -62,6 +88,7 @@ export const {
   setActionLoading,
   setError,
   setReviews,
+  setReviewPage,
   updateReviewInList,
   removeReviewFromList,
   bulkUpdateStatusInList,
@@ -71,28 +98,45 @@ export const {
 export default adminReviewSlice.reducer;
 
 // Thunks
-export function fetchAdminReviews() {
+// The filters of the page on screen, so live updates and actions can reload it as it is
+let lastQuery: Partial<AdminReviewQuery> = {};
+
+/** Loads one page of reviews; without a query it reloads the page on screen with the same filters */
+export function fetchAdminReviews(query?: Partial<AdminReviewQuery>) {
+  if (query) lastQuery = query;
+  const q = lastQuery;
   return async function fetchAdminReviewsThunk(dispatch: AppDispatch) {
     dispatch(setStatus(Status.LOADING));
     dispatch(setError(null));
     try {
-      const response = await APIAuthenticated.get("/admin/review");
-      if (response.status === 200 && response.data.data) {
-        dispatch(setReviews(response.data.data));
-        dispatch(setStatus(Status.SUCCESS));
-      } else {
-        dispatch(setReviews([]));
-        dispatch(setStatus(Status.SUCCESS));
-      }
-    } catch (err: any) {
-      if (err.response && err.response.status === 404) {
-        dispatch(setReviews([]));
-        dispatch(setStatus(Status.SUCCESS));
-        return;
-      }
-      const message =
-        err.response?.data?.message || "Failed to fetch customer reviews";
-      dispatch(setError(message));
+      const response = await APIAuthenticated.get("/admin/review", {
+        params: {
+          tab: q.tab && q.tab !== "ALL" ? q.tab : undefined,
+          search: q.search || undefined,
+          rating: q.rating && q.rating !== "ALL" ? q.rating : undefined,
+          photo: q.photo && q.photo !== "ALL" ? q.photo : undefined,
+          sort: q.sort,
+          page: q.page,
+          limit: q.limit,
+        },
+      });
+      // A newer request was made while this one was in flight: its result wins
+      if (q !== lastQuery) return;
+      const d = response.data;
+      dispatch(
+        setReviewPage({
+          reviews: d.data ?? [],
+          total: d.total ?? 0,
+          totalPages: d.totalPages ?? 1,
+          currentPage: d.currentPage ?? 1,
+          counts: d.counts,
+          stats: d.stats,
+        }),
+      );
+      dispatch(setStatus(Status.SUCCESS));
+    } catch (err) {
+      if (q !== lastQuery) return;
+      dispatch(setError(apiMessage(err) || "Failed to fetch customer reviews"));
       dispatch(setStatus(Status.ERROR));
     }
   };
@@ -113,9 +157,9 @@ export function deleteAdminReview(id: string) {
         dispatch(setActionLoading(false));
         return { success: false };
       }
-    } catch (err: any) {
+    } catch (err) {
       const message =
-        err.response?.data?.message || "Error deleting customer review";
+        apiMessage(err) || "Error deleting customer review";
       toast.error(message);
       dispatch(setActionLoading(false));
       return { success: false, error: message };
@@ -141,9 +185,9 @@ export function updateReviewStatus(id: string, status: ReviewModerationStatus) {
         dispatch(setActionLoading(false));
         return { success: false };
       }
-    } catch (err: any) {
+    } catch (err) {
       const message =
-        err.response?.data?.message || "Error updating review status";
+        apiMessage(err) || "Error updating review status";
       toast.error(message);
       dispatch(setActionLoading(false));
       return { success: false, error: message };
@@ -171,9 +215,9 @@ export function replyToReview(id: string, adminReply: string) {
         dispatch(setActionLoading(false));
         return { success: false };
       }
-    } catch (err: any) {
+    } catch (err) {
       const message =
-        err.response?.data?.message || "Error saving response to review";
+        apiMessage(err) || "Error saving response to review";
       toast.error(message);
       dispatch(setActionLoading(false));
       return { success: false, error: message };
@@ -206,9 +250,9 @@ export function bulkUpdateReviewStatus(
         dispatch(setActionLoading(false));
         return { success: false };
       }
-    } catch (err: any) {
+    } catch (err) {
       const message =
-        err.response?.data?.message || "Error updating reviews in bulk";
+        apiMessage(err) || "Error updating reviews in bulk";
       toast.error(message);
       dispatch(setActionLoading(false));
       return { success: false, error: message };
@@ -238,9 +282,9 @@ export function bulkDeleteReviews(reviewIds: string[]) {
         dispatch(setActionLoading(false));
         return { success: false };
       }
-    } catch (err: any) {
+    } catch (err) {
       const message =
-        err.response?.data?.message || "Error deleting reviews in bulk";
+        apiMessage(err) || "Error deleting reviews in bulk";
       toast.error(message);
       dispatch(setActionLoading(false));
       return { success: false, error: message };

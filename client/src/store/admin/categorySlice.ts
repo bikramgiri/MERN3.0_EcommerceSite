@@ -39,7 +39,8 @@ const categorySlice = createSlice({
         (c) => c.id === action.payload.id
       );
       if (index !== -1) {
-        state.categories[index] = action.payload;
+        // Keep fields the response may not include (e.g. the product count)
+        state.categories[index] = { ...state.categories[index], ...action.payload };
       }
     },
     removeCategoryFromList: (state, action: PayloadAction<string>) => {
@@ -60,6 +61,12 @@ export const {
 
 export default categorySlice.reducer;
 
+/** Status and message from a failed request */
+const apiError = (error: unknown) => {
+  const response = (error as { response?: { status?: number; data?: { message?: string } } })?.response;
+  return { status: response?.status, message: response?.data?.message };
+};
+
 // 1. Fetch All Categories for Admin
 export function fetchAdminCategories() {
   return async function fetchAdminCategoriesThunk(dispatch: AppDispatch) {
@@ -74,13 +81,13 @@ export function fetchAdminCategories() {
         dispatch(setCategories([]));
         dispatch(setStatus(Status.SUCCESS));
       }
-    } catch (error: any) {
-      if (error?.response?.status === 404) {
+    } catch (error) {
+      if (apiError(error).status === 404) {
         dispatch(setCategories([]));
         dispatch(setStatus(Status.SUCCESS));
       } else {
         const errorMsg =
-          error?.response?.data?.message || "Failed to fetch categories";
+          apiError(error).message || "Failed to fetch categories";
         dispatch(setError(errorMsg));
         dispatch(setStatus(Status.ERROR));
         console.error("fetchAdminCategories error:", error);
@@ -101,9 +108,9 @@ export function addAdminCategory(formData: FormData) {
         return { success: true, data: response.data.data };
       }
       return { success: false };
-    } catch (error: any) {
+    } catch (error) {
       const errorMsg =
-        error?.response?.data?.message || "Failed to create category";
+        apiError(error).message || "Failed to create category";
       toast.error(errorMsg);
       return { success: false, error: errorMsg };
     } finally {
@@ -127,9 +134,9 @@ export function updateAdminCategory(id: string, formData: FormData) {
         return { success: true, data: response.data.data };
       }
       return { success: false };
-    } catch (error: any) {
+    } catch (error) {
       const errorMsg =
-        error?.response?.data?.message || "Failed to update category";
+        apiError(error).message || "Failed to update category";
       toast.error(errorMsg);
       return { success: false, error: errorMsg };
     } finally {
@@ -139,20 +146,24 @@ export function updateAdminCategory(id: string, formData: FormData) {
 }
 
 // 4. Delete Category
-export function deleteAdminCategory(id: string) {
+/** Delete a category; with `moveTo`, its products are moved to that category first */
+export function deleteAdminCategory(id: string, moveTo?: string) {
   return async function deleteAdminCategoryThunk(dispatch: AppDispatch) {
     dispatch(setActionLoading(true));
     try {
-      const response = await APIAuthenticated.delete(`/admin/category/${id}`);
+      const query = moveTo ? `?moveTo=${encodeURIComponent(moveTo)}` : "";
+      const response = await APIAuthenticated.delete(`/admin/category/${id}${query}`);
       if (response.status === 200) {
         dispatch(removeCategoryFromList(id));
+        // The receiving category's product count changed
+        if (response.data?.data?.moved) dispatch(fetchAdminCategories());
         toast.success(response.data.message || "Category deleted successfully!");
         return { success: true };
       }
       return { success: false };
-    } catch (error: any) {
+    } catch (error) {
       const errorMsg =
-        error?.response?.data?.message || "Failed to delete category";
+        apiError(error).message || "Failed to delete category";
       toast.error(errorMsg);
       return { success: false, error: errorMsg };
     } finally {

@@ -119,6 +119,10 @@ export const validateSettingsUpdate = (
       return { data: {}, error: { field: key, message: `${key} must be text` } };
     }
     data[key] = (body[key] as string).trim();
+    const max = key === "maintenanceMessage" ? 500 : key === "address" ? 300 : (URL_FIELDS as readonly string[]).includes(key) ? 300 : 120;
+    if ((data[key] as string).length > max) {
+      return { data: {}, error: { field: key, message: `This field can be up to ${max} characters` } };
+    }
   }
 
   for (const key of NUMBER_FIELDS) {
@@ -132,6 +136,10 @@ export const validateSettingsUpdate = (
           message: `${NUMBER_LABELS[key]} must be a whole number of 0 or more`,
         },
       };
+    }
+    const ceiling = key === "returnWindowDays" ? 365 : 10_000_000;
+    if (value > ceiling) {
+      return { data: {}, error: { field: key, message: `${NUMBER_LABELS[key]} can be at most ${ceiling.toLocaleString()}` } };
     }
     data[key] = value;
   }
@@ -158,6 +166,13 @@ export const validateSettingsUpdate = (
   }
   if (data.orderPrefix === "") {
     return { data: {}, error: { field: "orderPrefix", message: "Order prefix is required" } };
+  }
+  // Shown in front of every order number (e.g. TRV-3f2a1c) in emails, invoices and searches
+  if (data.orderPrefix !== undefined && !/^[A-Za-z0-9#-]{1,8}$/.test(data.orderPrefix as string)) {
+    return {
+      data: {},
+      error: { field: "orderPrefix", message: "Order prefix can be up to 8 letters, numbers, # or -" },
+    };
   }
   for (const key of URL_FIELDS) {
     const value = data[key] as string | undefined;

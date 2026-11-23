@@ -293,7 +293,7 @@ const CouponManagement = () => {
             <h1 className="text-2xl font-bold tracking-tight text-[#1A1613] dark:text-[#F5EFE6] sm:text-3xl">Coupons</h1>
           </div>
           <p className="mt-1 text-xs text-[#1A1613]/60 dark:text-[#F5EFE6]/50 sm:text-sm">
-            Promo codes shoppers can enter at checkout. Cancelled orders and failed payments don't count as uses.
+            Promo codes shoppers can enter at checkout. Cancelled orders don't count as uses.
           </p>
         </div>
         <div className="flex gap-2.5">
@@ -449,7 +449,8 @@ const CouponManagement = () => {
                   onChange={(e) => setField("code", e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ""))}
                   placeholder="WELCOME10"
                   maxLength={40}
-                  className={`${fieldClass("code")} font-mono uppercase`}
+                  readOnly={editing !== "new" && editing.timesUsed > 0}
+                  className={`${fieldClass("code")} font-mono uppercase read-only:opacity-60`}
                 />
                 {editing !== "new" && editing.timesUsed > 0 && (
                   <p className="mt-1 text-xs text-[#1A1613]/50 dark:text-[#F5EFE6]/40">Used on orders, so the code can't be renamed.</p>

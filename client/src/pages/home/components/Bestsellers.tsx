@@ -2,36 +2,26 @@ import { ChevronRight, RotateCw } from "lucide-react";
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Status } from "../../../global/statuses";
-import { fetchProducts } from "../../../store/customer/productSlice";
+import { fetchPopularProducts } from "../../../store/customer/productSlice";
 import { useAppDispatch, useAppSelector } from "../../../hooks/hooks";
-import type { Product } from "../../../types/customer/productTypes";
 import ProductCard, { ProductCardSkeleton } from "../../../components/customer/ProductCard";
-
-// Weighted rating: pulls products with only a few reviews towards 3 stars,
-// so a single 5-star review doesn't outrank fifty 4.8-star reviews.
-const popularityScore = (product: Product) => {
-  const count = product.reviews?.length || 0;
-  const total = (product.reviews || []).reduce((acc, r) => acc + Number(r.rating || 0), 0);
-  return (total + 3 * 3) / (count + 3);
-};
 
 export default function Bestsellers() {
   const dispatch = useAppDispatch();
   const { product: products = [], status } = useAppSelector((state) => state.product);
 
   // Errors are reflected in the slice status, so the rejection is not needed here
-  const loadProducts = () => dispatch(fetchProducts()).catch(() => {});
+  const loadProducts = () => dispatch(fetchPopularProducts()).catch(() => {});
 
   useEffect(() => {
-    dispatch(fetchProducts()).catch(() => {});
+    dispatch(fetchPopularProducts()).catch(() => {});
   }, [dispatch]);
 
   const isLoading = status === Status.LOADING && products.length === 0;
   const hasError = status === Status.ERROR && products.length === 0;
 
-  const popular = [...products]
-    .sort((a, b) => popularityScore(b) - popularityScore(a))
-    .slice(0, 8);
+  // Already ranked by the server (weighted rating, so a single 5-star review can't jump to the top)
+  const popular = products.slice(0, 8);
 
   if (!isLoading && !hasError && popular.length === 0) return null;
 

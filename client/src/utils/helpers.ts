@@ -1,5 +1,4 @@
 import type { SyntheticEvent } from "react";
-import type { Product } from "../types/customer/productTypes";
 
 interface HasRating {
   rating?: number | string | null;
@@ -13,16 +12,6 @@ export const getAverageRatingNumber = <T extends HasRating>(
   const total = reviews?.reduce((acc, r) => acc + Number(r.rating || 0), 0);
   return Number((total / reviews?.length).toFixed(1));
 };
-
-/** Search rule shared by the header search and the products page: product name or category name */
-export function matchesSearch(product: Product, query: string): boolean {
-  const q = query.trim().toLowerCase();
-  if (!q) return true;
-  return (
-    product.productName.toLowerCase().includes(q) ||
-    (product.category?.categoryName || "").toLowerCase().includes(q)
-  );
-}
 
 /**
  * Asks Cloudinary for a resized, modern-format copy (WebP/AVIF) of an image

@@ -53,12 +53,13 @@ export const {
 } = productSlice.actions;
 export default productSlice.reducer;
 
-export function fetchProducts() {
-  return async function fetchProductsThunk(dispatch: AppDispatch) {
+// The home page's "Popular products": the server ranks by weighted rating and sends only these
+export function fetchPopularProducts(limit = 8) {
+  return async function fetchPopularProductsThunk(dispatch: AppDispatch) {
     dispatch(setStatus(Status.LOADING));
     try {
-      const response = await API.get("/admin/product");
-      dispatch(setProducts(response.data.data.reverse()));
+      const response = await API.get("/products", { params: { sort: "top", limit } });
+      dispatch(setProducts(response.data.data));
       dispatch(setStatus(Status.SUCCESS));
     } catch (error) {
       dispatch(setStatus(Status.ERROR));

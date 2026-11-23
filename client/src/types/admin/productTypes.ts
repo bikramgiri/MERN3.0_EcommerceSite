@@ -29,7 +29,12 @@ export interface AdminProduct {
   id: string;
   productName: string;
   productDescription: string;
+  // What customers pay (after the discount), as sent by the server
   productPrice: number;
+  // Price before the discount: the value the admin enters and edits
+  listPrice?: number;
+  // Crossed-out price shown to shoppers when there's a discount
+  oldPrice?: number | null;
   productStock: number;
   productDiscount: number;
   productImage: string;
@@ -75,6 +80,8 @@ export interface ProductOrderRecord {
 export interface ProductOrderItem {
   id: string;
   quantity: number;
+  // Price paid per item (null on older orders)
+  unitPrice?: number | string | null;
   Order?: ProductOrderRecord;
 }
 

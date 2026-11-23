@@ -1,5 +1,13 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { DatasState, OrderData, TopSellingProduct, OrderDistributionData, SalesRecord } from "../../types/admin/datasTypes";
+import {
+  DatasState,
+  OrderData,
+  TopSellingProduct,
+  OrderDistributionData,
+  DashboardAttention,
+  DashboardPeriod,
+  DailySales,
+} from "../../types/admin/datasTypes";
 import { Status } from "../../global/statuses";
 import { UserData, Review } from "../../types/customer/productTypes";
 import { AppDispatch } from "../store";
@@ -17,7 +25,12 @@ const initialState: DatasState = {
   recentReviews: [],
   topSellingProducts: [],
   orderDistribution: undefined,
-  salesAnalytics: [],
+  verifiedCustomers: 0,
+  newCustomers30d: 0,
+  attention: undefined,
+  period: undefined,
+  dailySales: [],
+  today: undefined,
   status: Status.IDLE,
 };
 
@@ -33,7 +46,12 @@ interface DatasPayload {
   recentReviews: Review[];
   topSellingProducts?: TopSellingProduct[];
   orderDistribution?: OrderDistributionData;
-  salesAnalytics?: SalesRecord[];
+  verifiedCustomers?: number;
+  newCustomers30d?: number;
+  attention?: DashboardAttention;
+  period?: DashboardPeriod;
+  dailySales?: DailySales[];
+  today?: string;
 }
 
 const datasSlice = createSlice({
@@ -55,7 +73,12 @@ const datasSlice = createSlice({
       state.recentReviews = action.payload.recentReviews;
       state.topSellingProducts = action.payload.topSellingProducts || [];
       state.orderDistribution = action.payload.orderDistribution;
-      state.salesAnalytics = action.payload.salesAnalytics || [];
+      state.verifiedCustomers = action.payload.verifiedCustomers || 0;
+      state.newCustomers30d = action.payload.newCustomers30d || 0;
+      state.attention = action.payload.attention;
+      state.period = action.payload.period;
+      state.dailySales = action.payload.dailySales || [];
+      state.today = action.payload.today;
     },
   },
 });
@@ -84,6 +107,13 @@ export function fetchDatas() {
             recentReviews: backendData.recentReviews || [],
             topSellingProducts: backendData.topSellingProducts || [],
             orderDistribution: backendData.orderDistribution,
+            // Daily totals worked out by the database, for the sales chart
+            dailySales: backendData.dailySales || [],
+            today: backendData.today,
+            verifiedCustomers: backendData.verifiedCustomers || 0,
+            newCustomers30d: backendData.newCustomers30d || 0,
+            attention: backendData.attention,
+            period: backendData.period,
           })
         );
         dispatch(setStatus(Status.SUCCESS));

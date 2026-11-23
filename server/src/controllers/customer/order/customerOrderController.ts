@@ -41,7 +41,7 @@ import {
   redeemableCoupon,
 } from "../../../services/couponService";
 import Coupon from "../../../database/models/couponModel";
-import { approvedReviewsOnly } from "../../../services/productPresenter";
+import { approvedReviewsOnly, sellingPrice, withPrices } from "../../../services/productPresenter";
 import {
   buildEsewaPayment,
   checkGatewayStatus,
@@ -49,6 +49,28 @@ import {
   startKhaltiPayment,
   type GatewayResult,
 } from "../../../services/paymentGatewayService";
+
+const MAX_LINE_QUANTITY = 999;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Order lines must be real product ids with whole-number quantities: they feed stock updates and totals.
+ * Converts each quantity to a number in place; returns an error message, or null when all lines are fine.
+ */
+const lineItemsError = (products: { productId: unknown; quantity: unknown }[]): string | null => {
+  const seen = new Set<string>();
+  for (const item of products) {
+    if (!item || typeof item.productId !== "string" || !UUID_RE.test(item.productId)) return "Invalid product in order";
+    if (seen.has(item.productId)) return "Each product can only appear once in an order";
+    seen.add(item.productId);
+    const qty = Number(item.quantity);
+    if (!Number.isInteger(qty) || qty < 1 || qty > MAX_LINE_QUANTITY) {
+      return `Quantity must be a whole number from 1 to ${MAX_LINE_QUANTITY}`;
+    }
+    item.quantity = qty;
+  }
+  return null;
+};
 
 const formatRs = (amount: number | string) => `Rs ${Number(amount).toLocaleString()}`;
 
@@ -102,9 +124,14 @@ export const settleOnlinePayment = async (order: Order, payment: Payment, custom
         { paymentStatus: PaymentStatus.Paid },
         { where: { id: payment.id, paymentStatus: { [Op.ne]: PaymentStatus.Paid } }, transaction: t },
       );
-      if (count && order.orderStatus === OrderStatus.Pending) {
-        order.orderStatus = OrderStatus.Preparation;
-        await order.save({ transaction: t });
+      if (count) {
+        // Only a still-pending order moves on; one cancelled meanwhile (its stock already released) stays cancelled
+        await Order.update(
+          { orderStatus: OrderStatus.Preparation },
+          { where: { id: order.id, orderStatus: OrderStatus.Pending }, transaction: t },
+        );
+        const current = await Order.findByPk(order.id, { attributes: ["orderStatus"], transaction: t });
+        if (current) order.orderStatus = current.orderStatus;
       }
       return count > 0;
     });
@@ -238,6 +265,12 @@ class CustomerOrderController {
       return;
     }
 
+    const linesError = lineItemsError(products);
+    if (linesError) {
+      res.status(400).json({ message: linesError, field: "products" });
+      return;
+    }
+
     const phoneRegex = /^\d{10}$/;
     if (!phoneRegex.test(phoneNumber)) {
       res.status(400).json({
@@ -293,8 +326,9 @@ class CustomerOrderController {
         return;
       }
 
-      const price = Number(product.productPrice) || 0;
-      unitPrices.set(item.productId, price); // price at the time of ordering
+      // What the customer pays (after the product discount), saved on the order line
+      const price = sellingPrice(product);
+      unitPrices.set(item.productId, price);
       const qty = Number(item.quantity) || 1;
       productsTotalCost += price * qty;
     }
@@ -404,7 +438,7 @@ class CustomerOrderController {
             const [affectedCount] = await Product.update(
               {
                 productStock: sequelize.literal(
-                  `"productStock" - ${item.quantity}`,
+                  `"productStock" - ${Math.trunc(Number(item.quantity))}`,
                 ) as unknown as number,
               },
               {
@@ -440,6 +474,8 @@ class CustomerOrderController {
         const product = await Product.findByPk(item.productId);
         if (product) {
           const stock = Number(product.productStock) || 0;
+          // Alert once, when this order takes the product to or below the threshold (not on every later sale)
+          const stockBefore = stock + Number(item.quantity);
           if (stock === 0) {
             emitToAdmin("admin:out-of-stock", {
               productId: product.id,
@@ -453,7 +489,7 @@ class CustomerOrderController {
               message: `${product.productName} just sold out. Restock it so customers can keep buying.`,
               link: "/admin-dashboard/products",
             });
-          } else if (stock < settings.lowStockThreshold) {
+          } else if (stock <= settings.lowStockThreshold && stockBefore > settings.lowStockThreshold) {
             emitToAdmin("admin:low-stock", {
               productId: product.id,
               productName: product.productName,
@@ -881,7 +917,12 @@ class CustomerOrderController {
           return;
         }
       } catch {
-        // Gateway unreachable: carry on with the new attempt
+        // Can't tell whether the earlier payment went through; starting a new one could charge twice
+        res.status(503).json({
+          message: "We couldn't check your earlier payment just now. Please try again in a minute.",
+          field: "payment",
+        });
+        return;
       }
     }
 
@@ -947,6 +988,7 @@ class CustomerOrderController {
                 attributes: [
                   "productName",
                   "productPrice",
+                  "productDiscount",
                   "productImage",
                   "productStock",
                 ],
@@ -969,6 +1011,8 @@ class CustomerOrderController {
                   detail.Product.productImage,
                 );
               }
+              // Today's selling price (only used for older orders without a saved price)
+              if (detail.Product) detail.Product = withPrices(detail.Product);
               return detail;
             },
           );
@@ -1029,6 +1073,7 @@ class CustomerOrderController {
                   "id",
                   "productName",
                   "productPrice",
+                  "productDiscount",
                   "productImage",
                   "productStock",
                 ],
@@ -1071,6 +1116,7 @@ class CustomerOrderController {
                 detail.Product.productImage,
               );
             }
+            if (detail.Product) detail.Product = withPrices(detail.Product);
             return detail;
           });
       }
@@ -1130,6 +1176,12 @@ class CustomerOrderController {
           message: "All fields are required",
           field: "general",
         });
+        return;
+      }
+
+      const linesError = lineItemsError(products);
+      if (linesError) {
+        res.status(400).json({ message: linesError, field: "products" });
         return;
       }
 
@@ -1252,7 +1304,7 @@ class CustomerOrderController {
 
         // Items keep the price they were ordered at, even if the shop price has changed since
         const savedPrice = oldOrderDetails.find((d) => d.productId === item.productId)?.unitPrice;
-        const price = savedPrice == null ? Number(product.productPrice) || 0 : Number(savedPrice);
+        const price = savedPrice == null ? sellingPrice(product) : Number(savedPrice);
         unitPrices.set(item.productId, price);
         const qty = Number(item.quantity) || 1;
         productsTotalCost += price * qty;
@@ -1367,8 +1419,10 @@ class CustomerOrderController {
           throw new Error("ORDER_NO_LONGER_EDITABLE");
         }
 
-        // Restore stock from the old line items
-        for (const oldDetail of oldOrderDetails) {
+        // Restore stock from the line items as they are now (read under the lock, so a
+        // simultaneous edit or cancel can't make us put back the wrong quantities)
+        const currentDetails = await OrderDetails.findAll({ where: { orderId: order.id }, transaction: t });
+        for (const oldDetail of currentDetails) {
           await Product.increment("productStock", {
             by: oldDetail.quantity,
             where: { id: oldDetail.productId },
@@ -1386,7 +1440,7 @@ class CustomerOrderController {
           const [affectedCount] = await Product.update(
             {
               productStock: sequelize.literal(
-                `"productStock" - ${item.quantity}`,
+                `"productStock" - ${Math.trunc(Number(item.quantity))}`,
               ) as unknown as number,
             },
             {
@@ -1579,10 +1633,6 @@ class CustomerOrderController {
         return;
       }
 
-      const orderDetails = await OrderDetails.findAll({
-        where: { orderId: order.id },
-      });
-
       await sequelize.transaction(async (t) => {
         const lockedOrder = await Order.findOne({
           where: { id: order.id, orderStatus: OrderStatus.Pending },
@@ -1593,6 +1643,8 @@ class CustomerOrderController {
           throw new Error("ORDER_NO_LONGER_CANCELLABLE");
         }
 
+        // Read the items under the lock, so an edit at the same moment can't change what goes back on sale
+        const orderDetails = await OrderDetails.findAll({ where: { orderId: order.id }, transaction: t });
         for (const detail of orderDetails) {
           await Product.increment("productStock", {
             by: detail.quantity,

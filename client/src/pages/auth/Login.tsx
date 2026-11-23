@@ -135,7 +135,17 @@ useEffect(() => {
 
 useEffect(() => {
   const queryParams = new URLSearchParams(window.location.search);
-  if (queryParams.get("expired") === "true") {
+  const googleError = queryParams.get("error");
+  if (queryParams.get("blocked") === "true" || googleError === "account_blocked") {
+    toast.error("This account has been blocked. Please contact the store if you think this is a mistake.", {
+      toastId: "account-blocked-notice",
+      autoClose: 8000,
+    });
+    window.history.replaceState({}, document.title, window.location.pathname);
+  } else if (googleError === "google_login_failed") {
+    toast.error("Google sign-in didn't work. Please try again.", { toastId: "google-login-failed" });
+    window.history.replaceState({}, document.title, window.location.pathname);
+  } else if (queryParams.get("expired") === "true") {
     toast.warn("Your session has expired. Please log in again to continue.", {
       toastId: "session-expired-notice",
       autoClose: 5000,

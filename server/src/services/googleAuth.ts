@@ -1,13 +1,36 @@
+import crypto from "crypto";
 import { Response } from "express";
 import { AuthRequest } from "../middleware/authMiddleware";
-import generateToken from "./generateToken";
 import User from "../database/models/userModel";
 import { envConfig } from "../config/config";
 import { emitToAdmin } from "./socketService";
 import { notifyNewCustomer } from "./notificationService";
 const passport = require("passport");
 const GoogleStrategy = require('passport-google-oauth').OAuth2Strategy;
-const jwt = require("jsonwebtoken");
+
+/** Where the shop runs (CLIENT_URL); redirects after Google sign-in go here */
+export const clientUrl = () => (envConfig.clientUrl || "http://localhost:5173").replace(/\/$/, "");
+
+// One-time codes handed to the shop after Google sign-in; the shop swaps one for a login token.
+// Works when the shop and the API are on different domains (cookies set by the API can't be read there).
+const LOGIN_CODE_TTL_MS = 60 * 1000;
+const loginCodes = new Map<string, { userId: string; expiresAt: number }>();
+
+const issueLoginCode = (userId: string) => {
+  const now = Date.now();
+  for (const [code, entry] of loginCodes) if (entry.expiresAt < now) loginCodes.delete(code);
+  const code = crypto.randomBytes(32).toString("hex");
+  loginCodes.set(code, { userId, expiresAt: now + LOGIN_CODE_TTL_MS });
+  return code;
+};
+
+/** Returns the user id for a valid code and forgets the code (each one works once) */
+export const redeemLoginCode = (code: unknown): string | null => {
+  if (typeof code !== "string") return null;
+  const entry = loginCodes.get(code);
+  loginCodes.delete(code);
+  return entry && entry.expiresAt >= Date.now() ? entry.userId : null;
+};
 
 passport.serializeUser(function(user: any, cb: any) {
   cb(null, user.id); // Serialize only the user ID
@@ -48,7 +71,8 @@ passport.use(new GoogleStrategy({
           email: userGoogleEmail,
           googleId,
           avatar,
-          // No password needed for Google auth users
+          password: null, // Google accounts sign in without a password (one can be set via Forgot password)
+          isVerified: true, // Google has already confirmed the email address
         });
 
         emitToAdmin("admin:user-registered", {
@@ -67,6 +91,12 @@ passport.use(new GoogleStrategy({
         // Link existing account
         user.googleId = googleId;
         user.avatar = avatar || user.avatar;
+        if (!user.isVerified) {
+          // Nobody proved they own this email before; the password chosen at sign-up could be
+          // someone else's, so it's dropped now that Google confirms the real owner
+          user.isVerified = true;
+          user.password = null;
+        }
         await user.save();
       }
 
@@ -79,40 +109,20 @@ passport.use(new GoogleStrategy({
 
 const googleAuthCallback = async function (req: AuthRequest, res: Response) {
   try {
-    const user = req.user as any;  // Passport sets req.user to the deserialized user
-
+    const user = req.user as User | undefined; // Passport sets req.user to the signed-in user
     if (!user) {
       throw new Error("User not found after authentication");
     }
-
-    // Generate JWT token
-    const token = generateToken(user.id, "1h");
-//     console.log("Generated token payload:", jwt.decode(token));
-
-  // Clear any old/wrong cookies first
-    res.clearCookie("token");
-    res.clearCookie("user");
-
-    // Set cookie (1 hour)
-    res.cookie("token", token, {
-      httpOnly: false, 
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 1 * 60 * 60 * 1000, // 1 hour
-    });
-    res.cookie("user", JSON.stringify(user.toJSON()), {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 1 * 60 * 60 * 1000, // 1 hour
-    });
-
-    // Redirect to frontend with success flag (avoid sending token in query for security)
-    res.redirect(`http://localhost:5173?loginSuccess=true`);
+    if (user.isBlocked) {
+      res.redirect(`${clientUrl()}/login?error=account_blocked`);
+      return;
+    }
+    // The shop exchanges this short-lived code for a login token (POST /api/auth/google/exchange)
+    res.redirect(`${clientUrl()}/?googleCode=${issueLoginCode(user.id)}`);
   } catch (error) {
     console.error("Error during Google OAuth callback:", error);
-    res.redirect("http://localhost:5173/login?error=google_login_failed");
+    res.redirect(`${clientUrl()}/login?error=google_login_failed`);
   }
-}
+};
 
 export default { passport, googleAuthCallback };

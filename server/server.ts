@@ -1,6 +1,7 @@
 import { initApp, allowedOrigins } from "./src/app";
+import { isTokenRevoked } from "./src/services/tokenRevocation";
 import { envConfig } from "./src/config/config";
-import adminSeeder from "./src/adminseeder";
+import adminSeeder from "./src/adminSeeder";
 import { ensureStoreSettings } from "./src/services/storeSettingsService";
 import CategoryController from "./src/controllers/admin/category/categoryController";
 import { startUnpaidOrderJob } from "./src/services/unpaidOrderJob";
@@ -32,6 +33,15 @@ async function startServer() {
 
   // Cancel online orders that were never paid, so their stock goes back on sale
   startUnpaidOrderJob();
+
+  // Hosts stop the app with SIGTERM on deploys: finish open requests, then exit
+  const shutdown = (signal: string) => {
+    console.log(`${signal} received, shutting down...`);
+    server.close(() => process.exit(0));
+    setTimeout(() => process.exit(0), 10_000).unref();
+  };
+  process.once("SIGTERM", () => shutdown("SIGTERM"));
+  process.once("SIGINT", () => shutdown("SIGINT"));
 
   // *Socket.io server (Method 1)
   //     const io = new Server(server, {
@@ -129,7 +139,8 @@ async function startServer() {
           return next();
         }
         const userData = await User.findByPk(result.id);
-        if (!userData) {
+        // Blocked accounts, and tokens from before a password change, get no personal or admin updates
+        if (!userData || userData.isBlocked || isTokenRevoked(result.iat, userData.passwordChangedAt)) {
           (socket as any).userId = null;
           (socket as any).role = "guest";
           return next();
@@ -174,50 +185,11 @@ async function startServer() {
       unregisterConnectedSocket(socket.id);
       console.log(`Socket disconnected: ${socket.id}`);
     });
-
-    // *Update Order status
-    socket.on("orderStatusUpdated", async (data) => {
-      // Only admins may change order status (any visitor could call this before)
-      if (role !== "admin") {
-        socket.emit("appError", "Forbidden");
-        return;
-      }
-      try {
-        console.log("Received orderStatusUpdated:", data); 
-        const { orderId, userId, status } = data;
-        const findUser = onlineUsers.find((user) => user.userId === userId);
-        if (!findUser) {
-          console.log("No online user found for userId:", userId);
-          socket.emit("appError", "Unauthorized! User not found"); 
-          return;
-        }
-        const [rowsUpdated] = await Order.update(
-          { orderStatus: status },
-          { where: { id: orderId } },
-        );
-        console.log("rowsUpdated:", rowsUpdated);
-        if (rowsUpdated === 0) {
-          socket.emit("appError", "Order not found or not updated");
-          return;
-        }
-        io.to(findUser.socketId).emit(
-          "success",
-          "Order status updated successfully",
-        );
-
-        // Notify admins in admin-room of status change
-        emitToAdmin("admin:dashboard-refresh", {
-          type: "order-status-updated",
-          orderId,
-          status,
-        });
-      } catch (err: any) {
-        console.error("orderStatusUpdated error:", err);
-        socket.emit("appError", "Something went wrong updating the order");
-      }
-    });
-
+    // Order status changes go through PATCH /api/admin/order/:id, which applies the stock and payment rules
   });
 }
 
-startServer();
+startServer().catch((error) => {
+  console.error("🔴 Server failed to start:", error);
+  process.exit(1);
+});

@@ -1,767 +1,493 @@
-import React, { useEffect, useState, useMemo } from "react";
-import {
-  MessageSquare,
-  Search,
-  RefreshCw,
-  X,
-  ChevronLeft,
-  ChevronRight,
-  Star,
-  AlertCircle,
-  Clock,
-  CheckCircle2,
-  AlertTriangle,
-  Trash2,
-} from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { AlertCircle, Camera, Check, Clock, Eye, EyeOff, Loader2, MessageSquare, MessageSquareReply, RefreshCw, Search, Star, Trash2, X } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "../../hooks/hooks";
 import {
-  fetchAdminReviews,
-  deleteAdminReview,
-  updateReviewStatus,
-  bulkUpdateReviewStatus,
   bulkDeleteReviews,
+  bulkUpdateReviewStatus,
+  deleteAdminReview,
+  fetchAdminReviews,
+  updateReviewStatus,
 } from "../../store/admin/reviewSlice";
-import { fetchDatas as syncDashboardStats } from "../../store/admin/datasSlice";
-import {
-  AdminReview,
-  ReviewModerationStatus,
-} from "../../types/admin/reviewTypes";
+import { fetchDatas as syncDashboard } from "../../store/admin/datasSlice";
+import type { AdminReview, ReviewModerationStatus } from "../../types/admin/reviewTypes";
 import { Status } from "../../global/statuses";
 import { Skeleton } from "../../global/Skeleton";
-import ReviewTable from "../../components/admin/Reviews/ReviewTable";
 import ReviewViewModal from "../../components/admin/Reviews/ReviewViewModal";
-import ReviewDeleteModal from "../../components/admin/Reviews/ReviewDeleteModal";
-import ReviewBulkDeleteModal from "../../components/admin/Reviews/ReviewBulkDeleteModal";
-import { useSearchParams } from "react-router-dom";
 import { connectSocket } from "../../services/socket";
+import { hideBrokenImage, optimizeImageUrl } from "../../utils/helpers";
 
-function formatDate(dateStr?: string) {
-  if (!dateStr) return "N/A";
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
+const PAGE_SIZE = 10;
+
+type Tab = "ALL" | "TO_CHECK" | "APPROVED" | "PENDING" | "FLAGGED";
+type RatingFilter = "ALL" | "5" | "4" | "3" | "2" | "1" | "LOW";
+type PhotoFilter = "ALL" | "WITH" | "WITHOUT";
+type Sort = "newest" | "oldest" | "rating_desc" | "rating_asc";
+
+const card = "rounded-2xl border border-[#1A1613]/10 bg-[#FFFDF8] dark:border-white/10 dark:bg-[#1E1A17]";
+const muted = "text-[#1A1613]/60 dark:text-[#F5EFE6]/55";
+const strong = "text-[#1A1613] dark:text-[#F5EFE6]";
+const control =
+  "rounded-lg border border-[#1A1613]/15 bg-white px-3 py-2 text-sm text-[#1A1613] focus:outline-none focus:ring-2 focus:ring-[#E6540B]/30 dark:border-white/10 dark:bg-[#14110F] dark:text-[#F5EFE6] dark:scheme-dark";
+const secondaryButton =
+  "inline-flex cursor-pointer items-center gap-2 rounded-lg border border-[#1A1613]/15 bg-[#FFFDF8] px-3 py-1.5 text-sm font-medium text-[#1A1613] hover:bg-[#F4EEDF] disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-[#1E1A17] dark:text-[#F5EFE6] dark:hover:bg-[#2A2420]";
+const iconButton =
+  "inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-[#1A1613]/60 hover:bg-[#F4EEDF] hover:text-[#1A1613] dark:text-[#F5EFE6]/60 dark:hover:bg-[#2A2420] dark:hover:text-[#F5EFE6]";
+
+/** Reviews saved before moderation existed have no status; they count as approved */
+const statusOf = (r: AdminReview): ReviewModerationStatus => r.status || "APPROVED";
+
+const TABS: { key: Tab; label: string; matches: (r: AdminReview) => boolean }[] = [
+  { key: "ALL", label: "All", matches: () => true },
+  { key: "TO_CHECK", label: "To check", matches: (r) => statusOf(r) !== "APPROVED" },
+  { key: "APPROVED", label: "Visible", matches: (r) => statusOf(r) === "APPROVED" },
+  { key: "PENDING", label: "Pending", matches: (r) => statusOf(r) === "PENDING" },
+  { key: "FLAGGED", label: "Flagged", matches: (r) => statusOf(r) === "FLAGGED" },
+];
+
+const statusTone: Record<ReviewModerationStatus, string> = {
+  APPROVED: "bg-emerald-500/10 text-emerald-800 dark:text-emerald-400",
+  PENDING: "bg-amber-500/10 text-amber-800 dark:text-amber-400",
+  FLAGGED: "bg-red-500/10 text-red-800 dark:text-red-400",
+};
+
+const formatDate = (iso?: string) =>
+  iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
+
+const Stars = ({ rating }: { rating: number }) => (
+  <span className="inline-flex items-center gap-0.5" aria-label={`${rating} out of 5 stars`}>
+    {[1, 2, 3, 4, 5].map((n) => (
+      <Star key={n} className={`h-3.5 w-3.5 ${n <= rating ? "text-amber-400" : "text-[#1A1613]/15 dark:text-white/15"}`} fill="currentColor" strokeWidth={0} />
+    ))}
+  </span>
+);
+
+/** Links like ?status=PENDING|FLAGGED|TO_CHECK, ?rating=1, ?search= from the dashboard and header search */
+const tabFromLink = (value: string | null): Tab => {
+  const v = (value || "").toUpperCase();
+  return (["TO_CHECK", "APPROVED", "PENDING", "FLAGGED"].includes(v) ? v : "ALL") as Tab;
+};
 
 const ReviewManagement: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { reviews, status, actionLoading } = useAppSelector(
-    (state) => state.adminReview
+  const { reviews, total, totalPages, currentPage, counts, stats: reviewStats, status, actionLoading, error } = useAppSelector(
+    (state) => state.adminReview,
   );
   const [searchParams] = useSearchParams();
 
-  // Search & Filters
-  const [searchTerm, setSearchTerm] = useState("");
+  const [tab, setTab] = useState<Tab>(tabFromLink(searchParams.get("status")));
+  const [searchInput, setSearchInput] = useState(searchParams.get("search") || "");
+  const [search, setSearch] = useState(searchParams.get("search") || "");
+  const [rating, setRating] = useState<RatingFilter>(() => {
+    const r = searchParams.get("rating") || "";
+    return (["5", "4", "3", "2", "1", "LOW"].includes(r.toUpperCase()) ? r.toUpperCase() : "ALL") as RatingFilter;
+  });
+  const [photos, setPhotos] = useState<PhotoFilter>("ALL");
+  const [sort, setSort] = useState<Sort>("newest");
+  const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState<string[]>([]);
+
+  const [viewing, setViewing] = useState<AdminReview | null>(null);
+  const [toDelete, setToDelete] = useState<AdminReview | null>(null);
+  const [bulkDelete, setBulkDelete] = useState(false);
+  const [statusBusy, setStatusBusy] = useState<string | null>(null);
+  const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Wait until typing pauses before searching
+  useEffect(() => {
+    const next = searchInput.trim();
+    if (next === search) return;
+    const timer = setTimeout(() => {
+      setSearch(next);
+      setPage(1);
+      setSelected([]);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput, search]);
+
+  // Every filter or page change asks the server for that page
+  useEffect(() => {
+    dispatch(fetchAdminReviews({ tab, search, rating, photo: photos, sort, page, limit: PAGE_SIZE }));
+  }, [dispatch, tab, search, rating, photos, sort, page]);
 
   useEffect(() => {
-    const q = searchParams.get("search");
-    if (q) {
-      const lower = q.trim().toLowerCase();
-      if (lower === "5 star" || lower === "5 stars" || lower === "5★") {
-        setSelectedRating("5");
-      } else if (lower === "1 star" || lower === "critical") {
-        setSelectedRating("1");
-      } else {
-        setSearchTerm(q);
-      }
-      setCurrentPage(1);
-    }
-
-    const ratingParam = searchParams.get("rating");
-    if (ratingParam) {
-      setSelectedRating(ratingParam);
-      setCurrentPage(1);
-    }
-
-    const statusParam = searchParams.get("status");
-    if (statusParam) {
-      setSelectedStatus(statusParam.toUpperCase());
-      setCurrentPage(1);
-    }
-  }, [searchParams]);
-  const [selectedRating, setSelectedRating] = useState<string>("ALL");
-  const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
-  const [selectedAttachment, setSelectedAttachment] = useState<string>("ALL");
-  const [sortBy, setSortBy] = useState<
-    "newest" | "oldest" | "rating_desc" | "rating_asc"
-  >("newest");
-
-  // Multi-select for Bulk Moderation
-  const [selectedReviewIds, setSelectedReviewIds] = useState<string[]>([]);
-  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
-
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 8;
-
-  // Modals
-  const [viewingReview, setViewingReview] = useState<AdminReview | null>(null);
-  const [deletingReview, setDeletingReview] = useState<AdminReview | null>(null);
-
-  // Initial load & real-time updates
-  useEffect(() => {
-    dispatch(fetchAdminReviews());
-
+    // New reviews and changes from other admins appear without refreshing (one reload per burst)
     const socket = connectSocket();
-    const handleReviewEvent = () => {
-      dispatch(fetchAdminReviews());
+    const refresh = () => {
+      if (refreshTimer.current) clearTimeout(refreshTimer.current);
+      refreshTimer.current = setTimeout(() => dispatch(fetchAdminReviews()), 800);
     };
-
-    socket.on("admin:review-created", handleReviewEvent);
-    socket.on("admin:dashboard-refresh", handleReviewEvent);
-
+    socket.on("admin:review-created", refresh);
+    socket.on("admin:dashboard-refresh", refresh);
     return () => {
-      socket.off("admin:review-created", handleReviewEvent);
-      socket.off("admin:dashboard-refresh", handleReviewEvent);
+      if (refreshTimer.current) clearTimeout(refreshTimer.current);
+      socket.off("admin:review-created", refresh);
+      socket.off("admin:dashboard-refresh", refresh);
     };
   }, [dispatch]);
 
-  const handleRefresh = async () => {
-    await dispatch(fetchAdminReviews());
-    setSelectedReviewIds([]);
+  /** Any filter change clears the selection, so bulk actions only touch reviews that are on screen */
+  const withReset = <T,>(setter: (value: T) => void) => (value: T) => {
+    setter(value);
+    setPage(1);
+    setSelected([]);
+  };
+  const changeTab = withReset(setTab);
+  const changeRating = withReset(setRating);
+  const changePhotos = withReset(setPhotos);
+  const changeSort = withReset(setSort);
+
+  // Tab counts, cards and the page itself change after an action, so reload the page on screen
+  const syncAfterChange = () => {
+    dispatch(fetchAdminReviews());
+    dispatch(syncDashboard()).catch(() => {});
   };
 
-  const handleConfirmDelete = async () => {
-    if (!deletingReview) return;
-    const result = await dispatch(deleteAdminReview(deletingReview.id));
-    if (result && result.success) {
-      dispatch(syncDashboardStats());
-      setDeletingReview(null);
-      setSelectedReviewIds((prev) => prev.filter((id) => id !== deletingReview.id));
-      if (viewingReview && viewingReview.id === deletingReview.id) {
-        setViewingReview(null);
+  const changeStatus = async (review: AdminReview, next: ReviewModerationStatus) => {
+    if (statusOf(review) === next) return;
+    setStatusBusy(review.id);
+    const result = await dispatch(updateReviewStatus(review.id, next));
+    setStatusBusy(null);
+    if (result?.success) syncAfterChange();
+  };
+
+  const bulkStatus = async (next: ReviewModerationStatus) => {
+    if (!selected.length) return;
+    const result = await dispatch(bulkUpdateReviewStatus(selected, next));
+    if (result?.success) {
+      setSelected([]);
+      syncAfterChange();
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (bulkDelete) {
+      const result = await dispatch(bulkDeleteReviews(selected));
+      if (result?.success) {
+        setSelected([]);
+        syncAfterChange();
       }
+      setBulkDelete(false);
+      return;
     }
+    if (!toDelete) return;
+    const result = await dispatch(deleteAdminReview(toDelete.id));
+    if (result?.success) {
+      setSelected((prev) => prev.filter((id) => id !== toDelete.id));
+      if (viewing?.id === toDelete.id) setViewing(null);
+      syncAfterChange();
+    }
+    setToDelete(null);
   };
 
-  // Status Change
-  const handleSingleStatusChange = async (
-    id: string,
-    newStatus: ReviewModerationStatus
-  ) => {
-    await dispatch(updateReviewStatus(id, newStatus));
-  };
+  // Numbers for the cards come from the server (whole store); the average counts visible reviews only,
+  // the same rating shoppers see
+  const pageItems = reviews;
+  const firstLoad = !reviewStats && status !== Status.ERROR;
+  const loading = status === Status.LOADING;
+  const filtered = search !== "" || rating !== "ALL" || photos !== "ALL";
+  const allOnPageSelected = pageItems.length > 0 && pageItems.every((r) => selected.includes(r.id));
+  const viewingLive = viewing ? reviews.find((r) => r.id === viewing.id) ?? viewing : null;
 
-  // Bulk Actions
-  const handleToggleSelect = (id: string) => {
-    setSelectedReviewIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+  const toggle = (id: string) => setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  const togglePage = () =>
+    setSelected((prev) =>
+      allOnPageSelected ? prev.filter((id) => !pageItems.some((r) => r.id === id)) : [...new Set([...prev, ...pageItems.map((r) => r.id)])],
     );
+
+  const resetFilters = () => {
+    setSearchInput("");
+    setSearch("");
+    setRating("ALL");
+    setPhotos("ALL");
+    setTab("ALL");
+    setPage(1);
+    setSelected([]);
   };
 
-  const handleBulkApprove = async () => {
-    if (selectedReviewIds.length === 0) return;
-    await dispatch(bulkUpdateReviewStatus(selectedReviewIds, "APPROVED"));
-    setSelectedReviewIds([]);
-  };
+  const stats = [
+    { label: "Reviews", value: (reviewStats?.total ?? 0).toLocaleString(), hint: `${(reviewStats?.visible ?? 0).toLocaleString()} visible in the store`, icon: MessageSquare, tone: "bg-[#E6540B]/10 text-[#E6540B] dark:bg-[#E6540B]/15", onClick: resetFilters, active: false },
+    { label: "Average rating", value: reviewStats?.visible ? reviewStats.averageRating.toFixed(1) : "—", hint: "Of visible reviews, out of 5", icon: Star, tone: "bg-amber-500/10 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400", onClick: null, active: false },
+    { label: "To check", value: (reviewStats?.toCheck ?? 0).toLocaleString(), hint: "Pending or flagged, hidden", icon: Clock, tone: "bg-sky-500/10 text-sky-700 dark:bg-sky-500/15 dark:text-sky-400", onClick: () => changeTab(tab === "TO_CHECK" ? "ALL" : "TO_CHECK"), active: tab === "TO_CHECK" },
+    { label: "Low ratings", value: (reviewStats?.lowRated ?? 0).toLocaleString(), hint: "1 or 2 stars", icon: AlertCircle, tone: "bg-red-500/10 text-red-700 dark:bg-red-500/15 dark:text-red-400", onClick: () => changeRating(rating === "LOW" ? "ALL" : "LOW"), active: rating === "LOW" },
+  ];
 
-  const handleBulkFlag = async () => {
-    if (selectedReviewIds.length === 0) return;
-    await dispatch(bulkUpdateReviewStatus(selectedReviewIds, "FLAGGED"));
-    setSelectedReviewIds([]);
-  };
-
-  const handleConfirmBulkDelete = async () => {
-    if (selectedReviewIds.length === 0) return;
-    const res = await dispatch(bulkDeleteReviews(selectedReviewIds));
-    if (res && res.success) {
-      dispatch(syncDashboardStats());
-      setSelectedReviewIds([]);
-      setIsBulkDeleting(false);
-    }
-  };
-
-  const isFiltered =
-    searchTerm.trim() !== "" ||
-    selectedRating !== "ALL" ||
-    selectedStatus !== "ALL" ||
-    selectedAttachment !== "ALL" ||
-    sortBy !== "newest";
-
-  const handleResetFilters = () => {
-    setSearchTerm("");
-    setSelectedRating("ALL");
-    setSelectedStatus("ALL");
-    setSelectedAttachment("ALL");
-    setSortBy("newest");
-    setCurrentPage(1);
-    setSelectedReviewIds([]);
-  };
-
-  // KPIs
-  const totalReviewsCount = reviews.length;
-  const averageRating =
-    totalReviewsCount > 0
-      ? (
-          reviews.reduce((sum, r) => sum + Number(r.rating || 0), 0) /
-          totalReviewsCount
-        ).toFixed(1)
-      : "0.0";
-
-  const pendingReviewsCount = reviews.filter(
-    (r) => r.status === "PENDING"
-  ).length;
-
-  const criticalReviewsCount = reviews.filter(
-    (r) => Number(r.rating || 0) <= 2 || r.status === "FLAGGED"
-  ).length;
-
-  // Filter & Sort
-  const filteredReviews = useMemo(() => {
-    return reviews
-      .filter((rev) => {
-        // Search
-        if (searchTerm.trim()) {
-          const q = searchTerm.toLowerCase();
-          const matchUser = rev.User?.username?.toLowerCase().includes(q);
-          const matchProduct = rev.Product?.productName
-            ?.toLowerCase()
-            .includes(q);
-          const matchCategory = rev.Product?.Category?.categoryName
-            ?.toLowerCase()
-            .includes(q);
-          const matchMessage = rev.message?.toLowerCase().includes(q);
-          const matchReply = rev.adminReply?.toLowerCase().includes(q);
-          if (
-            !matchUser &&
-            !matchProduct &&
-            !matchCategory &&
-            !matchMessage &&
-            !matchReply
-          ) {
-            return false;
-          }
-        }
-
-        // Rating Filter
-        if (selectedRating !== "ALL") {
-          if (
-            selectedRating === "1,2" ||
-            selectedRating === "1_2" ||
-            selectedRating === "LOW"
-          ) {
-            const r = Math.round(Number(rev.rating || 0));
-            if (r !== 1 && r !== 2) {
-              return false;
-            }
-          } else {
-            const targetRating = Number(selectedRating);
-            if (Math.round(Number(rev.rating || 0)) !== targetRating) {
-              return false;
-            }
-          }
-        }
-
-        // Status Filter
-        if (selectedStatus !== "ALL") {
-          const revStatus = rev.status || "APPROVED";
-          if (revStatus !== selectedStatus) {
-            return false;
-          }
-        }
-
-        // Attachment Filter
-        if (selectedAttachment === "WITH_PHOTO" && !rev.reviewImage) {
-          return false;
-        }
-        if (selectedAttachment === "TEXT_ONLY" && rev.reviewImage) {
-          return false;
-        }
-
-        return true;
-      })
-      .sort((a, b) => {
-        if (sortBy === "newest") {
-          return (
-            new Date(b.createdAt || 0).getTime() -
-            new Date(a.createdAt || 0).getTime()
-          );
-        }
-        if (sortBy === "oldest") {
-          return (
-            new Date(a.createdAt || 0).getTime() -
-            new Date(b.createdAt || 0).getTime()
-          );
-        }
-        if (sortBy === "rating_desc") {
-          return Number(b.rating || 0) - Number(a.rating || 0);
-        }
-        if (sortBy === "rating_asc") {
-          return Number(a.rating || 0) - Number(b.rating || 0);
-        }
-        return 0;
-      });
-  }, [reviews, searchTerm, selectedRating, selectedStatus, selectedAttachment, sortBy]);
-
-  // Pagination calculation
-  const totalPages = Math.ceil(filteredReviews.length / pageSize) || 1;
-  const paginatedReviews = filteredReviews.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
+  const statusSelect = (r: AdminReview) => (
+    <div className="relative inline-flex items-center">
+      <select
+        value={statusOf(r)}
+        onChange={(e) => changeStatus(r, e.target.value as ReviewModerationStatus)}
+        disabled={statusBusy === r.id}
+        aria-label={`Moderation status of ${r.User?.username ?? "this"} review`}
+        className={`cursor-pointer appearance-none rounded-full py-0.5 pl-2.5 pr-6 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#E6540B]/30 disabled:opacity-60 dark:scheme-dark ${statusTone[statusOf(r)]}`}
+      >
+        <option value="APPROVED">Visible</option>
+        <option value="PENDING">Pending</option>
+        <option value="FLAGGED">Flagged</option>
+      </select>
+      {statusBusy === r.id ? (
+        <Loader2 className="pointer-events-none absolute right-1.5 h-3 w-3 animate-spin" />
+      ) : (
+        <span className="pointer-events-none absolute right-2 text-[9px] opacity-60">▼</span>
+      )}
+    </div>
   );
 
-  const isAllSelectedOnPage =
-    paginatedReviews.length > 0 &&
-    paginatedReviews.every((r) => selectedReviewIds.includes(r.id));
+  const actions = (r: AdminReview) => (
+    <div className="flex items-center justify-end gap-0.5">
+      <button type="button" onClick={() => setViewing(r)} className={iconButton} aria-label="View and reply" title={r.adminReply ? "View or edit your reply" : "View and reply"}>
+        {r.adminReply ? <MessageSquareReply className="h-4 w-4 text-emerald-600" /> : <Eye className="h-4 w-4" />}
+      </button>
+      <button type="button" onClick={() => setToDelete(r)} className={`${iconButton} hover:text-red-700 dark:hover:text-red-400`} aria-label="Delete review" title="Delete review">
+        <Trash2 className="h-4 w-4" />
+      </button>
+    </div>
+  );
 
-  const handleToggleSelectAll = () => {
-    const pageIds = paginatedReviews.map((r) => r.id);
-    if (isAllSelectedOnPage) {
-      setSelectedReviewIds((prev) => prev.filter((id) => !pageIds.includes(id)));
-    } else {
-      setSelectedReviewIds((prev) => Array.from(new Set([...prev, ...pageIds])));
-    }
-  };
+  const productCell = (r: AdminReview) => (
+    <div className="flex min-w-0 items-center gap-2">
+      <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-md bg-[#F4EEDF] dark:bg-white/5">
+        <img src={optimizeImageUrl(r.Product?.productImage, 80)} alt="" loading="lazy" onError={hideBrokenImage} className="h-full w-full object-cover" />
+      </span>
+      {r.Product ? (
+        <a href={`/productdetails/${r.productId}#reviews`} target="_blank" rel="noopener noreferrer" className={`truncate text-sm font-medium hover:text-[#E6540B] ${strong}`} title="Open in store">
+          {r.Product.productName}
+        </a>
+      ) : (
+        <span className={`text-sm ${muted}`}>Deleted product</span>
+      )}
+    </div>
+  );
 
-  const loading = status === Status.LOADING;
-  // Skeletons only until the first response; refreshes keep the loaded rows visible
-  const initialLoading =
-    (status === Status.IDLE || status === Status.LOADING) && reviews.length === 0;
+  const messageCell = (r: AdminReview) => (
+    <div className="min-w-0">
+      <p className={`line-clamp-2 text-sm ${strong}`}>{r.message}</p>
+      <p className={`mt-0.5 flex items-center gap-2 text-xs ${muted}`}>
+        {r.reviewImage && <span className="inline-flex items-center gap-1"><Camera className="h-3 w-3" /> Photo</span>}
+        {r.adminReply ? <span className="text-emerald-700 dark:text-emerald-400">You replied</span> : <button type="button" onClick={() => setViewing(r)} className="cursor-pointer hover:text-[#E6540B] hover:underline">Reply</button>}
+      </p>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
-      {/* 1. Header Bar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-[#E6540B]/10 dark:bg-[#E6540B]/15 text-[#E6540B] flex items-center justify-center">
-              <MessageSquare className="w-5 h-5" />
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight text-[#1A1613] dark:text-[#F5EFE6] sm:text-3xl">
-              Review Management
-            </h1>
-          </div>
-          <p className="mt-1 text-xs text-[#1A1613]/60 dark:text-[#F5EFE6]/50 sm:text-sm">
-            Moderate product reviews, approve feedback, post official responses, and manage ratings.
-          </p>
+          <h1 className={`text-2xl font-bold sm:text-3xl ${strong}`}>Reviews</h1>
+          <p className={`mt-1 text-sm ${muted}`}>Decide which reviews shoppers see, and reply to customers.</p>
         </div>
-
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={handleRefresh}
-            disabled={loading}
-            className="inline-flex items-center gap-2 rounded-xl border border-[#1A1613]/15 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] px-4 py-2 text-xs font-semibold text-[#1A1613] dark:text-[#F5EFE6] shadow-xs hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
-          >
-            <RefreshCw
-              className={`w-3.5 h-3.5 ${
-                loading ? "animate-spin text-[#E6540B]" : ""
-              }`}
-            />
-            <span>Refresh</span>
-          </button>
-        </div>
+        <button type="button" onClick={() => { dispatch(fetchAdminReviews()); setSelected([]); }} disabled={status === Status.LOADING} className={secondaryButton}>
+          <RefreshCw className={`h-4 w-4 ${status === Status.LOADING ? "animate-spin" : ""}`} /> Refresh
+        </button>
       </div>
 
-      {/* 2. KPI Metrics Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {/* Total Reviews */}
-        <div
-          onClick={handleResetFilters}
-          className={`p-4 rounded-2xl border transition-all cursor-pointer select-none active:scale-[0.98] ${
-            !isFiltered
-              ? "border-[#E6540B]/40 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs"
-              : "border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs hover:border-[#E6540B]/40"
-          }`}
-          title="Click to reset filters and view all reviews"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
-              Total Reviews
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-[#E6540B]/10 dark:bg-[#E6540B]/15 text-[#E6540B] flex items-center justify-center">
-              <MessageSquare className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            {initialLoading ? (
-              <Skeleton className="h-8 w-14" />
-            ) : (
-              <span className="text-2xl font-bold text-[#1A1613] dark:text-[#F5EFE6]">
-                {totalReviewsCount}
-              </span>
-            )}
-            <span className="text-[11px] text-[#1A1613]/40 dark:text-[#F5EFE6]/50">submitted</span>
-          </div>
-        </div>
-
-        {/* Average Rating */}
-        <div className="p-4 rounded-2xl border border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
-              Average Rating
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-500/15 text-amber-500 flex items-center justify-center">
-              <Star className="w-4 h-4 fill-amber-400" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            {initialLoading ? (
-              <Skeleton className="h-8 w-14" />
-            ) : (
-              <span className="text-2xl font-bold text-amber-700 dark:text-amber-400">
-                {`${averageRating}`}
-              </span>
-            )}
-            <span className="text-[11px] text-[#1A1613]/40 dark:text-[#F5EFE6]/50">out of 5.0</span>
-          </div>
-        </div>
-
-        {/* Pending Moderation */}
-        <div
-          onClick={() => {
-            if (selectedStatus === "PENDING") {
-              setSelectedStatus("ALL");
-            } else {
-              setSelectedStatus("PENDING");
-              setCurrentPage(1);
-            }
-          }}
-          className={`p-4 rounded-2xl border transition-all cursor-pointer select-none active:scale-[0.98] ${
-            selectedStatus === "PENDING"
-              ? "border-amber-500 bg-amber-50/50 dark:bg-amber-500/10 shadow-sm ring-2 ring-amber-500/20"
-              : "border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs hover:border-amber-400 hover:shadow-xs"
-          }`}
-          title="Click to filter reviews awaiting moderation (PENDING)"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
-              Pending Approval
-            </span>
-            <div className="flex items-center gap-1.5">
-              {selectedStatus === "PENDING" && (
-                <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-100/90 dark:bg-amber-500/15 px-1.5 py-0.5 rounded-md">
-                  Filtered
-                </span>
-              )}
-              <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-                <Clock className="w-4 h-4" />
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        {stats.map((stat) => {
+          const Icon = stat.icon;
+          const body = (
+            <>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className={`text-sm ${muted}`}>{stat.label}</p>
+                  {firstLoad ? <Skeleton className="mt-1 h-7 w-12" /> : <p className={`mt-1 text-2xl font-bold ${strong}`}>{stat.value}</p>}
+                </div>
+                <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${stat.tone}`}><Icon className="h-4 w-4" /></span>
               </div>
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            {initialLoading ? (
-              <Skeleton className="h-8 w-14" />
-            ) : (
-              <span className="text-2xl font-bold text-amber-700 dark:text-amber-400">
-                {pendingReviewsCount}
-              </span>
-            )}
-            <span className="text-[11px] text-[#1A1613]/40 dark:text-[#F5EFE6]/50">awaiting review</span>
-          </div>
-        </div>
-
-        {/* Critical or Flagged */}
-        <div
-          onClick={() => {
-            if (selectedRating === "1,2") {
-              setSelectedRating("ALL");
-            } else {
-              setSelectedRating("1,2");
-              setCurrentPage(1);
-            }
-          }}
-          className={`p-4 rounded-2xl border transition-all cursor-pointer select-none active:scale-[0.98] ${
-            selectedRating === "1,2"
-              ? "border-rose-500 bg-rose-50/50 dark:bg-rose-500/10 shadow-sm ring-2 ring-rose-500/20"
-              : "border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs hover:border-rose-400 hover:shadow-xs"
-          }`}
-          title="Click to filter 1 & 2 star reviews"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#1A1613]/60 dark:text-[#F5EFE6]/50">
-              Needs Attention
-            </span>
-            <div className="flex items-center gap-1.5">
-              {selectedRating === "1,2" && (
-                <span className="text-[10px] font-semibold text-rose-700 dark:text-rose-400 bg-rose-100/90 dark:bg-rose-500/15 px-1.5 py-0.5 rounded-md">
-                  Filtered
-                </span>
-              )}
-              <div className="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400 flex items-center justify-center">
-                <AlertCircle className="w-4 h-4" />
-              </div>
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            {initialLoading ? (
-              <Skeleton className="h-8 w-14" />
-            ) : (
-              <span className="text-2xl font-bold text-rose-700 dark:text-rose-400">
-                {criticalReviewsCount}
-              </span>
-            )}
-            <span className="text-[11px] text-[#1A1613]/40 dark:text-[#F5EFE6]/50">
-              flagged / low ratings
-            </span>
-          </div>
-        </div>
+              <p className={`mt-1 text-xs ${muted}`}>{stat.active ? "Showing these · click to show all" : stat.hint}</p>
+            </>
+          );
+          return stat.onClick ? (
+            <button key={stat.label} type="button" onClick={stat.onClick} aria-pressed={stat.active} className={`${card} cursor-pointer p-4 text-left transition hover:border-[#1A1613]/25 dark:hover:border-white/25 ${stat.active ? "border-[#E6540B]! ring-2 ring-[#E6540B]/15" : ""}`}>
+              {body}
+            </button>
+          ) : (
+            <div key={stat.label} className={`${card} p-4`}>{body}</div>
+          );
+        })}
       </div>
 
-      {/* 3. Bulk Action Banner (when items are checked) */}
-      {selectedReviewIds.length > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-[#1A1613] dark:bg-[#F5EFE6] text-white dark:text-[#1A1613] shadow-md animate-in fade-in slide-in-from-top-1 duration-200">
-          <div className="flex items-center gap-2.5">
-            <span className="w-6 h-6 rounded-full bg-[#E6540B] text-white font-bold text-xs flex items-center justify-center">
-              {selectedReviewIds.length}
-            </span>
-            <span className="text-xs font-semibold">
-              Review{selectedReviewIds.length === 1 ? "" : "s"} selected
-            </span>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={handleBulkApprove}
-              disabled={actionLoading}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-all cursor-pointer shadow-xs disabled:opacity-50"
-            >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Approve Selected</span>
-            </button>
-
-            <button
-              onClick={handleBulkFlag}
-              disabled={actionLoading}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold transition-all cursor-pointer shadow-xs disabled:opacity-50"
-            >
-              <AlertTriangle className="w-3.5 h-3.5" />
-              <span>Flag Selected</span>
-            </button>
-
-            <button
-              onClick={() => setIsBulkDeleting(true)}
-              disabled={actionLoading}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold transition-all cursor-pointer shadow-xs disabled:opacity-50"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>Delete Selected</span>
-            </button>
-
-            <button
-              onClick={() => setSelectedReviewIds([])}
-              className="text-xs text-white/60 dark:text-[#1A1613]/60 hover:text-white dark:hover:text-[#1A1613] underline cursor-pointer ml-1"
-            >
-              Deselect All
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* 4. Reviews Container & Filter Bar */}
-      <div className="rounded-xl border border-[#1A1613]/10 dark:border-white/10 bg-[#FFFDF8] dark:bg-[#1E1A17] shadow-xs overflow-hidden">
-        {/* Filter Controls */}
-        <div className="p-4 sm:p-5 border-b border-[#1A1613]/10 dark:border-white/10 space-y-3">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            {/* Search Input */}
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#1A1613]/40 dark:text-[#F5EFE6]/50 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Search by customer, product, message, reply..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full h-10 pl-10 pr-9 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] text-xs text-[#1A1613] dark:text-[#F5EFE6] placeholder:text-[#1A1613]/40 dark:placeholder:text-[#F5EFE6]/40 focus:outline-none focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B]"
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1A1613]/40 dark:text-[#F5EFE6]/50 hover:text-[#1A1613] dark:hover:text-[#F5EFE6] cursor-pointer"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-
-            {/* Dropdowns */}
-            <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-              {/* Status Filter */}
-              <select
-                value={selectedStatus}
-                onChange={(e) => {
-                  setSelectedStatus(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="flex-1 min-w-[125px] sm:flex-initial sm:min-w-0 h-9 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] px-3 text-xs font-medium text-[#1A1613] dark:text-[#F5EFE6] focus:outline-none focus:border-[#E6540B]"
-              >
-                <option value="ALL">All Statuses</option>
-                <option value="APPROVED">Approved Only</option>
-                <option value="PENDING">Pending Moderation</option>
-                <option value="FLAGGED">Flagged Reviews</option>
-              </select>
-
-              {/* Rating Filter */}
-              <select
-                value={selectedRating}
-                onChange={(e) => {
-                  setSelectedRating(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="flex-1 min-w-[125px] sm:flex-initial sm:min-w-0 h-9 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] px-3 text-xs font-medium text-[#1A1613] dark:text-[#F5EFE6] focus:outline-none focus:border-[#E6540B]"
-              >
-                <option value="ALL">All Ratings</option>
-                <option value="1,2">1 &amp; 2 Stars (Needs Attention)</option>
-                <option value="5">5 Stars (★★★★★)</option>
-                <option value="4">4 Stars (★★★★☆)</option>
-                <option value="3">3 Stars (★★★☆☆)</option>
-                <option value="2">2 Stars (★★☆☆☆)</option>
-                <option value="1">1 Star (★☆☆☆☆)</option>
-              </select>
-
-              {/* Attachment Filter */}
-              <select
-                value={selectedAttachment}
-                onChange={(e) => {
-                  setSelectedAttachment(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="flex-1 min-w-[125px] sm:flex-initial sm:min-w-0 h-9 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] px-3 text-xs font-medium text-[#1A1613] dark:text-[#F5EFE6] focus:outline-none focus:border-[#E6540B]"
-              >
-                <option value="ALL">All Attachments</option>
-                <option value="WITH_PHOTO">With Photos</option>
-                <option value="TEXT_ONLY">Text Only</option>
-              </select>
-
-              {/* Sort By */}
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                className="flex-1 min-w-[125px] sm:flex-initial sm:min-w-0 h-9 rounded-lg border border-[#1A1613]/15 dark:border-white/15 bg-[#FDF8ED] dark:bg-[#14110F] px-3 text-xs font-medium text-[#1A1613] dark:text-[#F5EFE6] focus:outline-none focus:border-[#E6540B]"
-              >
-                <option value="newest">Sort: Newest First</option>
-                <option value="oldest">Sort: Oldest First</option>
-                <option value="rating_desc">Rating: High to Low</option>
-                <option value="rating_asc">Rating: Low to High</option>
-              </select>
-
-              {/* Reset Filter Button */}
-              {isFiltered && (
-                <button
-                  onClick={handleResetFilters}
-                  className="h-9 px-3 rounded-lg border border-dashed border-[#1A1613]/25 dark:border-white/20 text-xs font-semibold text-[#1A1613]/70 dark:text-[#F5EFE6]/70 hover:text-[#E6540B] hover:border-[#E6540B] transition-colors cursor-pointer"
-                  title="Reset all search & filters"
-                >
-                  Reset
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* 5. Table */}
-        <ReviewTable
-          reviews={paginatedReviews}
-          loading={initialLoading}
-          selectedIds={selectedReviewIds}
-          onToggleSelect={handleToggleSelect}
-          onToggleSelectAll={handleToggleSelectAll}
-          isAllSelected={isAllSelectedOnPage}
-          onView={(rev) => setViewingReview(rev)}
-          onDelete={(rev) => setDeletingReview(rev)}
-          onStatusChange={handleSingleStatusChange}
-          formatDate={formatDate}
-        />
-
-        {/* 6. Pagination Footer */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-[#1A1613]/10 dark:border-white/10 text-xs text-[#1A1613]/60 dark:text-[#F5EFE6]/50 bg-[#FDF8ED]/30 dark:bg-white/5">
-          <div>
-            {initialLoading ? (
-              <div className="h-3.5 w-32 rounded bg-[#1A1613]/10 dark:bg-white/10 animate-pulse" />
-            ) : filteredReviews.length === 0 ? (
-              "Showing 0 reviews"
-            ) : (
-              `Showing ${(currentPage - 1) * pageSize + 1} to ${Math.min(
-                currentPage * pageSize,
-                filteredReviews.length
-              )} of ${filteredReviews.length} review${
-                filteredReviews.length === 1 ? "" : "s"
-              }`
-            )}
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <button
-              disabled={loading || currentPage === 1}
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              className="p-1.5 rounded-lg border border-[#1A1613]/15 dark:border-white/10 text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] disabled:opacity-40 transition-colors cursor-pointer"
-              title="Previous Page"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-
-            {Array.from({ length: totalPages }).map((_, idx) => {
-              const pageNum = idx + 1;
-              if (
-                totalPages > 5 &&
-                pageNum !== 1 &&
-                pageNum !== totalPages &&
-                Math.abs(pageNum - currentPage) > 1
-              ) {
-                if (Math.abs(pageNum - currentPage) === 2) {
-                  return (
-                    <span key={`dots-${pageNum}`} className="px-1 text-[#1A1613]/40 dark:text-[#F5EFE6]/50">
-                      ...
-                    </span>
-                  );
-                }
-                return null;
-              }
-
+      <section className={card}>
+        <div className="space-y-3 border-b border-[#1A1613]/10 p-4 dark:border-white/10">
+          <div className="flex gap-1 overflow-x-auto" role="tablist" aria-label="Moderation status">
+            {TABS.map((t) => {
+              const active = tab === t.key;
               return (
                 <button
-                  key={pageNum}
-                  onClick={() => setCurrentPage(pageNum)}
-                  className={`min-w-[28px] h-7 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    currentPage === pageNum
-                      ? "bg-[#E6540B] text-white shadow-xs"
-                      : "border border-[#1A1613]/15 dark:border-white/10 text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420]"
+                  key={t.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => changeTab(t.key)}
+                  className={`shrink-0 cursor-pointer rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                    active ? "bg-[#1A1613] text-white dark:bg-[#F5EFE6] dark:text-[#1A1613]" : "text-[#1A1613]/70 hover:bg-[#F4EEDF] dark:text-[#F5EFE6]/70 dark:hover:bg-[#2A2420]"
                   }`}
                 >
-                  {pageNum}
+                  {t.label} {counts && <span className="opacity-60">{counts[t.key].toLocaleString()}</span>}
                 </button>
               );
             })}
-
-            <button
-              disabled={loading || currentPage === totalPages}
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              className="p-1.5 rounded-lg border border-[#1A1613]/15 dark:border-white/10 text-[#1A1613] dark:text-[#F5EFE6] hover:bg-[#F4EEDF] dark:hover:bg-[#2A2420] disabled:opacity-40 transition-colors cursor-pointer"
-              title="Next Page"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
+          </div>
+          <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
+            <div className="relative lg:w-80">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1A1613]/40 dark:text-[#F5EFE6]/40" />
+              <input type="search" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} maxLength={100} placeholder="Customer, product or words in the review" aria-label="Search reviews" className={`${control} w-full pl-9`} />
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-1 sm:justify-end">
+              <select value={rating} onChange={(e) => changeRating(e.target.value as RatingFilter)} aria-label="Rating" className={`${control} cursor-pointer`}>
+                <option value="ALL">Any rating</option>
+                <option value="5">5 stars</option>
+                <option value="4">4 stars</option>
+                <option value="3">3 stars</option>
+                <option value="2">2 stars</option>
+                <option value="1">1 star</option>
+                <option value="LOW">1–2 stars</option>
+              </select>
+              <select value={photos} onChange={(e) => changePhotos(e.target.value as PhotoFilter)} aria-label="Photos" className={`${control} cursor-pointer`}>
+                <option value="ALL">With or without photo</option>
+                <option value="WITH">With a photo</option>
+                <option value="WITHOUT">Without a photo</option>
+              </select>
+              <select value={sort} onChange={(e) => changeSort(e.target.value as Sort)} aria-label="Sort" className={`${control} col-span-2 cursor-pointer sm:col-span-1`}>
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+                <option value="rating_desc">Highest rating</option>
+                <option value="rating_asc">Lowest rating</option>
+              </select>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* 7. Modals */}
-      <ReviewViewModal
-        review={viewingReview}
-        onClose={() => setViewingReview(null)}
-        onDelete={(rev) => {
-          setViewingReview(null);
-          setDeletingReview(rev);
-        }}
-        formatDate={formatDate}
-      />
+        {/* Bulk actions for the checked reviews */}
+        {selected.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 border-b border-[#1A1613]/10 bg-[#F4EEDF]/60 px-4 py-2 text-sm dark:border-white/10 dark:bg-white/5">
+            <span className={`font-semibold ${strong}`}>{selected.length} selected</span>
+            <button type="button" onClick={() => bulkStatus("APPROVED")} disabled={actionLoading} className={`${secondaryButton} py-1`}><Check className="h-3.5 w-3.5" /> Make visible</button>
+            <button type="button" onClick={() => bulkStatus("FLAGGED")} disabled={actionLoading} className={`${secondaryButton} py-1`}><EyeOff className="h-3.5 w-3.5" /> Hide (flag)</button>
+            <button type="button" onClick={() => setBulkDelete(true)} disabled={actionLoading} className={`${secondaryButton} py-1 text-red-700 dark:text-red-400`}><Trash2 className="h-3.5 w-3.5" /> Delete</button>
+            <button type="button" onClick={() => setSelected([])} className={`ml-auto cursor-pointer ${muted} hover:text-[#E6540B]`} aria-label="Clear selection"><X className="h-4 w-4" /></button>
+          </div>
+        )}
 
-      <ReviewDeleteModal
-        review={deletingReview}
-        onClose={() => setDeletingReview(null)}
-        onConfirm={handleConfirmDelete}
-        loading={actionLoading}
-      />
+        {firstLoad ? (
+          <div className="divide-y divide-[#1A1613]/8 dark:divide-white/10">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 p-4">
+                <Skeleton className="h-9 w-9 rounded-md" />
+                <div className="flex-1 space-y-1.5"><Skeleton className="h-4 w-48" /><Skeleton className="h-3 w-full max-w-md" /></div>
+              </div>
+            ))}
+          </div>
+        ) : status === Status.ERROR && !reviewStats ? (
+          <div className={`p-10 text-center text-sm ${muted}`}>
+            {error || "Couldn't load reviews."}{" "}
+            <button type="button" onClick={() => dispatch(fetchAdminReviews())} className="cursor-pointer font-semibold text-[#E6540B] hover:underline">Try again</button>
+          </div>
+        ) : reviewStats?.total === 0 ? (
+          <div className="p-10 text-center">
+            <p className={`font-semibold ${strong}`}>No reviews yet</p>
+            <p className={`mt-1 text-sm ${muted}`}>Reviews from customers appear here as soon as they're posted.</p>
+          </div>
+        ) : reviews.length === 0 ? (
+          <div className={`p-10 text-center text-sm ${muted}`}>
+            {tab === "TO_CHECK" && !filtered ? "Nothing to check. Every review is visible." : "No reviews match."}{" "}
+            {(filtered || tab !== "ALL") && <button type="button" onClick={resetFilters} className="cursor-pointer font-semibold text-[#E6540B] hover:underline">Show all reviews</button>}
+          </div>
+        ) : (
+          <>
+            {/* Phones */}
+            <ul className="divide-y divide-[#1A1613]/8 md:hidden dark:divide-white/10">
+              {pageItems.map((r) => (
+                <li key={r.id} className="flex gap-3 p-4">
+                  <input type="checkbox" checked={selected.includes(r.id)} onChange={() => toggle(r.id)} aria-label="Select review" className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-[#E6540B]" />
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className={`truncate text-sm font-semibold ${strong}`}>{r.User?.username ?? "Customer"}</span>
+                      {statusSelect(r)}
+                    </div>
+                    {productCell(r)}
+                    <div className="flex items-center gap-2"><Stars rating={Number(r.rating)} /><span className={`text-xs ${muted}`}>{formatDate(r.createdAt)}</span></div>
+                    {messageCell(r)}
+                  </div>
+                  {actions(r)}
+                </li>
+              ))}
+            </ul>
 
-      <ReviewBulkDeleteModal
-        isOpen={isBulkDeleting}
-        count={selectedReviewIds.length}
-        onClose={() => setIsBulkDeleting(false)}
-        onConfirm={handleConfirmBulkDelete}
-        loading={actionLoading}
-      />
+            {/* Larger screens */}
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className={`border-b border-[#1A1613]/10 text-left text-xs font-semibold dark:border-white/10 ${muted}`}>
+                    <th className="w-10 px-4 py-3">
+                      <input type="checkbox" checked={allOnPageSelected} onChange={togglePage} aria-label="Select all on this page" className="h-4 w-4 cursor-pointer accent-[#E6540B]" />
+                    </th>
+                    <th className="px-4 py-3">Review</th>
+                    <th className="px-4 py-3">Product</th>
+                    <th className="px-4 py-3">Rating</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3"><span className="sr-only">Actions</span></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#1A1613]/8 dark:divide-white/10">
+                  {pageItems.map((r) => (
+                    <tr key={r.id} className={`align-top hover:bg-[#F4EEDF]/40 dark:hover:bg-white/5 ${selected.includes(r.id) ? "bg-[#E6540B]/5" : ""}`}>
+                      <td className="px-4 py-3">
+                        <input type="checkbox" checked={selected.includes(r.id)} onChange={() => toggle(r.id)} aria-label="Select review" className="h-4 w-4 cursor-pointer accent-[#E6540B]" />
+                      </td>
+                      <td className="max-w-md px-4 py-3">
+                        <p className={`text-xs ${muted}`}><span className={`font-semibold ${strong}`}>{r.User?.username ?? "Customer"}</span> · {formatDate(r.createdAt)}</p>
+                        <div className="mt-0.5">{messageCell(r)}</div>
+                      </td>
+                      <td className="max-w-55 px-4 py-3">{productCell(r)}</td>
+                      <td className="px-4 py-3"><Stars rating={Number(r.rating)} /></td>
+                      <td className="px-4 py-3">{statusSelect(r)}</td>
+                      <td className="px-4 py-3">{actions(r)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className={`flex flex-wrap items-center justify-between gap-2 border-t border-[#1A1613]/10 px-4 py-3 text-sm dark:border-white/10 ${muted}`}>
+              <span>{(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, total)} of {total.toLocaleString()}</span>
+              {totalPages > 1 && (
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => { setPage(currentPage - 1); setSelected([]); }} disabled={currentPage === 1 || loading} className={secondaryButton}>Previous</button>
+                  <span>Page {currentPage} of {totalPages}</span>
+                  <button type="button" onClick={() => { setPage(currentPage + 1); setSelected([]); }} disabled={currentPage === totalPages || loading} className={secondaryButton}>Next</button>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </section>
+
+      <p className={`text-xs ${muted}`}>
+        <strong>Visible</strong> reviews show on the product page and count towards its rating. <strong>Pending</strong> and{" "}
+        <strong>Flagged</strong> reviews are hidden from shoppers; the customer is told when theirs is hidden or shown again.{" "}
+        <Link to="/admin-dashboard/products" className="font-semibold text-[#E6540B] hover:underline">See product ratings</Link>
+      </p>
+
+      <ReviewViewModal key={viewingLive?.id ?? "none"} review={viewingLive} onClose={() => setViewing(null)} onDelete={(r) => setToDelete(r)} formatDate={formatDate} />
+
+      {(toDelete || bulkDelete) && (
+        <div className="fixed inset-0 z-10000 flex items-center justify-center bg-black/50 p-4" role="alertdialog" aria-modal="true">
+          <div className="w-full max-w-sm rounded-2xl bg-[#FFFDF8] p-5 dark:bg-[#1E1A17]">
+            <h2 className={`text-lg font-bold ${strong}`}>
+              {bulkDelete ? `Delete ${selected.length} review${selected.length === 1 ? "" : "s"}?` : `Delete ${toDelete?.User?.username ?? "this"}'s review?`}
+            </h2>
+            <p className={`mt-2 text-sm ${muted}`}>
+              Deleted reviews and their photos can't be restored. To keep a review but stop shoppers seeing it, flag it instead.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" onClick={() => { setToDelete(null); setBulkDelete(false); }} disabled={actionLoading} className={secondaryButton}>Cancel</button>
+              <button type="button" onClick={confirmDelete} disabled={actionLoading} className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-red-600 px-3.5 py-1.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60">
+                {actionLoading && <Loader2 className="h-4 w-4 animate-spin" />} Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

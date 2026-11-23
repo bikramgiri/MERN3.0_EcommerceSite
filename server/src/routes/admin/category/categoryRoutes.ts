@@ -13,7 +13,7 @@ router.route("/category")
 
 router.route("/category/:id")
 .get(catchAsyncError(categoryController.fetchSingleCategory))
-.patch(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Admin),  upload.single('categoryImage'), cloudinaryUpload, (categoryController.updateCategory))
+.patch(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Admin),  upload.single('categoryImage'), cloudinaryUpload, catchAsyncError(categoryController.updateCategory))
 .delete(authMiddleware.isAuthenticated, authMiddleware.authorizeRole(Role.Admin), catchAsyncError(categoryController.deleteCategory))
 
 export default router;

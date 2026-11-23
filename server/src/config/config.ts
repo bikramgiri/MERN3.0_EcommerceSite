@@ -28,3 +28,11 @@ export const envConfig = {
   googleClientId: process.env.GOOGLE_CLIENT_ID,
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
 };
+// Fail fast when something essential is missing, instead of breaking later (e.g. every login returning 500)
+const REQUIRED_ENV = ["DB_CONNECTION_STRING", "JWT_SECRET_KEY", "SESSION_SECRET", "CLIENT_URL", "BACKEND_URL"];
+const missingEnv = REQUIRED_ENV.filter((key) => !process.env[key]);
+if (missingEnv.length) {
+  const message = `Missing environment variables: ${missingEnv.join(", ")}`;
+  if (process.env.NODE_ENV === "production") throw new Error(message);
+  console.warn(`⚠️  ${message}`);
+}

@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { isInvalidIdError } from "../../../services/catchAsyncError";
 import { Op } from "sequelize";
 import { AuthRequest } from "../../../middleware/authMiddleware";
 import Review from "../../../database/models/reviewModel";
@@ -145,10 +146,11 @@ class ReviewController {
       });
     } catch (error: any) {
       console.error("AddReview error:", error);
-      res.status(500).json({
-        message: "Internal server error",
-        error: error.message,
-      });
+      if (isInvalidIdError(error)) {
+        res.status(404).json({ message: "Not found" });
+        return;
+      }
+      res.status(500).json({ message: "Internal server error" });
     }
   }
 
@@ -217,10 +219,11 @@ class ReviewController {
       });
     } catch (error: any) {
       console.error("GetReviews error:", error);
-      res.status(500).json({
-        message: "Internal server error",
-        error: error.message,
-      });
+      if (isInvalidIdError(error)) {
+        res.status(404).json({ message: "Not found" });
+        return;
+      }
+      res.status(500).json({ message: "Internal server error" });
     }
   }
 
@@ -305,10 +308,11 @@ class ReviewController {
       });
     } catch (error: any) {
       console.error("GetUserReviews error:", error);
-      res.status(500).json({
-        message: "Internal server error",
-        error: error.message,
-      });
+      if (isInvalidIdError(error)) {
+        res.status(404).json({ message: "Not found" });
+        return;
+      }
+      res.status(500).json({ message: "Internal server error" });
     }
   }
 
@@ -471,10 +475,11 @@ class ReviewController {
       });
     } catch (error: any) {
       console.error("EditReview error:", error);
-      res.status(500).json({
-        message: "Internal server error",
-        error: error.message,
-      });
+      if (isInvalidIdError(error)) {
+        res.status(404).json({ message: "Not found" });
+        return;
+      }
+      res.status(500).json({ message: "Internal server error" });
     }
   }
 
@@ -550,10 +555,11 @@ class ReviewController {
       });
     } catch (error: any) {
       console.error("DeleteReview error:", error);
-      res.status(500).json({
-        message: "Internal server error",
-        error: error.message,
-      });
+      if (isInvalidIdError(error)) {
+        res.status(404).json({ message: "Not found" });
+        return;
+      }
+      res.status(500).json({ message: "Internal server error" });
     }
   }
 }

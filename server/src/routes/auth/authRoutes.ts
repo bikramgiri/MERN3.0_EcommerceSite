@@ -3,7 +3,7 @@ import AuthController from '../../controllers/auth/authController';
 import authMiddleware from '../../middleware/authMiddleware';
 import catchAsyncError from '../../services/catchAsyncError';
 import { loginRateLimiter, otpRateLimiter, registerRateLimiter, resetPasswordRateLimiter } from '../../middleware/rateLimiter';
-import googleAuth from '../../services/googleAuth';
+import googleAuth, { clientUrl } from '../../services/googleAuth';
 
 const router:Router = express.Router()
 
@@ -20,7 +20,8 @@ router.route("/change-password").post(authMiddleware.isAuthenticated, catchAsync
 // Google routes
 router.get("/google",googleAuth.passport.authenticate("google", { scope: ["profile", "email"] }));
 router.get("/google/callback",googleAuth.passport.authenticate("google", 
-    { failureRedirect: "http://localhost:5173/login?error=google_login_failed" }),
+    { failureRedirect: `${clientUrl()}/login?error=google_login_failed` }),
   googleAuth.googleAuthCallback // ← use the named export
 );
+router.route("/google/exchange").post(loginRateLimiter, catchAsyncError(AuthController.exchangeGoogleCode))
 export default router;

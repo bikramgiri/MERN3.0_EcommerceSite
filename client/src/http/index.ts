@@ -56,6 +56,23 @@ export const handleSessionExpiry = (
   }
 };
 
+let isHandlingBlock = false;
+
+/**
+ * The store blocked this account: end the session and explain why on the login page.
+ * Triggered by a 403 ACCOUNT_BLOCKED response or the live "auth:blocked" socket event.
+ */
+export const handleAccountBlocked = () => {
+  if (isHandlingBlock) return;
+  isHandlingBlock = true;
+  clearAuthSession();
+  if (!window.location.pathname.startsWith("/login")) {
+    window.location.href = "/login?blocked=true";
+  } else {
+    isHandlingBlock = false;
+  }
+};
+
 // For Unauthenticated Requests
 export const API = axios.create({
   baseURL: SERVER_URL,
@@ -105,9 +122,15 @@ APIAuthenticated.interceptors.request.use(
 );
 
 // Response Interceptor: Catch 401 TokenExpiredError & Unauthorized responses
-const handleResponseError = (error: any) => {
+const handleResponseError = (error: { response?: { status?: number; data?: Record<string, unknown> } }) => {
   // A guest who never logged in has no session to expire
   const hadSession = !!localStorage.getItem("token");
+
+  // Signed-in user whose account was blocked by the store
+  if (hadSession && error.response?.status === 403 && error.response.data?.code === "ACCOUNT_BLOCKED") {
+    handleAccountBlocked();
+    return Promise.reject(error);
+  }
 
   if (hadSession && error.response && error.response.status === 401) {
     const data = error.response.data;

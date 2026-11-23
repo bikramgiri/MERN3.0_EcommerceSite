@@ -2,9 +2,9 @@ import { useState, useEffect, useRef, type FormEvent, type KeyboardEvent } from 
 import { LayoutGrid, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../../../hooks/hooks";
-import { fetchProducts } from "../../../../store/customer/productSlice";
+import { API } from "../../../../http";
 import { fetchCategories } from "../../../../store/customer/categorySlice";
-import { hideBrokenImage, matchesSearch, responsiveImage } from "../../../../utils/helpers";
+import { hideBrokenImage, responsiveImage } from "../../../../utils/helpers";
 import type { Product } from "../../../../types/customer/productTypes";
 import type { Category } from "../../../../types/customer/categoriesTypes";
 
@@ -27,7 +27,6 @@ const SearchProducts = ({
 }: SearchProductsProps) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { product: allProducts = [] } = useAppSelector((state) => state.product);
   const { categories = [] } = useAppSelector((state) => state.category);
 
   const [query, setQuery] = useState("");
@@ -37,10 +36,24 @@ const SearchProducts = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const listId = `search-suggestions-${variant}`;
 
-  // Make sure there's something to search through, without refetching every render
+  // Products matching what's typed, found by the server (the shop never downloads the whole catalogue)
+  const [found, setFound] = useState<{ query: string; products: Product[] }>({ query: "", products: [] });
   useEffect(() => {
-    if (allProducts.length === 0) dispatch(fetchProducts()).catch(() => {});
-  }, [dispatch, allProducts.length]);
+    const term = query.trim();
+    if (!term) return;
+    let current = true;
+    const timer = setTimeout(() => {
+      API.get("/products", { params: { search: term, limit: MAX_PRODUCTS } })
+        .then((res) => {
+          if (current) setFound({ query: term, products: res.data?.data ?? [] });
+        })
+        .catch(() => {});
+    }, 200);
+    return () => {
+      current = false;
+      clearTimeout(timer);
+    };
+  }, [query]);
 
   useEffect(() => {
     if (categories.length === 0) dispatch(fetchCategories()).catch(() => {});
@@ -64,16 +77,9 @@ const SearchProducts = ({
     ? categories.filter((c) => c.id && c.categoryName.toLowerCase().includes(q)).slice(0, MAX_CATEGORIES)
     : [];
 
-  // Products whose own name matches come before ones that only match by category
-  const productMatches = q
-    ? allProducts
-        .filter((p) => matchesSearch(p, q))
-        .sort(
-          (a, b) =>
-            Number(b.productName.toLowerCase().includes(q)) -
-            Number(a.productName.toLowerCase().includes(q)),
-        )
-    : [];
+  // The server puts products whose own name matches before ones that only match by category;
+  // results for an older search are hidden until the new ones arrive
+  const productMatches = q && found.query.toLowerCase() === q ? found.products : [];
 
   const options: Option[] = [
     ...categoryMatches.map((category) => ({ type: "category" as const, category })),

@@ -1,7 +1,6 @@
+import crypto from "crypto";
 
-const generateOtp = () =>{
-      const otp = Math.floor(100000 + Math.random() * 900000).toString(); // Generate a random 6-digit OTP
-      return otp;
-} 
+// 6-digit code from a cryptographically secure source (Math.random is predictable)
+const generateOtp = () => crypto.randomInt(100000, 1000000).toString();
 
 export default generateOtp;

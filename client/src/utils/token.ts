@@ -1,7 +1,13 @@
 /**
  * Decodes JWT token payload safely in the browser environment.
  */
-export function decodeTokenPayload(token?: string | null): any | null {
+export interface TokenPayload {
+  id?: string;
+  exp?: number;
+  [key: string]: unknown;
+}
+
+export function decodeTokenPayload(token?: string | null): TokenPayload | null {
   if (!token) return null;
   try {
     const parts = token.split(".");

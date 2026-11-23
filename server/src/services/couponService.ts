@@ -41,22 +41,16 @@ export const countCouponUses = async (
   options: { userId?: string; transaction?: Transaction | null } = {},
 ): Promise<number> => countLiveOrders({ couponCode: code, ...(options.userId ? { userId: options.userId } : {}) }, options.transaction);
 
-/** Orders that count: not cancelled, and not an online payment that failed */
-const countLiveOrders = async (filter: WhereOptions, transaction?: Transaction | null): Promise<number> => {
-  const where: WhereOptions = { ...filter, orderStatus: { [Op.ne]: OrderStatus.Cancelled } };
-  return Order.count({
-    where,
-    include: [
-      {
-        model: Payment,
-        required: true,
-        attributes: [],
-        where: { paymentStatus: { [Op.ne]: PaymentStatus.Failed } },
-      },
-    ],
+/**
+ * Orders that count: every order that isn't cancelled. An order whose online payment failed still
+ * counts, because the customer can retry that payment (or switch to cash) and keep the discount;
+ * it stops counting once it's cancelled (by the customer, the store, or the unpaid-order job).
+ */
+const countLiveOrders = async (filter: WhereOptions, transaction?: Transaction | null): Promise<number> =>
+  Order.count({
+    where: { ...filter, orderStatus: { [Op.ne]: OrderStatus.Cancelled } },
     transaction: transaction ?? null,
   });
-};
 
 /** Whether this customer has ever placed an order that counts (for first-order-only codes) */
 export const hasOrderedBefore = async (userId: string, transaction?: Transaction | null) =>

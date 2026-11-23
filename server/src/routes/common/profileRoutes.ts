@@ -11,6 +11,12 @@ router.route("/profile")
 .get(authMiddleware.isAuthenticated, catchAsyncError(ProfileController.fetchMyProfile))
 .patch(authMiddleware.isAuthenticated, catchAsyncError(ProfileController.updateMyProfile))
 
+router.route("/profile/email/confirm")
+.post(authMiddleware.isAuthenticated, catchAsyncError(ProfileController.confirmEmailChange))
+
+router.route("/profile/email")
+.delete(authMiddleware.isAuthenticated, catchAsyncError(ProfileController.cancelEmailChange))
+
 router.route("/profile/avatar")
 .patch(authMiddleware.isAuthenticated, upload.single('avatar'), cloudinaryUpload, catchAsyncError(ProfileController.updateMyAvatar))
 .delete(authMiddleware.isAuthenticated, catchAsyncError(ProfileController.deleteMyAvatar))

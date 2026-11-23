@@ -80,15 +80,15 @@ const Settings: React.FC = () => {
     "general" | "orders" | "notifications" | "maintenance"
   >("general");
 
-  useEffect(() => {
-    const tabParam = searchParams.get("tab");
-    if (
-      tabParam &&
-      ["general", "orders", "notifications", "maintenance"].includes(tabParam)
-    ) {
-      setActiveTab(tabParam as any);
+  // Links like ?tab=orders (e.g. from the header search) open that tab, also while already on the page
+  const tabParam = searchParams.get("tab");
+  const [appliedTabParam, setAppliedTabParam] = useState<string | null>(null);
+  if (tabParam !== appliedTabParam) {
+    setAppliedTabParam(tabParam);
+    if (tabParam === "general" || tabParam === "orders" || tabParam === "notifications" || tabParam === "maintenance") {
+      setActiveTab(tabParam);
     }
-  }, [searchParams]);
+  }
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -122,7 +122,8 @@ const Settings: React.FC = () => {
   // Check if form has unsaved edits
   const isDirty = JSON.stringify(formData) !== JSON.stringify(savedSettings);
 
-  const validate = (): boolean => {
+  // Returns the problems found (field -> message); empty when the form can be saved
+  const validate = (): Record<string, string> => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.storeName.trim()) {
@@ -159,8 +160,17 @@ const Settings: React.FC = () => {
       newErrors.lowStockThreshold = "Low stock threshold must be at least 1";
     }
 
+    if (formData.orderPrefix.trim() && !/^[A-Za-z0-9#-]{1,8}$/.test(formData.orderPrefix.trim())) {
+      newErrors.orderPrefix = "Order prefix can be up to 8 letters, numbers, # or -";
+    }
+
+    if (!formData.enableCod && !formData.enableOnlinePayment) {
+      newErrors.enableCod =
+        "Keep at least one payment method on (cash on delivery or online payment), or turn on maintenance mode to pause orders.";
+    }
+
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return newErrors;
   };
 
   const handleInputChange = (
@@ -196,8 +206,10 @@ const Settings: React.FC = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validate()) {
-      toast.error("Please fix validation errors before saving");
+    // Name the first problem: it may be on another tab
+    const problems = Object.values(validate());
+    if (problems.length > 0) {
+      toast.error(problems[0]);
       return;
     }
 
@@ -379,22 +391,13 @@ const Settings: React.FC = () => {
                   />
                 </div>
 
-                {/* Currency */}
+                {/* Currency: fixed, because Khalti, eSewa and every price in the shop use Nepalese rupees */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 dark:text-[#F5EFE6]/70 mb-1.5">
-                    Default currency
-                  </label>
-                  <select
-                    name="currency"
-                    value={formData.currency}
-                    onChange={handleInputChange}
-                    className="w-full rounded-lg border dark:bg-[#14110F] dark:placeholder:text-[#F5EFE6]/40 border-gray-300 dark:border-white/15 px-3.5 py-2.5 text-sm text-gray-900 dark:text-[#F5EFE6] focus:outline-none focus:border-[#E6540B] focus:ring-1 focus:ring-[#E6540B] bg-white transition-colors"
-                  >
-                    <option value="NPR (Rs.)">NPR (Rs.) — Nepalese Rupee</option>
-                    <option value="USD ($)">USD ($) — US Dollar</option>
-                    <option value="INR (₹)">INR (₹) — Indian Rupee</option>
-                    <option value="EUR (€)">EUR (€) — Euro</option>
-                  </select>
+                  <p className="block text-xs font-medium text-gray-700 dark:text-[#F5EFE6]/70 mb-1.5">Currency</p>
+                  <p className="rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-3.5 py-2.5 text-sm text-gray-700 dark:text-[#F5EFE6]/80">
+                    Nepalese Rupee (Rs.)
+                  </p>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-[#F5EFE6]/50">Khalti and eSewa only accept rupees.</p>
                 </div>
               </div>
 

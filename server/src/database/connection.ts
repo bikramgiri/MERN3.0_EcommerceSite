@@ -177,12 +177,27 @@ const connectDB = async () => {
           ADD COLUMN IF NOT EXISTS "couponCode" VARCHAR(40) DEFAULT NULL;
         ALTER TABLE IF EXISTS "order_details"
           ADD COLUMN IF NOT EXISTS "unitPrice" DECIMAL(10,2) DEFAULT NULL;
+        ALTER TABLE IF EXISTS "users"
+          ADD COLUMN IF NOT EXISTS "isBlocked" BOOLEAN NOT NULL DEFAULT false,
+          ADD COLUMN IF NOT EXISTS "blockedAt" TIMESTAMP WITH TIME ZONE DEFAULT NULL;
+        ALTER TABLE IF EXISTS "users" ALTER COLUMN "password" DROP NOT NULL;
+        ALTER TABLE IF EXISTS "users"
+          ADD COLUMN IF NOT EXISTS "passwordChangedAt" TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+          ADD COLUMN IF NOT EXISTS "pendingEmail" VARCHAR(255) DEFAULT NULL,
+          ADD COLUMN IF NOT EXISTS "pendingEmailCodeHash" VARCHAR(255) DEFAULT NULL,
+          ADD COLUMN IF NOT EXISTS "pendingEmailCodeAt" TIMESTAMP WITH TIME ZONE DEFAULT NULL;
         ALTER TABLE IF EXISTS "coupons"
           ADD COLUMN IF NOT EXISTS "firstOrderOnly" BOOLEAN NOT NULL DEFAULT false,
           ADD COLUMN IF NOT EXISTS "showToNewCustomers" BOOLEAN NOT NULL DEFAULT false,
           ADD COLUMN IF NOT EXISTS "showOnSite" BOOLEAN NOT NULL DEFAULT false,
           ADD COLUMN IF NOT EXISTS "bannerText" VARCHAR(120) NOT NULL DEFAULT '',
           ADD COLUMN IF NOT EXISTS "lastEmailedAt" TIMESTAMP WITH TIME ZONE DEFAULT NULL;
+      `);
+      // Cash on delivery is collected on delivery: delivered COD orders count as paid
+      await sequelize.query(`
+        UPDATE "payments" SET "paymentStatus" = 'Paid'
+        WHERE "paymentMethod" = 'COD' AND "paymentStatus" <> 'Paid'
+          AND id IN (SELECT "paymentId" FROM "orders" WHERE "orderStatus" = 'Delivered');
       `);
     } catch (migError) {
       console.warn("Orders column migration notice:", migError);

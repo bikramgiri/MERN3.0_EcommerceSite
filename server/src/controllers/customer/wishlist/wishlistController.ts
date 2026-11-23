@@ -6,7 +6,7 @@ import getFullImageUrl from "../../../services/imageHandler";
 import Category from "../../../database/models/categoryModel";
 import Wishlist from "../../../database/models/wishlistModel";
 import Review from "../../../database/models/reviewModel";
-import { approvedReviewsOnly, formatReviewImages } from "../../../services/productPresenter";
+import { approvedReviewsOnly, formatReviewImages, withPrices } from "../../../services/productPresenter";
 
 // Product details a shopper needs on a wishlist card (never the owner's account data)
 const wishlistProductIncludes = [
@@ -22,11 +22,11 @@ const wishlistProductIncludes = [
 
 const presentProduct = (product: Product) => {
   const data = product.toJSON();
-  return {
+  return withPrices({
     ...data,
     productImage: getFullImageUrl(data.productImage),
     reviews: (data.reviews || []).map(formatReviewImages),
-  };
+  });
 };
 
 class WishlistController {
