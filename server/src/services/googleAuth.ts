@@ -45,10 +45,19 @@ passport.deserializeUser(async function(id: string, cb: any) {
   }
 });
 
+const getGoogleCallbackUrl = (): string => {
+  if (process.env.GOOGLE_CALLBACK_URL) return process.env.GOOGLE_CALLBACK_URL;
+  if (envConfig.backendUrl) {
+    const base = envConfig.backendUrl.replace(/\/+$/, "").replace(/\/api\/?$/, "");
+    return `${base}/api/auth/google/callback`;
+  }
+  return "/api/auth/google/callback";
+};
+
 passport.use(new GoogleStrategy({
     clientID: envConfig.googleClientId,
     clientSecret: envConfig.googleClientSecret,
-    callbackURL: "/api/auth/google/callback"
+    callbackURL: getGoogleCallbackUrl()
   },
   
   async function(accessToken: string, refreshToken: string, profile: any, done: any) {
