@@ -159,7 +159,7 @@ const InteractiveOrdersTable: React.FC<InteractiveOrdersTableProps> = ({
               {/* Sort Order Dropdown */}
               <select
                 value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value as any)}
+                onChange={(e) => setSortOrder(e.target.value as "newest" | "oldest" | "highest" | "lowest")}
                 className="h-9 rounded-lg border border-[#1A1613]/15 bg-[#FDF8ED] px-2.5 text-xs font-medium text-[#1A1613] focus:outline-none focus:border-[#E6540B] dark:bg-[#14110F] dark:border-white/15 dark:text-[#F5EFE6]"
               >
                 <option value="newest">Newest First</option>

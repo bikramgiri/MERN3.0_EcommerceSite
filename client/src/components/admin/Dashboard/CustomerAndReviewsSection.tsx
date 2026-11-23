@@ -146,7 +146,7 @@ const CustomerAndReviewsSection: React.FC<CustomerAndReviewsSectionProps> = ({
                     ? recentOrders.filter(
                         (o) =>
                           o.userId === user.id ||
-                          (o as any).User?.id === user.id
+                          o.User?.id === user.id
                       ).length
                     : 0;
 

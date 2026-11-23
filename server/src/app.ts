@@ -52,6 +52,14 @@ if (process.env.TRUST_PROXY || process.env.NODE_ENV === "production") {
   app.set("trust proxy", Number(process.env.TRUST_PROXY) || 1);
 }
 
+// Health check and root ping endpoints (ideal for Render keep-awake cron jobs)
+app.get("/health", (_req: Request, res: Response) => {
+  res.status(200).json({ status: "ok", message: "Truvora API is active" });
+});
+app.get("/", (_req: Request, res: Response) => {
+  res.status(200).json({ status: "ok", message: "Truvora API server running" });
+});
+
 // *Route
 app.use("/api", apiRoutes)
 

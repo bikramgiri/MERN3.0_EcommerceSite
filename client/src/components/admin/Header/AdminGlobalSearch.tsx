@@ -29,6 +29,9 @@ import { fetchAdminCategories } from "../../../store/admin/categorySlice";
 import { fetchDatas } from "../../../store/admin/datasSlice";
 import { useStoreSettings } from "../../../services/storeSettingsService";
 import { APIAuthenticated } from "../../../http";
+import { UserData } from "../../../types/customer/productTypes";
+import { OrderData } from "../../../types/admin/datasTypes";
+import { OrderStatus } from "../../../types/customer/checkoutTypes";
 
 export type SearchCategory =
   | "all"
@@ -71,9 +74,9 @@ export const AdminGlobalSearch: React.FC = () => {
     }
   });
   // Customers matching what's typed, found by the server (not just the first page of accounts)
-  const [apiUsers, setApiUsers] = useState<any[]>([]);
+  const [apiUsers, setApiUsers] = useState<UserData[]>([]);
   // Orders matching what's typed, found by the server (the Orders page only keeps one page in memory)
-  const [matchedOrders, setMatchedOrders] = useState<any[]>([]);
+  const [matchedOrders, setMatchedOrders] = useState<OrderData[]>([]);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -173,11 +176,11 @@ export const AdminGlobalSearch: React.FC = () => {
 
   // Combine and normalize users from API & datasSlice
   const allUsers = useMemo(() => {
-    const map = new Map<string, any>();
-    (recentUsers || []).forEach((u: any) => {
+    const map = new Map<string, UserData>();
+    (recentUsers || []).forEach((u) => {
       if (u?.id) map.set(u.id, u);
     });
-    (query.trim().length >= 2 ? apiUsers : []).forEach((u: any) => {
+    (query.trim().length >= 2 ? apiUsers : []).forEach((u) => {
       if (u?.id) map.set(u.id, u);
     });
     return Array.from(map.values());
@@ -208,11 +211,11 @@ export const AdminGlobalSearch: React.FC = () => {
 
   // Recent orders from the dashboard plus the server's matches for the current search
   const allOrders = useMemo(() => {
-    const map = new Map<string, any>();
-    (recentOrders || []).forEach((o: any) => {
+    const map = new Map<string, OrderData>();
+    (recentOrders || []).forEach((o) => {
       if (o?.id) map.set(o.id, o);
     });
-    (query.trim().length >= 2 ? matchedOrders : []).forEach((o: any) => {
+    (query.trim().length >= 2 ? matchedOrders : []).forEach((o) => {
       if (o?.id) map.set(o.id, o);
     });
     return Array.from(map.values());
@@ -518,7 +521,7 @@ export const AdminGlobalSearch: React.FC = () => {
     allOrders.forEach((o) => {
       const id = String(o.id || "");
       const displayId = formatOrderNumber(id, orderPrefix);
-      const customer = o.User?.username || o.customerName || (o as any).name || "Customer";
+      const customer = o.User?.username || (o as { customerName?: string }).customerName || (o as { name?: string }).name || "Customer";
       const email = o.User?.email || "";
       const phone = o.phoneNumber || "";
       const status = o.orderStatus || "";
@@ -536,13 +539,13 @@ export const AdminGlobalSearch: React.FC = () => {
         address.toLowerCase().includes(q)
       ) {
         let statusBadgeColor = "bg-gray-100 text-gray-700 border-gray-200 dark:bg-white/10 dark:text-[#F5EFE6]/70 dark:border-white/10";
-        if (status === "Delivered")
+        if (status === OrderStatus.Delivered)
           statusBadgeColor = "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30";
-        else if (status === "Cancelled")
+        else if (status === OrderStatus.Cancelled)
           statusBadgeColor = "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/15 dark:text-red-400 dark:border-red-500/30";
-        else if (status === "Pending")
+        else if (status === OrderStatus.Pending)
           statusBadgeColor = "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30";
-        else if (status === "InTransit")
+        else if (status === OrderStatus.InTransit)
           statusBadgeColor = "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-400 dark:border-blue-500/30";
 
         items.push({
@@ -563,7 +566,7 @@ export const AdminGlobalSearch: React.FC = () => {
     (products || []).forEach((p) => {
       const name = p.productName || "";
       const desc = p.productDescription || "";
-      const cat = p.category?.categoryName || p.Category?.categoryName || (p as any).categoryName || "";
+      const cat = p.category?.categoryName || p.Category?.categoryName || (p as { categoryName?: string }).categoryName || "";
       const id = p.id || "";
       const price = p.productPrice !== undefined ? String(p.productPrice) : "";
 

@@ -5,4 +5,16 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  build: {
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (id.includes('apexcharts') || id.includes('react-apexcharts') || id.includes('jsvectormap')) {
+            return 'vendor-charts'
+          }
+        },
+      },
+    },
+  },
 })
