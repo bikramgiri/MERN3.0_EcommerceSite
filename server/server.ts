@@ -1,7 +1,7 @@
 import { initApp, allowedOrigins } from "./src/app";
 import { isTokenRevoked } from "./src/services/tokenRevocation";
 import { envConfig } from "./src/config/config";
-import adminSeeder from "./src/adminSeeder";
+import adminSeeder from "./src/adminseeder";
 import { ensureStoreSettings } from "./src/services/storeSettingsService";
 import CategoryController from "./src/controllers/admin/category/categoryController";
 import { startUnpaidOrderJob } from "./src/services/unpaidOrderJob";
