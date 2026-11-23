@@ -67,7 +67,14 @@ const STRENGTH_COLORS: Record<string, string> = {
   Strong: "text-[#4F6B4A]",
 };
 
-const google = import.meta.env.VITE_GOOGLE;
+const getGoogleAuthUrl = (): string => {
+  if (import.meta.env.VITE_GOOGLE) return import.meta.env.VITE_GOOGLE as string;
+  const base = (import.meta.env.VITE_SERVER_URL as string) || "http://localhost:4000";
+  const origin = base.replace(/\/api\/?$/, "").replace(/\/+$/, "");
+  return `${origin}/api/auth/google`;
+};
+
+const google = getGoogleAuthUrl();
 
 const AuthForm = ({
   type = "login",

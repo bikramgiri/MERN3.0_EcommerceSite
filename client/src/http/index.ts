@@ -2,7 +2,13 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { isTokenExpired } from "../utils/token";
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL as string;
+const getBaseApiUrl = (): string => {
+  const envUrl = (import.meta.env.VITE_SERVER_URL as string) || "http://localhost:4000/api";
+  const trimmed = envUrl.trim().replace(/\/+$/, "");
+  return trimmed.endsWith("/api") ? trimmed : `${trimmed}/api`;
+};
+
+const SERVER_URL = getBaseApiUrl();
 
 let isHandlingExpiry = false;
 
