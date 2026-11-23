@@ -19,9 +19,12 @@ const OrderStatusBreakdown: React.FC<OrderStatusBreakdownProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<"status" | "payment">("status");
 
-  const total = orderDistribution
-    ? orderDistribution.totalOrders
-    : recentOrders.length || totalOrders || 1;
+  const total = Math.max(
+    1,
+    orderDistribution
+      ? orderDistribution.totalOrders
+      : recentOrders.length || totalOrders || 1
+  );
 
   // Status counts (from orderDistribution across all DB orders if available, else recentOrders)
   const preparationCount = orderDistribution

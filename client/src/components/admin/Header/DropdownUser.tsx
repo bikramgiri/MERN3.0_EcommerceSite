@@ -4,7 +4,7 @@ import ClickOutside from '../ClickOutside';
 import { ChevronDown, LogOut, Settings } from "lucide-react";
 import { CgProfile } from "react-icons/cg";
 import { useAppDispatch, useAppSelector } from '../../../hooks/hooks';
-import { logout } from '../../../store/auth/authSlice';
+import { logoutUser } from '../../../store/auth/authSlice';
 
 const DropdownUser = () => {
   const dispatch = useAppDispatch();
@@ -13,19 +13,22 @@ const DropdownUser = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const storedToken = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-  const storedUser = JSON.parse(localStorage.getItem("user") || "null");
+  const storedUser = (() => {
+    try {
+      return typeof window !== "undefined" ? JSON.parse(localStorage.getItem("user") || "null") : null;
+    } catch {
+      return null;
+    }
+  })();
   
   const effectiveToken = token || storedToken;
-  const effectiveUser = user || storedUser;
+  const effectiveUser = user?.id ? user : storedUser;
 
   const isLoggedIn = !!effectiveToken && !!effectiveUser; 
 
-
-  const handleLogOut = () => {
-    dispatch(logout());
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+  const handleLogOut = async () => {
     setDropdownOpen(false);
+    await dispatch(logoutUser());
     navigate("/login?logout=true");
   };
 

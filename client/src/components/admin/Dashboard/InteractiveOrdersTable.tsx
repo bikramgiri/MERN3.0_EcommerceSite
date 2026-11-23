@@ -67,7 +67,7 @@ const InteractiveOrdersTable: React.FC<InteractiveOrdersTableProps> = ({
 
   const handleCopy = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(id);
+    navigator.clipboard?.writeText(id)?.catch(() => {});
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   };

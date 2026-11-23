@@ -91,7 +91,16 @@ const SalesAnalyticsChart: React.FC<{ dailySales?: DailySales[]; today?: string;
   const grid = isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(26, 22, 19, 0.07)";
 
   const options: ApexOptions = {
-    chart: { type: "area", toolbar: { show: false }, zoom: { enabled: false }, fontFamily: "inherit", foreColor: axis, background: "transparent" },
+    chart: {
+      type: "area",
+      toolbar: { show: false },
+      zoom: { enabled: false },
+      fontFamily: "inherit",
+      foreColor: axis,
+      background: "transparent",
+      redrawOnParentResize: false,
+      redrawOnWindowResize: true,
+    },
     colors: [color],
     dataLabels: { enabled: false },
     stroke: { curve: "smooth", width: 2 },
@@ -173,15 +182,16 @@ const SalesAnalyticsChart: React.FC<{ dailySales?: DailySales[]; today?: string;
         </div>
       </div>
 
-      <div className="mt-4 -mx-2">
+      <div className="mt-4 w-full min-w-0 overflow-hidden" style={{ minHeight: "260px" }}>
         {loading ? (
-          <Skeleton className="mx-2 h-[260px] w-auto rounded-xl" />
+          <Skeleton className="h-[260px] w-full rounded-xl" />
         ) : (
           <ReactApexChart
             key={`${metric}-${range}-${theme}`}
             options={options}
             series={[{ name: metric === "revenue" ? "Revenue" : "Orders", data: current.map((b) => (metric === "revenue" ? Math.round(b.revenue) : b.orders)) }]}
             type="area"
+            width="100%"
             height={260}
           />
         )}
